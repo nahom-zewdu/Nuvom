@@ -3,6 +3,7 @@
 import typer
 from rich import print
 from nuvom.config import get_settings
+from nuvom.worker import start_worker_pool
 
 app = typer.Typer(help="Nuvom — Task Queue CLI")
 
@@ -20,14 +21,10 @@ def config():
 def runworker():
     """
     Start a local worker pool to process jobs.
-    (Stubbed for now.)
     """
+    
     print("[yellow]Starting worker...[/yellow]")
-    settings = get_settings()
-    print(f"→ Max workers: {settings.max_workers}")
-    print(f"→ Batch size: {settings.batch_size}")
-    print(f"→ Timeout: {settings.job_timeout_secs}s")
-    # TODO: Call actual worker runner here later.
+    start_worker_pool()
 
 
 def main():
