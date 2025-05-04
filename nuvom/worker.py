@@ -1,3 +1,56 @@
+# nuvom/worker.py
+
 # Pre-spawns worker threads or processes
 # Handles job pulling from queue
 # Clean shutdown via signals or flags
+
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+from nuvom.config import get_settings
+from nuvom.queue import get_global_queue
+
+_shutdown_event = threading.Event()
+
+
+def worker_loop(worker_id: int, batch_size: int, timeout: int):
+    q = get_global_queue()
+    while not _shutdown_event.is_set():
+        jobs = q.pop_batch(batch_size=batch_size, timeout=timeout)
+        if not jobs:
+            continue
+        for job in jobs:
+            try:
+                print(f"[Worker-{worker_id}] Running job: {job}")
+                job.run()
+            except Exception as e:
+                print(f"[Worker-{worker_id}] Job failed: {e}")
+
+
+def start_worker_pool():
+    settings = get_settings()
+    max_workers = settings.max_workers
+    batch_size = settings.batch_size
+    job_timeout = settings.job_timeout_secs
+
+    print(f"[Nuvom] Starting {max_workers} workers...")
+    threads = []
+
+    for worker_id in range(max_workers):
+        thread = threading.Thread(
+            target=worker_loop,
+            args=(worker_id, batch_size, job_timeout),
+            daemon=True,
+        )
+        threads.append(thread)
+        thread.start()
+
+    try:
+        while not _shutdown_event.is_set():
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\n[!] Shutdown requested. Stopping workers...")
+        _shutdown_event.set()
+        for t in threads:
+            t.join()
+        print("[✔] All workers stopped.")
