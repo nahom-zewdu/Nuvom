@@ -1,0 +1,72 @@
+# === Python Bytecode & Cache ===
+__pycache__/
+*.py[cod]
+*$py.class
+
+# === Virtual Environments ===
+.venv/
+venv/
+env/
+
+# === VSCode Settings ===
+.vscode/
+
+# === PyCharm ===
+.idea/
+
+# === OS Files ===
+.DS_Store
+Thumbs.db
+
+# === Build Artifacts ===
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# === Packaging tools ===
+*.egg
+*.manifest
+*.spec
+
+# === Test and Coverage ===
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+.pytest_cache/
+
+# === Type Checkers ===
+.mypy_cache/
+.dmypy.json
+.pytype/
+
+# === Linters / Formatters ===
+ruff_cache/
+.pyre/
+
+# === Logs ===
+*.log
+
+# === Local Environment Variables ===
+.env
+.env.*
+
+# === IDE Backup Files ===
+*~
+*.bak
+*.swp
+*.swo
+
+# === Python Wheels ===
+*.whl
+
+# === CI/CD ===
+.cache/
+pip-wheel-metadata/
+
+# === Lock Files (optional, if you're using pip-tools or poetry) ===
+poetry.lock
+requirements.txt
+requirements-dev.txt
