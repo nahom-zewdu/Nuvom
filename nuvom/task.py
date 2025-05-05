@@ -26,6 +26,10 @@ class Task:
         queue = get_global_queue()
         queue.enqueue(job)
         return job.id
+    
+    def submit(self, *args, **kwargs):
+        return self.delay(*args, **kwargs)
+
 
 def task(_func=None, *, name=None, retries=0):
     def wrapper(func):
