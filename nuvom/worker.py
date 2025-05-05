@@ -6,7 +6,9 @@
 
 import threading
 import time
+from rich import print
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+
 from nuvom.config import get_settings
 from nuvom.queue import get_global_queue
 
@@ -49,8 +51,8 @@ def start_worker_pool():
         while not _shutdown_event.is_set():
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\n[!] Shutdown requested. Stopping workers...")
+        print("\n[red][ ! ] Shutdown requested. Stopping workers...[/red]")
         _shutdown_event.set()
         for t in threads:
             t.join()
-        print("[✔] All workers stopped.")
+        print("[green][ ✔ ] All workers stopped.[/green]")
