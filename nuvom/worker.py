@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 
 from nuvom.config import get_settings
 from nuvom.queue import get_global_queue
-
+from nuvom.result_store import store_result, store_error
 _shutdown_event = threading.Event()
 
 
@@ -26,8 +26,10 @@ def worker_loop(worker_id: int, batch_size: int, timeout: int):
         for job in jobs:
             try:
                 print(f"[Worker-{worker_id}] Running job: {job}")
-                job.run()
+                result = job.run()
+                store_result(job.id, result)
             except Exception as e:
+                store_error(job.id, str(e))
                 print(f"[Worker-{worker_id}] Job failed: {e}")
 
 
