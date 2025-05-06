@@ -25,6 +25,8 @@ class Task:
         job = Job(func_name=self.name, args=args, kwargs=kwargs, retries=self.retries)
         queue = get_global_queue()
         queue.enqueue(job)
+        
+        print("Job queued ", self.name, args)
         return job.id
     
     def submit(self, *args, **kwargs):
