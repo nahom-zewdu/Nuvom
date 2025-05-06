@@ -53,6 +53,14 @@ class Job:
             "retries_left": self.retries_left,
             "max_retries": self.max_retries,
         }
+    
+    def run(self):
+        from .task import get_task
+        self.retries_left -= 1
+        task = get_task(self.func_name)
+        if not task:
+            raise ValueError(f"Task '{self.func_name}' not found.")
+        return task(*self.args, **self.kwargs)
 
     def mark_running(self):
         self.status = JobStatus.RUNNING
