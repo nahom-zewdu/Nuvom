@@ -2,6 +2,8 @@
 
 import typer
 from rich import print
+import threading
+
 from nuvom.config import get_settings
 from nuvom.worker import start_worker_pool
 
@@ -24,7 +26,9 @@ def runworker():
     """
     
     print("[yellow]Starting worker...[/yellow]")
-    start_worker_pool()
+    
+    # Start worker threads
+    threading.Thread(target=start_worker_pool, daemon=True).start()
 
 
 def main():
