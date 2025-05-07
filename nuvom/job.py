@@ -53,6 +53,8 @@ class Job:
             "created_at": self.created_at,
             "retries_left": self.retries_left,
             "max_retries": self.max_retries,
+            "result": self.result,
+            "error": self.error,
         }
     
     def run(self):
