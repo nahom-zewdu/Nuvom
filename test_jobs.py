@@ -6,10 +6,9 @@ from nuvom.result_store import get_result, get_error
 
 import threading
 
-@task
+@task(retries=9)
 def add(a, b):
-    print("Hello, You")
-    return (a + b)
+    return (a + b) / 0
 
 # Start worker threads
 threading.Thread(target=start_worker_pool, daemon=True).start()
@@ -22,4 +21,4 @@ job_id = add.delay(2, 4)
 import time
 time.sleep(5)
 
-print(get_result(job_id))
+print(job_id, get_result(job_id))
