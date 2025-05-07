@@ -1,0 +1,39 @@
+[project]
+name = "nuvom"
+version = "0.2.0"
+description = "A Fast, Windows-First Task Queue for Python. Simple, Reliable, and Cross-Platform."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "Apache-2.0" }
+
+authors = [
+  { name = "Nahom", email = "nahiyo86@gmail.com" }
+]
+
+dependencies = [
+  "rich>=13.0.0",
+  "pydantic>=2.0.0",
+  "typer>=0.7.0"
+]
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project.urls]
+"Homepage" = "https://github.com/nahom-zewdu/nuvom"
+"Repository" = "https://github.com/nahom-zewdu/nuvom"
+
+[project.scripts]
+nuvom = "nuvom.cli:main"
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+
+[tool.isort]
+profile = "black"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
