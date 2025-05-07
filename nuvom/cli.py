@@ -30,8 +30,7 @@ def runworker():
     print("[yellow]Starting worker...[/yellow]")
     
     # Start worker threads
-    threading.Thread(target=start_worker_pool, daemon=True).start()
-    time.sleep(10)
+    start_worker_pool()
 
 @app.command()
 def status(job_id: str):
