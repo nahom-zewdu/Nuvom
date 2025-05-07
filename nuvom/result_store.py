@@ -1,20 +1,24 @@
 # nuvom/result_store.py
 
-# Simple result store (in-memory dict of job_id -> result)
+from nuvom.result_backends.file_backend import FileResultBackend
 
-from typing import Any, Dict
+_backend = None
 
-_RESULT_STORE: Dict[str, Any] = {}
-_ERROR_STORE: Dict[str, str] = {}
+def get_backend():
+    global _backend
+    if _backend is None:
+        # Later: switch based on config
+        _backend = FileResultBackend()
+    return _backend
 
-def store_result(job_id: str, result: Any):
-    _RESULT_STORE[job_id] = result
+def set_result(job_id, result):
+    get_backend().set_result(job_id, result)
 
-def get_result(job_id: str) -> Any:
-    return _RESULT_STORE.get(job_id)
+def get_result(job_id):
+    return get_backend().get_result(job_id)
 
-def store_error(job_id: str, error: str):
-    _ERROR_STORE[job_id] = error
+def set_error(job_id, error):
+    get_backend().set_error(job_id, error)
 
-def get_error(job_id: str) -> str:
-    return _ERROR_STORE.get(job_id)
+def get_error(job_id):
+    return get_backend().get_error(job_id)
