@@ -1,5 +1,7 @@
 # nuvom/result_store.py
 
+# Simple result store (in-memory dict of job_id -> result)
+
 from typing import Any, Dict
 
 _RESULT_STORE: Dict[str, Any] = {}
