@@ -12,8 +12,8 @@ from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 from nuvom.config import get_settings
 from nuvom.queue import get_global_queue
 from nuvom.result_store import store_result, store_error
-_shutdown_event = threading.Event()
 
+_shutdown_event = threading.Event()
 
 def worker_loop(worker_id: int, batch_size: int, timeout: int):
     q = get_global_queue()
@@ -32,12 +32,12 @@ def worker_loop(worker_id: int, batch_size: int, timeout: int):
                 retries = job.retries_left
                 
                 if retries > 0:
-                    print(f"[yellow][Worker-{worker_id}] 🔁 Retrying Job {job.id} for the ({job.max_retries} - {job.retries_left}) time [/yellow]")
+                    print(f"[yellow][Worker-{worker_id}] 🔁 Retrying Job {job.func_name} for the {job.max_retries - job.retries_left} time [/yellow]")
                     q = get_global_queue()  
                     q.enqueue(job)  
                 else:
                     store_error(job.id, str(e))
-                    print(f"[red][Worker-{worker_id}] ❌ Job {job.id} failed after {job.max_retries} retries[/red]")
+                    print(f"[red][Worker-{worker_id}] ❌ Job {job.func_name} failed after {job.max_retries} retries[/red]")
 
 
 def start_worker_pool():
