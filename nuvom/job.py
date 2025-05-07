@@ -8,6 +8,7 @@ import uuid
 import time
 from enum import Enum
 
+from nuvom.result_store import get_backend
 
 class JobStatus(str, Enum):
     PENDING = "PENDING"
@@ -56,11 +57,33 @@ class Job:
     
     def run(self):
         from nuvom.task import get_task
+        
         self.retries_left -= 1
         task = get_task(self.func_name)
         if not task:
             raise ValueError(f"Task '{self.func_name}' not found.")
         return task(*self.args, **self.kwargs)
+
+    def get(self, timeout=None, interval=0.5):
+        """
+        Polls for result. Blocks until result is available or timeout is hit.
+        """
+        backend = get_backend()
+        start = time.time()
+
+        while True:
+            result = backend.get_result(self.id)
+            if result is not None:
+                return self.to_dict()
+
+            error = backend.get_error(self.id)
+            if error is not None:
+                raise RuntimeError(f"Job failed: {error}")
+
+            if timeout is not None and (time.time() - start) > timeout:
+                raise TimeoutError("Job result not ready within timeout")
+
+            time.sleep(interval)
 
     def mark_running(self):
         self.status = JobStatus.RUNNING
@@ -72,7 +95,6 @@ class Job:
     def mark_failed(self, error):
         self.status = JobStatus.FAILED
         self.error = str(error)
-        self.retries_left -= 1
-
+        
     def can_retry(self):
         return self.retries_left > 0
