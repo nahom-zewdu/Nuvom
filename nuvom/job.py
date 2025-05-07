@@ -55,7 +55,7 @@ class Job:
         }
     
     def run(self):
-        from .task import get_task
+        from nuvom.task import get_task
         self.retries_left -= 1
         task = get_task(self.func_name)
         if not task:
