@@ -14,12 +14,14 @@ def add(a, b):
 threading.Thread(target=start_worker_pool, daemon=True).start()
 
 # Now delay
-job_id = add.map([(2, 4),(2, 3),(26, 4),(72, 4),(82, 4),(29, 4),(0, 4),(92, 45),(22, 4)])
+jobs = add.map([(2, 4),(2, 3),(26, 4),(72, 4),(82, 4),(29, 4),(0, 4),(92, 45),(22, 4)])
 
-
-# Let the main thread sleep to allow processing
-import time
-time.sleep(6)
-
-for id in job_id:
-    print(get_result(id))
+print("Waiting for result...")
+try:
+    for job in jobs:
+        print(job.get())
+except TimeoutError:
+    print("Job timed out")
+except RuntimeError as e:
+    print("Job failed:", e)
+    
