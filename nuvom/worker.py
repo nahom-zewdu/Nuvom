@@ -24,13 +24,17 @@ def worker_loop(worker_id: int, batch_size: int, timeout: int):
         if not jobs:
             continue
         for job in jobs:
+            job.mark_running()
             try:
                 print(f"[blue][Worker-{worker_id}] Running job: {job.to_dict()}[/blue]")
                 result = job.run()
                 set_result(job.id, result)
-            except Exception as e:
-                retries = job.retries_left
                 
+                job.mark_success(result)
+            except Exception as e:
+                job.mark_failed(result)
+                
+                retries = job.retries_left
                 if retries > 0:
                     print(f"[yellow][Worker-{worker_id}] 🔁 Retrying Job {job.func_name} for the {job.max_retries - job.retries_left} time [/yellow]")
                     q = get_global_queue()  
