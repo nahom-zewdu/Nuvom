@@ -10,6 +10,9 @@ class NuvomSettings(BaseSettings):
     # General settings
     environment: Literal["dev", "prod", "test"] = "dev"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    
+    # Backed-result store
+    result_backend: Literal["file", "redis", "SQLite"] = "file"  # default
 
     # Worker-related
     max_workers: int = 4
