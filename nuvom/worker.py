@@ -18,14 +18,14 @@ _shutdown_event = threading.Event()
 def worker_loop(worker_id: int, batch_size: int, timeout: int):
     q = get_global_queue()
     
-    print(f"[green][ ✔ ] Worker {worker_id} started. {q} [/green]")
+    print(f"[green][ ✔ ] Worker {worker_id} started. {q.qsize()} [/green]")
     while not _shutdown_event.is_set():
         jobs = q.pop_batch(batch_size=batch_size, timeout=timeout)
         if not jobs:
             continue
         for job in jobs:
             try:
-                print(f"[blue][Worker-{worker_id}] Running job: {job}[/blue]")
+                print(f"[blue][Worker-{worker_id}] Running job: {job.to_dict()}[/blue]")
                 result = job.run()
                 store_result(job.id, result)
             except Exception as e:
