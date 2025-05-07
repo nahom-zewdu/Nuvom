@@ -3,9 +3,11 @@
 import typer
 from rich import print
 import threading
+import time
 
 from nuvom.config import get_settings
 from nuvom.worker import start_worker_pool
+from nuvom.result_store import get_result, get_error
 
 app = typer.Typer(help="Nuvom — Task Queue CLI")
 
@@ -29,7 +31,24 @@ def runworker():
     
     # Start worker threads
     threading.Thread(target=start_worker_pool, daemon=True).start()
+    time.sleep(10)
 
+@app.command()
+def status(job_id: str):
+    """
+    Check the status of a job by its ID.
+    """
+    error = get_error(job_id)
+    if error:
+        print(f"[bold red]❌ FAILED:[/bold red] {error}")
+        return
+
+    result = get_result(job_id)
+    if result is not None:
+        print(f"[bold green]✅ SUCCESS:[/bold green] {result}")
+        return
+
+    print("[cyan]🕒 PENDING[/cyan]")
 
 def main():
     app()
