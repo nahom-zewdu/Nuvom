@@ -27,7 +27,7 @@ class Task:
         queue.enqueue(job)
         
         print("Job queued ", self.name, args)
-        return job.id
+        return job
     
     def submit(self, *args, **kwargs):
         return self.delay(*args, **kwargs)
@@ -36,13 +36,13 @@ class Task:
         """
         Enqueue multiple jobs in batch using a list of argument tuples.
         """
-        job_ids = []
+        jobs = []
         for args in arg_tuples:
             if not isinstance(args, (list, tuple)):
                 raise TypeError("Each map item must be a tuple or list of arguments")
-            job_ids.append(self.delay(*args))
+            jobs.append(self.delay(*args))
 
-        return job_ids
+        return jobs
     
 def task(_func=None, *, name=None, retries=0):
     def wrapper(func):
