@@ -1,20 +1,35 @@
 # nuvom/result_store.py
 
-# Simple result store (in-memory dict of job_id -> result)
+from nuvom.config import get_settings
+from nuvom.result_backends.file_backend import FileResultBackend
+from nuvom.result_backends.memory_backend import MemoryResultBackend 
 
-from typing import Any, Dict
+_backend = None
 
-_RESULT_STORE: Dict[str, Any] = {}
-_ERROR_STORE: Dict[str, str] = {}
+def get_backend():
+    global _backend
+    if _backend is not None:
+        return _backend
 
-def store_result(job_id: str, result: Any):
-    _RESULT_STORE[job_id] = result
+    backend_name = get_settings().result_backend.lower()
+    
+    if backend_name == "file":
+        _backend = FileResultBackend()
+    elif backend_name == "memory":
+        _backend = MemoryResultBackend()
+    else:
+        raise ValueError(f"Unsupported result backend: {backend_name}")
+    
+    return _backend
 
-def get_result(job_id: str) -> Any:
-    return _RESULT_STORE.get(job_id)
+def set_result(job_id, result):
+    get_backend().set_result(job_id, result)
 
-def store_error(job_id: str, error: str):
-    _ERROR_STORE[job_id] = error
+def get_result(job_id):
+    return get_backend().get_result(job_id)
 
-def get_error(job_id: str) -> str:
-    return _ERROR_STORE.get(job_id)
+def set_error(job_id, error):
+    get_backend().set_error(job_id, error)
+
+def get_error(job_id):
+    return get_backend().get_error(job_id)
