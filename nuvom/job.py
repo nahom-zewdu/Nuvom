@@ -18,22 +18,10 @@ class JobStatus(str, Enum):
 
 
 class Job:
-    __slots__ = (
-        "id",
-        "func_name",
-        "args",
-        "kwargs",
-        "status",
-        "created_at",
-        "retries_left",
-        "max_retries",
-        "result",
-        "error",
-    )
-
-    def __init__(self, func_name, args=None, kwargs=None, retries=0):
+    def __init__(self, func_name, args=None, kwargs=None, retries=0, store_result=True):
         self.id = str(uuid.uuid4())
         self.func_name = func_name  # name in task registry
+        self.store_result = store_result
         self.args = args or ()
         self.kwargs = kwargs or {}
         self.status = JobStatus.PENDING
@@ -70,6 +58,9 @@ class Job:
         """
         Polls for result. Blocks until result is available or timeout is hit.
         """
+        if not self.store_result:
+            return
+        
         backend = get_backend()
         start = time.time()
 
