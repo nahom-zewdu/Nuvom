@@ -1,27 +1,26 @@
 # tests/test_memory_backend.py
 
-from nuvom.task import task
-from nuvom.result_store import get_result, get_error
-from nuvom.queue import get_global_queue
-from nuvom.result_store import _backend
-
-# Force backend to memory (for isolation)
+import pytest
 from nuvom.result_backends.memory_backend import MemoryResultBackend
-_backend = MemoryResultBackend()
 
-@task
-def add(a, b):
-    return a + b
+@pytest.fixture
+def backend():
+    return MemoryResultBackend()
 
-def test_memory_result_backend():
-    job = add.delay(2, 3)
-    result = job.run()  # run directly
-    # Simulate setting result manually
-    _backend.set_result(job.id, result)
+def test_set_and_get_result(backend):
+    job_id = "job-1"
+    data = {"foo": "bar"}
+    backend.set_result(job_id, data)
+    assert backend.get_result(job_id) == data
 
-    assert _backend.get_result(job.id) == 5
-    assert _backend.get_error(job.id) is None
+def test_set_and_get_error(backend):
+    job_id = "job-err"
+    error_msg = "Something went wrong"
+    backend.set_error(job_id, error_msg)
+    assert backend.get_error(job_id) == error_msg
 
-if __name__ == "__main__":
-    test_memory_result_backend()
-    print("✅ test_memory_backend.py passed")
+def test_get_result_missing(backend):
+    assert backend.get_result("missing-job") is None
+
+def test_get_error_missing(backend):
+    assert backend.get_error("missing-job") is None
