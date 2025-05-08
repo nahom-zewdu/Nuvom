@@ -1,1 +1,2 @@
-from .task import task
+from nuvom.task import task
+from nuvom.__version__ import __version__

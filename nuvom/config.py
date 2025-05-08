@@ -10,6 +10,9 @@ class NuvomSettings(BaseSettings):
     # General settings
     environment: Literal["dev", "prod", "test"] = "dev"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    
+    # Backed-result store
+    result_backend: Literal["file", "redis", "SQLite", "memory"] = "memory"  # default
 
     # Worker-related
     max_workers: int = 4
@@ -27,6 +30,7 @@ class NuvomSettings(BaseSettings):
             "batch_size": self.batch_size,
             "timeout": self.job_timeout_secs,
             "queue_size": self.queue_maxsize,
+            "result_backend": self.result_backend
         }
 
 

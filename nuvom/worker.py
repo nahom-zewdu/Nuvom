@@ -11,24 +11,38 @@ from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 
 from nuvom.config import get_settings
 from nuvom.queue import get_global_queue
+from nuvom.result_store import set_result, set_error
 
 _shutdown_event = threading.Event()
-
 
 def worker_loop(worker_id: int, batch_size: int, timeout: int):
     q = get_global_queue()
     
+    print(f"[green][ ✔ ] Worker {worker_id} started. {q.qsize()} [/green]")
     while not _shutdown_event.is_set():
         jobs = q.pop_batch(batch_size=batch_size, timeout=timeout)
-        print(f"[green][ ✔ ] Worker {worker_id} started. {jobs} [/green]")
         if not jobs:
             continue
         for job in jobs:
+            job.mark_running()
             try:
-                print(f"[Worker-{worker_id}] Running job: {job}")
-                job.run()
+                print(f"[blue][Worker-{worker_id}] Running job: {job.to_dict()}[/blue]")
+                result = job.run()
+                if job.store_result:
+                    set_result(job.id, result)
+                
+                job.mark_success(result)
             except Exception as e:
-                print(f"[Worker-{worker_id}] Job failed: {e}")
+                job.mark_failed(e)
+                
+                retries = job.retries_left
+                if retries > 0:
+                    print(f"[yellow][Worker-{worker_id}] 🔁 Retrying Job {job.func_name} for the {job.max_retries - job.retries_left} time [/yellow]")
+                    q.enqueue(job)  
+                else:
+                    if job.store_result:
+                        set_error(job.id, str(e))
+                    print(f"[red][Worker-{worker_id}] ❌ Job {job.func_name} failed after {job.max_retries} retries[/red]")
 
 
 def start_worker_pool():
@@ -37,7 +51,7 @@ def start_worker_pool():
     batch_size = settings.batch_size
     job_timeout = settings.job_timeout_secs
 
-    print(f"[Nuvom] Starting {max_workers} workers...")
+    print(f"[blue][Nuvom] Starting {max_workers} workers...[/blue]")
     threads = []
 
     for worker_id in range(max_workers):

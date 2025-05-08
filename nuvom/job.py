@@ -8,6 +8,7 @@ import uuid
 import time
 from enum import Enum
 
+from nuvom.result_store import get_backend
 
 class JobStatus(str, Enum):
     PENDING = "PENDING"
@@ -17,22 +18,10 @@ class JobStatus(str, Enum):
 
 
 class Job:
-    __slots__ = (
-        "id",
-        "func_name",
-        "args",
-        "kwargs",
-        "status",
-        "created_at",
-        "retries_left",
-        "max_retries",
-        "result",
-        "error",
-    )
-
-    def __init__(self, func_name, args=None, kwargs=None, retries=0):
+    def __init__(self, func_name, args=None, kwargs=None, retries=0, store_result=True):
         self.id = str(uuid.uuid4())
         self.func_name = func_name  # name in task registry
+        self.store_result = store_result
         self.args = args or ()
         self.kwargs = kwargs or {}
         self.status = JobStatus.PENDING
@@ -52,15 +41,42 @@ class Job:
             "created_at": self.created_at,
             "retries_left": self.retries_left,
             "max_retries": self.max_retries,
+            "result": self.result,
+            "error": self.error,
         }
     
     def run(self):
-        from .task import get_task
+        from nuvom.task import get_task
+        
         self.retries_left -= 1
         task = get_task(self.func_name)
         if not task:
             raise ValueError(f"Task '{self.func_name}' not found.")
         return task(*self.args, **self.kwargs)
+
+    def get(self, timeout=None, interval=0.5):
+        """
+        Polls for result. Blocks until result is available or timeout is hit.
+        """
+        if not self.store_result:
+            return
+        
+        backend = get_backend()
+        start = time.time()
+
+        while True:
+            result = backend.get_result(self.id)
+            if result is not None:
+                return self.to_dict()
+
+            error = backend.get_error(self.id)
+            if error is not None:
+                raise RuntimeError(f"Job failed: {error}")
+
+            if timeout is not None and (time.time() - start) > timeout:
+                raise TimeoutError("Job result not ready within timeout")
+
+            time.sleep(interval)
 
     def mark_running(self):
         self.status = JobStatus.RUNNING
@@ -72,7 +88,6 @@ class Job:
     def mark_failed(self, error):
         self.status = JobStatus.FAILED
         self.error = str(error)
-        self.retries_left -= 1
-
+        
     def can_retry(self):
         return self.retries_left > 0
