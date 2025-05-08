@@ -12,17 +12,18 @@ from nuvom.queue import get_global_queue
 _TASK_REGISTRY = {}
 
 class Task:
-    def __init__(self, func, name=None, retries=0):
+    def __init__(self, func, name=None, retries=0, store_result=True):
         self.func = func
         self.name = name or func.__name__
         self.retries = retries
+        self.store_result = store_result
         _TASK_REGISTRY[self.name] = self
 
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs)
 
     def delay(self, *args, **kwargs):
-        job = Job(func_name=self.name, args=args, kwargs=kwargs, retries=self.retries)
+        job = Job(func_name=self.name, args=args, kwargs=kwargs, retries=self.retries, store_result=self.store_result)
         queue = get_global_queue()
         queue.enqueue(job)
         
@@ -44,9 +45,9 @@ class Task:
 
         return jobs
     
-def task(_func=None, *, name=None, retries=0):
+def task(_func=None, *, name=None, retries=0, store_result=True):
     def wrapper(func):
-        return Task(func, name=name, retries=retries)
+        return Task(func, name=name, retries=retries, store_result=store_result)
 
     if _func is None:
         return wrapper
