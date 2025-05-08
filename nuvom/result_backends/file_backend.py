@@ -1,34 +1,39 @@
 # nuvom/result_backends/file_backend.py
 
 import os
-import json
-from nuvom.result_backends.base import BaseResultBackend
 
-DATA_DIR = os.path.expanduser("~/.nuvom/results")
+from nuvom.result_backends.base import BaseResultBackend
+from nuvom.serialization import dumps, loads
 
 class FileResultBackend(BaseResultBackend):
     def __init__(self):
-        os.makedirs(DATA_DIR, exist_ok=True)
+        self.result_dir = "job_results"
+        os.makedirs(self.result_dir, exist_ok=True)
 
-    def _path(self, job_id, ext):
-        return os.path.join(DATA_DIR, f"{job_id}.{ext}")
+    def _path(self, job_id):
+        return os.path.join(self.result_dir, f"{job_id}.out")
+
+    def _err_path(self, job_id):
+        return os.path.join(self.result_dir, f"{job_id}.err")
 
     def set_result(self, job_id, result):
-        with open(self._path(job_id, "result"), "w") as f:
-            json.dump(result, f)
+        with open(self._path(job_id), "wb") as f:
+            f.write(dumps(result))
 
     def get_result(self, job_id):
-        path = self._path(job_id, "result")
-        if os.path.exists(path):
-            with open(path) as f:
-                return json.load(f)
+        path = self._path(job_id)
+        if not os.path.exists(path):
+            return None
+        with open(path, "rb") as f:
+            return loads(f.read())
 
     def set_error(self, job_id, error):
-        with open(self._path(job_id, "error"), "w") as f:
-            f.write(error)
+        with open(self._err_path(job_id), "w") as f:
+            f.write(str(error))
 
     def get_error(self, job_id):
-        path = self._path(job_id, "error")
-        if os.path.exists(path):
-            with open(path) as f:
-                return f.read()
+        path = self._err_path(job_id)
+        if not os.path.exists(path):
+            return None
+        with open(path, "r") as f:
+            return f.read()
