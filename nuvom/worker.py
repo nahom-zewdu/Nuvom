@@ -28,19 +28,20 @@ def worker_loop(worker_id: int, batch_size: int, timeout: int):
             try:
                 print(f"[blue][Worker-{worker_id}] Running job: {job.to_dict()}[/blue]")
                 result = job.run()
-                set_result(job.id, result)
+                if job.store_result:
+                    set_result(job.id, result)
                 
                 job.mark_success(result)
             except Exception as e:
-                job.mark_failed(result)
+                job.mark_failed(e)
                 
                 retries = job.retries_left
                 if retries > 0:
                     print(f"[yellow][Worker-{worker_id}] 🔁 Retrying Job {job.func_name} for the {job.max_retries - job.retries_left} time [/yellow]")
-                    q = get_global_queue()  
                     q.enqueue(job)  
                 else:
-                    set_error(job.id, str(e))
+                    if job.store_result:
+                        set_error(job.id, str(e))
                     print(f"[red][Worker-{worker_id}] ❌ Job {job.func_name} failed after {job.max_retries} retries[/red]")
 
 
