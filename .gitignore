@@ -70,3 +70,6 @@ pip-wheel-metadata/
 poetry.lock
 requirements.txt
 requirements-dev.txt
+
+# === project local  ===
+job_results/
