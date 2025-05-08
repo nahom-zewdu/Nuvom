@@ -5,11 +5,17 @@ from rich import print
 import threading
 import time
 
+from nuvom import __version__
 from nuvom.config import get_settings
 from nuvom.worker import start_worker_pool
 from nuvom.result_store import get_result, get_error
 
 app = typer.Typer(help="Nuvom — Task Queue CLI")
+
+@app.command()
+def version():
+    """Show current Nuvom version."""
+    print(f"[bold green]NUVOM v{__version__}[/bold green]")
 
 @app.command()
 def config():
