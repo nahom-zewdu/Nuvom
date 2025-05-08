@@ -6,7 +6,7 @@ from nuvom.result_store import get_result, get_error
 
 import threading
 
-@task(retries=9)
+@task(retries=2, store_result=True)
 def add(a, b):
     return (a + b)
 
