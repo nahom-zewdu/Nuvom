@@ -3,11 +3,12 @@ import threading
 from nuvom.task import task
 from nuvom.queue import get_global_queue
 from nuvom.worker import worker_loop, _shutdown_event
-from nuvom.result_store import get_result, get_error
+from nuvom.result_store import get_result, get_error, reset_backend
 from nuvom.config import get_settings
 
 # Set config to use memory backend explicitly
 get_settings().result_backend = "memory"
+reset_backend() # Force re-init backend
 
 @task
 def add(x, y):
