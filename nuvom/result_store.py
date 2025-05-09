@@ -22,6 +22,10 @@ def get_backend():
     
     return _backend
 
+def reset_backend():
+    global _backend
+    _backend = None
+
 def set_result(job_id, result):
     get_backend().set_result(job_id, result)
 
