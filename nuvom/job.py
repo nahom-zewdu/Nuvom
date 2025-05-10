@@ -44,6 +44,26 @@ class Job:
             "result": self.result,
             "error": self.error,
         }
+        
+    @classmethod
+    def from_dict(cls, data):
+        job = cls(
+            func_name=data["func_name"],
+            args=data.get("args"),
+            kwargs=data.get("kwargs"),
+            retries=data.get("max_retries", 0),
+            store_result=data.get("store_result", True),
+        )
+
+        # Override attributes that aren't part of __init__
+        job.id = data["id"]
+        job.status = data.get("status", JobStatus.PENDING)
+        job.created_at = data.get("created_at", time.time())
+        job.retries_left = data.get("retries_left", job.max_retries)
+        job.result = data.get("result")
+        job.error = data.get("error")
+
+        return job
     
     def run(self):
         from nuvom.task import get_task
