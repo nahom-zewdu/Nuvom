@@ -49,7 +49,7 @@ class Job:
     def from_dict(cls, data):
         job = cls(
             func_name=data["func_name"],
-            args=data.get("args"),
+            args=tuple(data.get("args")),
             kwargs=data.get("kwargs"),
             retries=data.get("max_retries", 0),
             store_result=data.get("store_result", True),
