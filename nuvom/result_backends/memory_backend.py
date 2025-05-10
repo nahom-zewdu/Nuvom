@@ -1,6 +1,6 @@
 # nuvom/backends/memory_backend.py
 
-from nuvom.serialization import dumps, loads
+from nuvom.serialize import serialize, deserialize
 from nuvom.result_backends.base import BaseResultBackend
 
 class MemoryResultBackend(BaseResultBackend):
@@ -9,11 +9,11 @@ class MemoryResultBackend(BaseResultBackend):
         self._errors = {}
 
     def set_result(self, job_id, result):
-        self._results[job_id] = dumps(result)
+        self._results[job_id] = serialize(result)
 
     def get_result(self, job_id):
         raw = self._results.get(job_id)
-        return loads(raw) if raw else None
+        return deserialize(raw) if raw else None
 
     def set_error(self, job_id, error):
         self._errors[job_id] = str(error)

@@ -3,7 +3,7 @@
 import os
 
 from nuvom.result_backends.base import BaseResultBackend
-from nuvom.serialization import dumps, loads
+from nuvom.serialize import serialize, deserialize
 
 class FileResultBackend(BaseResultBackend):
     def __init__(self):
@@ -18,14 +18,14 @@ class FileResultBackend(BaseResultBackend):
 
     def set_result(self, job_id, result):
         with open(self._path(job_id), "wb") as f:
-            f.write(dumps(result))
+            f.write(serialize(result))
 
     def get_result(self, job_id):
         path = self._path(job_id)
         if not os.path.exists(path):
             return None
         with open(path, "rb") as f:
-            return loads(f.read())
+            return deserialize(f.read())
 
     def set_error(self, job_id, error):
         with open(self._err_path(job_id), "w") as f:

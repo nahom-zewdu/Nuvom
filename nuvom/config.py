@@ -11,8 +11,11 @@ class NuvomSettings(BaseSettings):
     environment: Literal["dev", "prod", "test"] = "dev"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     
-    # Backed-result store
+    # Backed-result storage
     result_backend: Literal["file", "redis", "SQLite", "memory"] = "memory"  # default
+
+    # serializer settings
+    serialization_backend: Literal["json", "msgpack", "pickle"] = "msgpack"
 
     # Worker-related
     max_workers: int = 4
