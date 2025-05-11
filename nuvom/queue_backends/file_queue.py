@@ -5,6 +5,7 @@ import uuid
 import msgpack
 from threading import Lock
 from typing import List, Optional
+import time
 
 from nuvom.job import Job
 from nuvom.queue_backends.base import BaseJobQueue
@@ -17,7 +18,8 @@ class FileJobQueue(BaseJobQueue):
         os.makedirs(self.dir, exist_ok=True)
 
     def _job_path(self, job_id):
-        return os.path.join(self.dir, f"{job_id}.msgpack")
+        ts = time.time()
+        return os.path.join(self.dir, f"{ts:.6f}_{job_id}.msgpack")
 
     def enqueue(self, job: Job):
         job_id = job.id
