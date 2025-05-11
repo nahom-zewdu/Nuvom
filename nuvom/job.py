@@ -37,6 +37,7 @@ class Job:
             "func_name": self.func_name,
             "args": self.args,
             "kwargs": self.kwargs,
+            "store_result": self.store_result,
             "status": self.status,
             "created_at": self.created_at,
             "retries_left": self.retries_left,
@@ -47,6 +48,7 @@ class Job:
         
     @classmethod
     def from_dict(cls, data):
+        print("2222222", data, "222222222222")
         job = cls(
             func_name=data["func_name"],
             args=tuple(data.get("args")),
@@ -54,15 +56,15 @@ class Job:
             retries=data.get("max_retries", 0),
             store_result=data.get("store_result", True),
         )
-
+        print("333333333", job, "33333333333333333")
         # Override attributes that aren't part of __init__
-        job.id = data["id"]
+        job.id = data.get("id")
         job.status = data.get("status", JobStatus.PENDING)
         job.created_at = data.get("created_at", time.time())
         job.retries_left = data.get("retries_left", job.max_retries)
         job.result = data.get("result")
         job.error = data.get("error")
-
+        print("444444444444", job, "444444444444444")
         return job
     
     def run(self):
