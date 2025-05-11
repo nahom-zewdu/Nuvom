@@ -12,18 +12,19 @@ class NuvomSettings(BaseSettings):
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     
     # Backed-result storage
-    result_backend: Literal["file", "redis", "SQLite", "memory"] = "memory"  # default
+    result_backend: Literal["file", "redis", "sqlite", "memory"] = "memory"  # default
+
+    # Queue settings
+    queue_backend: Literal["file", "redis", "sqlite", "memory"] = "file"
+    queue_maxsize: int = 0  # 0 = infinite
 
     # serializer settings
     serialization_backend: Literal["json", "msgpack", "pickle"] = "msgpack"
-
+    
     # Worker-related
     max_workers: int = 4
     batch_size: int = 1
     job_timeout_secs: int = 60
-
-    # Queue settings
-    queue_maxsize: int = 0  # 0 = infinite
 
     def summary(self):
         return {
