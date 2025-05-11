@@ -43,3 +43,7 @@ def pop_batch(batch_size: int = 1, timeout: int = 1) -> List[Job]:
 def qsize() -> int:
     """Return the number of jobs in the queue."""
     return get_queue_backend().qsize()
+
+def clear() -> int:
+    """Clear out the queue."""
+    return get_queue_backend().clear()
