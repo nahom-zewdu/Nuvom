@@ -60,3 +60,7 @@ class FileJobQueue(BaseJobQueue):
 
     def qsize(self) -> int:
         return len(os.listdir(self.dir))
+
+    def clear(self):
+        for f in os.listdir(self.dir):
+            os.remove(os.path.join(self.dir, f))
