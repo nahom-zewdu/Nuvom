@@ -8,4 +8,4 @@ class MsgpackSerializer(Serializer):
         return msgpack.packb(obj, use_bin_type=True)
 
     def deserialize(self, data: bytes) -> object:
-        return msgpack.unpackb(data, raw=False)
+        return msgpack.unpackb(data, raw=False, strict_map_key=False)
