@@ -1,11 +1,10 @@
 # nuvom/queue_backends/file_queue.py
 
 import os
-import uuid
-import msgpack
 from threading import Lock
 from typing import List, Optional
 import time
+import logging
 
 from nuvom.job import Job
 from nuvom.queue_backends.base import BaseJobQueue
@@ -36,7 +35,9 @@ class FileJobQueue(BaseJobQueue):
                         job_data = deserialize(f.read())
                         os.remove(path)
                         return Job.from_dict(job_data)
-                except Exception:
+                except Exception as e:
+                    logging.error(f"Failed to deserialize job file: {filename}: {e}")
+                    os.rename(path, path + ".corrupt")
                     continue
         return None
 
@@ -51,7 +52,9 @@ class FileJobQueue(BaseJobQueue):
                         job_data = deserialize(f.read())
                         os.remove(path)
                         jobs.append(Job.from_dict(job_data))
-                except Exception:
+                except Exception as e:
+                    logging.error(f"Failed to deserialize job file: {filename}: {e}")
+                    os.rename(path, path + ".corrupt")
                     continue
         return jobs
 
