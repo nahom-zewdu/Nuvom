@@ -25,3 +25,8 @@ class BaseJobQueue(ABC):
     def qsize(self) -> int:
         """Return the number of jobs in the queue."""
         pass
+    
+    @abstractmethod
+    def clear(self):
+        # raise NotImplementedError()
+        pass
