@@ -48,7 +48,6 @@ class Job:
         
     @classmethod
     def from_dict(cls, data):
-        print("2222222", data, "222222222222")
         job = cls(
             func_name=data["func_name"],
             args=tuple(data.get("args")),
@@ -56,7 +55,7 @@ class Job:
             retries=data.get("max_retries", 0),
             store_result=data.get("store_result", True),
         )
-        print("333333333", job, "33333333333333333")
+        
         # Override attributes that aren't part of __init__
         job.id = data.get("id")
         job.status = data.get("status", JobStatus.PENDING)
@@ -64,7 +63,7 @@ class Job:
         job.retries_left = data.get("retries_left", job.max_retries)
         job.result = data.get("result")
         job.error = data.get("error")
-        print("444444444444", job, "444444444444444")
+        
         return job
     
     def run(self):
