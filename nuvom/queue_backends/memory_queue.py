@@ -35,3 +35,8 @@ class MemoryJobQueue:
 
     def qsize(self):
         return self.q.qsize()
+    
+    def clear(self):
+        with self.lock:
+            while not self.q.empty():
+                self.q.get()
