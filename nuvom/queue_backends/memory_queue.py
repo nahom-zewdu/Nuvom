@@ -13,14 +13,12 @@ class MemoryJobQueue:
         self.serializer = get_serializer()
 
     def enqueue(self, job: Job):
-        serialized = self.serializer.serialize(job.to_dict())
-        self.q.put(serialized)
+        self.q.put(job)
 
     def dequeue(self, timeout=1) -> Job | None:
         try:
-            data = self.q.get(timeout=timeout)
-            job_dict = self.serializer.deserialize(data)
-            return Job.from_dict(job_dict)
+            job = self.q.get(timeout=timeout)
+            return job
         except queue.Empty:
             return None
 
@@ -29,9 +27,8 @@ class MemoryJobQueue:
         with self.lock:
             for _ in range(batch_size):
                 try:
-                    data = self.q.get(timeout=timeout)
-                    job_dict = self.serializer.deserialize(data)
-                    batch.append(Job.from_dict(job_dict))
+                    job = self.q.get(timeout=timeout)
+                    batch.append(job)
                 except queue.Empty:
                     break
         return batch
