@@ -9,6 +9,7 @@ import logging
 from nuvom.job import Job
 from nuvom.queue_backends.base import BaseJobQueue
 from nuvom.serialize import serialize, deserialize
+from nuvom.utils.file_utils.safe_remove import safe_remove
 
 class FileJobQueue(BaseJobQueue):
     def __init__(self, directory="nuvom_queue"):
@@ -33,11 +34,13 @@ class FileJobQueue(BaseJobQueue):
                     path = os.path.join(self.dir, filename)
                     with open(path, "rb") as f:
                         job_data = deserialize(f.read())
-                        os.remove(path)
+                        safe_remove(path)
                         return Job.from_dict(job_data)
                 except Exception as e:
                     logging.error(f"Failed to deserialize job file: {filename}: {e}")
-                    os.rename(path, path + ".corrupt")
+                    if not path.endswith(".corrupt"):
+                        corrupt_path = path + ".corrupt"
+                        os.rename(path, corrupt_path)
                     continue
         return None
 
@@ -46,15 +49,32 @@ class FileJobQueue(BaseJobQueue):
         with self.lock:
             files = sorted(os.listdir(self.dir))[:batch_size]
             for filename in files:
+                path = os.path.join(self.dir, filename)
+
+                # Only try to load non-corrupt files
+                if filename.endswith(".corrupt"):
+                    continue
+
                 try:
-                    path = os.path.join(self.dir, filename)
                     with open(path, "rb") as f:
                         job_data = deserialize(f.read())
-                        os.remove(path)
-                        jobs.append(Job.from_dict(job_data))
+                    safe_remove(path)
+                    jobs.append(Job.from_dict(job_data))
+
                 except Exception as e:
                     logging.error(f"Failed to deserialize job file: {filename}: {e}")
-                    os.rename(path, path + ".corrupt")
+
+                    try:
+                        if not filename.endswith(".corrupt"):
+                            corrupt_path = f"{path}.corrupt"
+                            os.rename(path, corrupt_path)
+                        else:
+                            # If it's *already* marked corrupt and still fails, try deleting
+                            safe_remove(path)
+                    except PermissionError as pe:
+                        logging.error(f"PermissionError handling corrupt file {filename}: {pe}")
+                    except Exception as ex:
+                        logging.error(f"Failed to handle corrupt file {filename}: {ex}")
                     continue
         return jobs
 
@@ -63,4 +83,4 @@ class FileJobQueue(BaseJobQueue):
 
     def clear(self):
         for f in os.listdir(self.dir):
-            os.remove(os.path.join(self.dir, f))
+            safe_remove(os.path.join(self.dir, f))
