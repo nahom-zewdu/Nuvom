@@ -104,3 +104,9 @@ class FileJobQueue(BaseJobQueue):
     def clear(self):
         for f in os.listdir(self.dir):
             safe_remove(os.path.join(self.dir, f))
+
+    def cleanup(self):
+        """Remove leftover .corrupt and .claimed.* files (e.g. after crash)."""
+        for fname in os.listdir(self.dir):
+            if fname.endswith(".corrupt") or ".claimed" in fname:
+                safe_remove(os.path.join(self.dir, fname))
