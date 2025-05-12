@@ -22,14 +22,16 @@ class FileJobQueue(BaseJobQueue):
         ts = time.time()
         return os.path.join(self.dir, f"{ts:.6f}_{job_id}.msgpack")
     
-    def _claim_file(self, filepath):
+    def _claim_file(self, filepath, retries=5, delay=0.05):
         """Atomically rename job file to mark it as claimed by this thread."""
         claimed_path = filepath + f".claimed.{uuid.uuid4().hex}"
-        try:
-            os.rename(filepath, claimed_path)  # atomic if on same filesystem
-            return claimed_path
-        except FileNotFoundError:
-            return None  # someone else already took it
+        for _ in range(retries):
+            try:
+                os.rename(filepath, claimed_path)
+                return claimed_path
+            except PermissionError:
+                time.sleep(delay)
+        raise RuntimeError(f"Failed to claim file: {filepath}")
 
     def enqueue(self, job: Job):
         job_id = job.id
