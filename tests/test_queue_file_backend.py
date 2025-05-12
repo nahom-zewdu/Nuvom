@@ -45,3 +45,24 @@ def test_corrupt_file_skipped(file_queue):
 
     result = file_queue.dequeue()
     assert result.func_name == "valid"
+
+def test_cleanup_removes_corrupt_and_claimed(file_queue):
+    # Simulate corrupt and claimed files
+    corrupt_path = os.path.join(file_queue.dir, "bad.msgpack.corrupt")
+    claimed_path = os.path.join(file_queue.dir, "job123.claimed.lock")
+
+    with open(corrupt_path, "wb") as f:
+        f.write(b"corrupt data")
+
+    with open(claimed_path, "wb") as f:
+        f.write(b"claimed lock")
+
+    # Ensure files exist
+    assert os.path.exists(corrupt_path)
+    assert os.path.exists(claimed_path)
+
+    file_queue.cleanup()
+
+    # Ensure files were cleaned
+    assert not os.path.exists(corrupt_path)
+    assert not os.path.exists(claimed_path)
