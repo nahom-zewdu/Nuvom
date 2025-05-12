@@ -144,34 +144,39 @@ Full test suite with mocks and assertions is planned for v0.3.
 
 ### 🗂 Roadmap
 
-- ✅ **v0.1**
-    Task definition and queue system
-    Worker threading
-    **v0.2**
-    Pluggable result backends
-    CLI enhancements
-    File and memory result store
-    Batch queue pulling
+✅ **v0.1**
 
-✅ v0.3
-    Pluggable queue backends
-    `MemoryJobQueue` and `FileJobQueue` implemented
-    Thread-safe, ordered job dequeuing with `.pop_batch()`
-    Corrupt file detection and quarantine (.corrupt handling)
-    Serialization-based job storage `(.msgpack)`
-    Test coverage: unit tests + concurrency stress test
-    `BaseJobQueue` abstraction for future Redis/SQLite queues
+- Task definition and queue system
+- Worker threading
 
-🛠️ v0.4 (in progress)
-    Execution Engine & Batching Runtime
-    Support for ThreadPoolExecutor with configurable worker behavior
-    Batch-aware task execution: on_batch() and fallback to on_task()
-    Graceful handling of task timeouts and cancellations
-    Internal deadline enforcement per job
-    Job-level metadata injection (e.g. job.retries_left, job.enqueued_at)
-    Async runtime integration: prototype asyncio support
-    Job lifecycle hooks (before_task, after_task, on_failure)
-    Performance benchmarks (vs. Celery on Windows and Unix)
+✅ **v0.2**
+
+- Pluggable result backends
+- CLI enhancements
+- File and memory result store
+- Batch queue pulling
+
+✅ **v0.3**
+
+- Pluggable queue backends
+- `MemoryJobQueue` and `FileJobQueue` implemented
+- Thread-safe, ordered job dequeuing with `.pop_batch()`
+- Corrupt file detection and quarantine (.corrupt handling)
+- Serialization-based job storage `(.msgpack)`
+- Test coverage: unit tests + concurrency stress test
+- `BaseJobQueue` abstraction for future Redis/SQLite queues
+
+🛠️ **v0.4 (in progress)**
+
+- Execution Engine & Batching Runtime
+- Support for ThreadPoolExecutor with configurable worker behavior
+- Batch-aware task execution: on_batch() and fallback to on_task()
+- Graceful handling of task timeouts and cancellations
+- Internal deadline enforcement per job
+- Job-level metadata injection (e.g. job.retries_left, job.enqueued_at)
+- Async runtime integration: prototype asyncio support
+- Job lifecycle hooks (before_task, after_task, on_failure)
+- Performance benchmarks (vs. Celery on Windows and Unix)
 
 ### 👨‍💻 Contributing
 
