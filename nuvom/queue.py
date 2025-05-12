@@ -2,46 +2,48 @@
 # Supports optional batch pulls
 # Backpressure handling if needed
 
-import queue
-import threading
+# nuvom/job_queue.py
+from typing import List, Optional
 
-# Global default queue (used by @task.delay)
-_GLOBAL_QUEUE = None
-_GLOBAL_LOCK = threading.Lock()
+from nuvom.config import get_settings
+from nuvom.queue_backends.file_queue import FileJobQueue
+from nuvom.queue_backends.memory_queue import MemoryJobQueue
+from nuvom.job import Job
 
+_global_queue = None
 
-class JobQueue:
-    def __init__(self, maxsize=0):
-        self.q = queue.Queue(maxsize=maxsize)  # 0 = infinite size
-        self.lock = threading.Lock()  # for batch pop
+def get_queue_backend():
+    global _global_queue
+    if _global_queue is not None:
+        return _global_queue
 
-    def enqueue(self, job):
-        self.q.put(job)
+    backend_name = get_settings().queue_backend.lower()
+    
+    if backend_name == "file":
+        _global_queue = FileJobQueue()
+    elif backend_name == "memory":
+        _global_queue = MemoryJobQueue()
+    else:
+        raise ValueError(f"Unsupported queue backend: {backend_name}")
+    
+    return _global_queue
 
-    def dequeue(self, timeout=1):
-        try:
-            return self.q.get(timeout=timeout)
-        except queue.Empty:
-            return None
+def enqueue(job: Job):
+    """Add a job to the queue."""
+    get_queue_backend().enqueue(job)
 
-    def pop_batch(self, batch_size=1, timeout=1):
-        batch = []
-        with self.lock:
-            for _ in range(batch_size):
-                try:
-                    job = self.q.get(timeout=timeout)
-                    batch.append(job)
-                except queue.Empty:
-                    break
-        return batch
+def dequeue(timeout: int = 1) -> Optional[Job]:
+    """Remove and return a job from the queue."""
+    return get_queue_backend().dequeue(timeout)
 
-    def qsize(self):
-        return self.q.qsize()
+def pop_batch(batch_size: int = 1, timeout: int = 1) -> List[Job]:
+    """Remove and return up to batch_size jobs."""
+    return get_queue_backend().pop_batch(batch_size=batch_size, timeout=timeout)
 
+def qsize() -> int:
+    """Return the number of jobs in the queue."""
+    return get_queue_backend().qsize()
 
-def get_global_queue():
-    global _GLOBAL_QUEUE
-    with _GLOBAL_LOCK:
-        if _GLOBAL_QUEUE is None:
-            _GLOBAL_QUEUE = JobQueue()
-        return _GLOBAL_QUEUE
+def clear() -> int:
+    """Clear out the queue."""
+    return get_queue_backend().clear()

@@ -7,7 +7,7 @@
 
 import functools
 from nuvom.job import Job
-from nuvom.queue import get_global_queue
+from nuvom.queue import get_queue_backend
 
 _TASK_REGISTRY = {}
 
@@ -24,7 +24,7 @@ class Task:
 
     def delay(self, *args, **kwargs):
         job = Job(func_name=self.name, args=args, kwargs=kwargs, retries=self.retries, store_result=self.store_result)
-        queue = get_global_queue()
+        queue = get_queue_backend()
         queue.enqueue(job)
         
         print("Job queued ", self.name, args)

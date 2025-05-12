@@ -10,9 +10,6 @@ import threading
 def add(a, b):
     return (a + b)
 
-# Start worker threads
-threading.Thread(target=start_worker_pool, daemon=True).start()
-
 # Now delay
 jobs = add.map([(2, 4),(2, 3),(26, 4),(72, 4),(82, 4),(29, 4),(0, 4),(92, 45),(22, 4)])
 
