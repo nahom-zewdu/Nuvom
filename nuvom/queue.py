@@ -2,53 +2,48 @@
 # Supports optional batch pulls
 # Backpressure handling if needed
 
-import queue
-import threading
+# nuvom/job_queue.py
+from typing import List, Optional
 
-from nuvom.serialize import get_serializer
-from nuvom.job import Job  # make sure this path is correct
+from nuvom.config import get_settings
+from nuvom.queue_backends.file_queue import FileJobQueue
+from nuvom.queue_backends.memory_queue import MemoryJobQueue
+from nuvom.job import Job
 
-_GLOBAL_QUEUE = None
-_GLOBAL_LOCK = threading.Lock()
+_global_queue = None
 
+def get_queue_backend():
+    global _global_queue
+    if _global_queue is not None:
+        return _global_queue
 
-class JobQueue:
-    def __init__(self, maxsize=0):
-        self.q = queue.Queue(maxsize=maxsize)
-        self.lock = threading.Lock()
-        self.serializer = get_serializer()
+    backend_name = get_settings().queue_backend.lower()
+    
+    if backend_name == "file":
+        _global_queue = FileJobQueue()
+    elif backend_name == "memory":
+        _global_queue = MemoryJobQueue()
+    else:
+        raise ValueError(f"Unsupported queue backend: {backend_name}")
+    
+    return _global_queue
 
-    def enqueue(self, job: Job):
-        serialized = self.serializer.serialize(job.to_dict())
-        self.q.put(serialized)
+def enqueue(job: Job):
+    """Add a job to the queue."""
+    get_queue_backend().enqueue(job)
 
-    def dequeue(self, timeout=1) -> Job | None:
-        try:
-            data = self.q.get(timeout=timeout)
-            job_dict = self.serializer.deserialize(data)
-            return Job.from_dict(job_dict)
-        except queue.Empty:
-            return None
+def dequeue(timeout: int = 1) -> Optional[Job]:
+    """Remove and return a job from the queue."""
+    return get_queue_backend().dequeue(timeout)
 
-    def pop_batch(self, batch_size=1, timeout=1):
-        batch = []
-        with self.lock:
-            for _ in range(batch_size):
-                try:
-                    data = self.q.get(timeout=timeout)
-                    job_dict = self.serializer.deserialize(data)
-                    batch.append(Job.from_dict(job_dict))
-                except queue.Empty:
-                    break
-        return batch
+def pop_batch(batch_size: int = 1, timeout: int = 1) -> List[Job]:
+    """Remove and return up to batch_size jobs."""
+    return get_queue_backend().pop_batch(batch_size=batch_size, timeout=timeout)
 
-    def qsize(self):
-        return self.q.qsize()
+def qsize() -> int:
+    """Return the number of jobs in the queue."""
+    return get_queue_backend().qsize()
 
-
-def get_global_queue():
-    global _GLOBAL_QUEUE
-    with _GLOBAL_LOCK:
-        if _GLOBAL_QUEUE is None:
-            _GLOBAL_QUEUE = JobQueue()
-        return _GLOBAL_QUEUE
+def clear() -> int:
+    """Clear out the queue."""
+    return get_queue_backend().clear()

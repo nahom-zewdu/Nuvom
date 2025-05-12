@@ -153,13 +153,14 @@ Full test suite with mocks and assertions is planned for v0.3.
     File and memory result store
     Batch queue pulling
 
-🔜 **v0.3 (Planned)**
-    Redis backend
-    SQLite backend
-    Retry metadata tracking
-    Job TTL & expiration
-    Plugin support for custom backends
-    Queue metrics and stats endpoint
+✅ v0.3
+    Pluggable queue backends
+    `MemoryJobQueue` and `FileJobQueue` implemented
+    Thread-safe, ordered job dequeuing with `.pop_batch()`
+    Corrupt file detection and quarantine (.corrupt handling)
+    Serialization-based job storage `(.msgpack)`
+    Test coverage: unit tests + concurrency stress test
+    `BaseJobQueue` abstraction for future Redis/SQLite queues
 
 ### 👨‍💻 Contributing
 

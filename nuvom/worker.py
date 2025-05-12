@@ -10,13 +10,13 @@ from rich import print
 from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
 
 from nuvom.config import get_settings
-from nuvom.queue import get_global_queue
+from nuvom.queue import get_queue_backend
 from nuvom.result_store import set_result, set_error
 
 _shutdown_event = threading.Event()
 
 def worker_loop(worker_id: int, batch_size: int, timeout: int):
-    q = get_global_queue()
+    q = get_queue_backend()
     
     print(f"[green][ ✔ ] Worker {worker_id} started. {q.qsize()} [/green]")
     while not _shutdown_event.is_set():
