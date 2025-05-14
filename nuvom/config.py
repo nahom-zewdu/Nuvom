@@ -12,7 +12,7 @@ class NuvomSettings(BaseSettings):
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     
     # Backed-result storage
-    result_backend: Literal["file", "redis", "sqlite", "memory"] = "memory"  # default
+    result_backend: Literal["file", "redis", "sqlite", "memory"] = "file"
 
     # Queue settings
     queue_backend: Literal["file", "redis", "sqlite", "memory"] = "file"
@@ -34,7 +34,9 @@ class NuvomSettings(BaseSettings):
             "batch_size": self.batch_size,
             "timeout": self.job_timeout_secs,
             "queue_size": self.queue_maxsize,
-            "result_backend": self.result_backend
+            "queue_backend": self.queue_backend,
+            "result_backend": self.result_backend,
+            "serialization_backend": self.serialization_backend,   
         }
 
 
