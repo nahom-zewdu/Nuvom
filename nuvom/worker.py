@@ -37,7 +37,7 @@ def worker_loop(worker_id: int, batch_size: int, timeout: int):
                 
                 retries = job.retries_left
                 if retries > 0:
-                    print(f"[yellow][Worker-{worker_id}] 🔁 Retrying Job {job.func_name} for the {job.max_retries - job.retries_left} time [/yellow]")
+                    print(f"[yellow][Worker-{worker_id}] 🔁 Retrying Job {job.func_name} {job.max_retries - job.retries_left} time [/yellow]")
                     q.enqueue(job)  
                 else:
                     if job.store_result:
