@@ -26,11 +26,16 @@ class FileJobQueue(BaseJobQueue):
         """Atomically rename job file to mark it as claimed by this thread."""
         claimed_path = filepath + f".claimed.{uuid.uuid4().hex}"
         for _ in range(retries):
+            if not os.path.exists(filepath):
+                continue
             try:
-                os.rename(filepath, claimed_path)
-                return claimed_path
+                if os.path.exists(filepath):
+                    os.rename(filepath, claimed_path)
+                    return claimed_path
             except PermissionError:
                 time.sleep(delay)
+            except FileNotFoundError:
+                continue  # Someone else claimed or deleted it
         raise RuntimeError(f"Failed to claim file: {filepath}")
 
     def enqueue(self, job: Job):
@@ -68,35 +73,35 @@ class FileJobQueue(BaseJobQueue):
         with self.lock:
             files = sorted(os.listdir(self.dir))[:batch_size]
             for filename in files:
-                path = os.path.join(self.dir, filename)
-                claimed_path = self._claim_file(path)
-                if not claimed_path:
-                    continue  # already taken
-                
-                # Only try to load non-corrupt files
-                if filename.endswith(".corrupt"):
-                    continue
+                if filename.endswith(".corrupt") or ".claimed." in filename:
+                    continue  # Skip corrupted or already claimed files
 
+                path = os.path.join(self.dir, filename)
                 try:
+                    claimed_path = self._claim_file(path)
                     with open(claimed_path, "rb") as f:
                         job_data = deserialize(f.read())
                     safe_remove(claimed_path)
                     jobs.append(Job.from_dict(job_data))
-
                 except Exception as e:
-                    logging.error(f"Failed to deserialize job file: {filename}: {e}")
-
+                    logging.error(f"Failed to process job {filename}: {e}")
                     try:
                         if not filename.endswith(".corrupt"):
-                            corrupt_path = f"{claimed_path}.corrupt"
-                            os.rename(claimed_path, corrupt_path)
-                        else:
-                            # If it's *already* marked corrupt and still fails, try deleting
+                            if claimed_path:
+                                corrupt_path = f"{claimed_path}.corrupt"
+                            else:
+                                logging.error("Failed to claim file and no claimed path available", exc_info=True)
+                                continue
+                            try:
+                                if os.path.exists(claimed_path):
+                                    os.rename(claimed_path, corrupt_path)
+                                    return claimed_path
+                            except PermissionError:
+                                logging.error(f"Failed to mark claimed job as corrupt {claimed_path}: {e}")
+                                continue
+                    except Exception:
+                        if claimed_path:
                             safe_remove(claimed_path)
-                    except PermissionError as pe:
-                        logging.error(f"PermissionError handling corrupt file {filename}: {pe}")
-                    except Exception as ex:
-                        logging.error(f"Failed to handle corrupt file {filename}: {ex}")
                     continue
         return jobs
 
