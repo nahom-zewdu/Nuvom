@@ -7,7 +7,7 @@
 import threading
 import time
 from rich import print
-from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
 from nuvom.config import get_settings
 from nuvom.queue import get_queue_backend
@@ -15,34 +15,51 @@ from nuvom.result_store import set_result, set_error
 
 _shutdown_event = threading.Event()
 
-def worker_loop(worker_id: int, batch_size: int, timeout: int):
+def worker_loop(worker_id: int, batch_size: int, default_timeout: int):
     q = get_queue_backend()
     
     print(f"[green][ ✔ ] Worker {worker_id} started. {q.qsize()} [/green]")
+
     while not _shutdown_event.is_set():
-        jobs = q.pop_batch(batch_size=batch_size, timeout=timeout)
+        jobs = q.pop_batch(batch_size=batch_size, timeout=default_timeout)
         if not jobs:
             continue
+
         for job in jobs:
             job.mark_running()
-            try:
-                print(f"[blue][Worker-{worker_id}] Running job: {job.to_dict()}[/blue]")
-                result = job.run()
-                if job.store_result:
-                    set_result(job.id, result)
-                
-                job.mark_success(result)
-            except Exception as e:
-                job.mark_failed(e)
-                
-                retries = job.retries_left
-                if retries > 0:
-                    print(f"[yellow][Worker-{worker_id}] 🔁 Retrying Job {job.func_name} {job.max_retries - job.retries_left} time [/yellow]")
-                    q.enqueue(job)  
-                else:
+            timeout_secs = job.timeout_secs or default_timeout
+
+            print(f"[blue][Worker-{worker_id}] Running job: {job.to_dict()}[/blue]")
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(job.run)
+                try:
+                    result = future.result(timeout=timeout_secs)
+
                     if job.store_result:
-                        set_error(job.id, str(e))
-                    print(f"[red][Worker-{worker_id}] ❌ Job {job.func_name} failed after {job.max_retries} retries[/red]")
+                        set_result(job.id, result)
+                    job.mark_success(result)
+
+                except FutureTimeoutError:
+                    job.mark_failed("Job execution timed out.")
+
+                    if job.store_result:
+                        set_error(job.id, "Timed out.")
+                    print(f"[red][Worker-{worker_id}] 🕒 Job {job.func_name} timed out after {timeout_secs}s[/red]")
+
+                    if job.can_retry():
+                        print(f"[yellow][Worker-{worker_id}] 🔁 Retrying timed-out Job {job.func_name}[/yellow]")
+                        q.enqueue(job)
+
+                except Exception as e:
+                    job.mark_failed(e)
+                    if job.can_retry():
+                        print(f"[yellow][Worker-{worker_id}] 🔁 Retrying Job {job.func_name} {job.max_retries - job.retries_left} time [/yellow]")
+                        q.enqueue(job)
+                    else:
+                        if job.store_result:
+                            set_error(job.id, str(e))
+                        print(f"[red][Worker-{worker_id}] ❌ Job {job.func_name} failed after {job.max_retries} retries[/red]")
 
 
 def start_worker_pool():
