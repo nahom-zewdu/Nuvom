@@ -7,6 +7,7 @@
 import uuid
 import time
 from enum import Enum
+from typing import Callable, Optional, Any
 
 from nuvom.result_store import get_backend
 
@@ -18,7 +19,14 @@ class JobStatus(str, Enum):
 
 
 class Job:
-    def __init__(self, func_name, args=None, kwargs=None, retries=0, store_result=True, timeout_secs=None):
+    def __init__(self, func_name, 
+                 args=None, kwargs=None, 
+                 retries=0, store_result=True, 
+                 timeout_secs=None, 
+                 before_job: Optional[Callable[[], None]] = None, 
+                 after_job: Optional[Callable[[Any], None]] = None, 
+                 on_error: Optional[Callable[[Exception], None]] = None
+                ):
         self.id = str(uuid.uuid4())
         self.func_name = func_name  # name in task registry
         self.store_result = store_result
@@ -31,7 +39,11 @@ class Job:
         self.max_retries = retries
         self.result = None
         self.error = None
-
+        
+        self.before_job = before_job
+        self.after_job = after_job
+        self.on_error = on_error
+        
     def to_dict(self):
         return {
             "id": self.id,
@@ -46,6 +58,12 @@ class Job:
             "max_retries": self.max_retries,
             "result": self.result,
             "error": self.error,
+            
+            "hooks": {
+                "before_job": bool(self.before_job),
+                "after_job": bool(self.after_job),
+                "on_error": bool(self.on_error),
+            },
         }
         
     @classmethod
