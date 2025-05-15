@@ -18,22 +18,22 @@ class JobRunner:
         # Metadata injection already handled at job creation
         job.mark_running()
 
-        # if job.before_job:
-        #     try:
-        #         job.before_job()
-        #     except Exception as e:
-        #         print(f"[yellow][Runner-{self.worker_id}] ⚠️ before_job hook failed: {e}[/yellow]")
+        if job.before_job:
+            try:
+                job.before_job()
+            except Exception as e:
+                print(f"[yellow][Runner-{self.worker_id}] ⚠️ before_job hook failed: {e}[/yellow]")
 
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(job.run)
             try:
                 result = future.result(timeout=timeout_secs)
 
-                # if job.after_job:
-                #     try:
-                #         job.after_job(result)
-                #     except Exception as e:
-                #         print(f"[yellow][Runner-{self.worker_id}] ⚠️ after_job hook failed: {e}[/yellow]")
+                if job.after_job:
+                    try:
+                        job.after_job(result)
+                    except Exception as e:
+                        print(f"[yellow][Runner-{self.worker_id}] ⚠️ after_job hook failed: {e}[/yellow]")
 
                 if job.store_result:
                     set_result(job.id, result)
@@ -48,11 +48,11 @@ class JobRunner:
     def _handle_failure(self, error):
         job = self.job
 
-        # if job.on_error:
-        #     try:
-        #         job.on_error(error)
-        #     except Exception as e:
-        #         print(f"[yellow][Runner-{self.worker_id}] ⚠️ on_error hook failed: {e}[/yellow]")
+        if job.on_error:
+            try:
+                job.on_error(error)
+            except Exception as e:
+                print(f"[yellow][Runner-{self.worker_id}] ⚠️ on_error hook failed: {e}[/yellow]")
 
         job.mark_failed(error)
 
