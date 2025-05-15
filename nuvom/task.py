@@ -12,18 +12,24 @@ from nuvom.queue import get_queue_backend
 _TASK_REGISTRY = {}
 
 class Task:
-    def __init__(self, func, name=None, retries=0, store_result=True):
+    def __init__(self, func, name=None, retries=0, store_result=True, timeout_secs=None):
         self.func = func
         self.name = name or func.__name__
         self.retries = retries
         self.store_result = store_result
+        self.timeout_secs = timeout_secs
         _TASK_REGISTRY[self.name] = self
 
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs)
 
     def delay(self, *args, **kwargs):
-        job = Job(func_name=self.name, args=args, kwargs=kwargs, retries=self.retries, store_result=self.store_result)
+        job = Job(func_name=self.name, 
+                  args=args, kwargs=kwargs, 
+                  retries=self.retries, 
+                  store_result=self.store_result, 
+                  timeout_secs=self.timeout_secs,
+                )
         queue = get_queue_backend()
         queue.enqueue(job)
         
