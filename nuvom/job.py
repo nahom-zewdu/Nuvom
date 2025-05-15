@@ -18,12 +18,13 @@ class JobStatus(str, Enum):
 
 
 class Job:
-    def __init__(self, func_name, args=None, kwargs=None, retries=0, store_result=True):
+    def __init__(self, func_name, args=None, kwargs=None, retries=0, store_result=True, timeout_secs=None):
         self.id = str(uuid.uuid4())
         self.func_name = func_name  # name in task registry
         self.store_result = store_result
         self.args = args or ()
         self.kwargs = kwargs or {}
+        self.timeout_secs = timeout_secs
         self.status = JobStatus.PENDING
         self.created_at = time.time()
         self.retries_left = retries
@@ -37,6 +38,7 @@ class Job:
             "func_name": self.func_name,
             "args": self.args,
             "kwargs": self.kwargs,
+            "timeout_secs": self.timeout_secs,
             "store_result": self.store_result,
             "status": self.status,
             "created_at": self.created_at,
@@ -52,6 +54,7 @@ class Job:
             func_name=data["func_name"],
             args=tuple(data.get("args")),
             kwargs=data.get("kwargs"),
+            timeout_secs=data.get("timeout_secs"),
             retries=data.get("max_retries", 0),
             store_result=data.get("store_result", True),
         )
