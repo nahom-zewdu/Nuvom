@@ -3,6 +3,7 @@
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from nuvom.result_store import set_result, set_error
 from nuvom.queue import get_queue_backend
+from rich import print
 
 class JobRunner:
     def __init__(self, job, worker_id: int, default_timeout: int):
