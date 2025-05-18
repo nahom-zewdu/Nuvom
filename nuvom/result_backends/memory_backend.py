@@ -18,5 +18,5 @@ class MemoryResultBackend(BaseResultBackend):
     def set_error(self, job_id, error):
         self._errors[job_id] = str(error)
 
-    def get_error(self, job_id):
+    def get_error(self, job_id) -> str:
         return self._errors.get(job_id)
