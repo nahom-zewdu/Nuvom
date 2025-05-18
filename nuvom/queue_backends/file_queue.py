@@ -95,7 +95,6 @@ class FileJobQueue(BaseJobQueue):
                             try:
                                 if os.path.exists(claimed_path):
                                     os.rename(claimed_path, corrupt_path)
-                                    return claimed_path
                             except PermissionError:
                                 logging.error(f"Failed to mark claimed job as corrupt {claimed_path}: {e}")
                                 continue
