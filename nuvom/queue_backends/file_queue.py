@@ -36,7 +36,7 @@ class FileJobQueue(BaseJobQueue):
                 time.sleep(delay)
             except FileNotFoundError:
                 continue  # Someone else claimed or deleted it
-        raise RuntimeError(f"Failed to claim file: {filepath}")
+        logging.error(f"Failed to claim file: {filepath}")
 
     def enqueue(self, job: Job):
         job_id = job.id
@@ -72,6 +72,7 @@ class FileJobQueue(BaseJobQueue):
         jobs = []
         with self.lock:
             files = sorted(os.listdir(self.dir))[:batch_size]
+            claimed_path = ''
             for filename in files:
                 if filename.endswith(".corrupt") or ".claimed." in filename:
                     continue  # Skip corrupted or already claimed files
@@ -79,6 +80,8 @@ class FileJobQueue(BaseJobQueue):
                 path = os.path.join(self.dir, filename)
                 try:
                     claimed_path = self._claim_file(path)
+                    if not claimed_path:
+                        continue
                     with open(claimed_path, "rb") as f:
                         job_data = deserialize(f.read())
                     safe_remove(claimed_path)
@@ -87,7 +90,7 @@ class FileJobQueue(BaseJobQueue):
                     logging.error(f"Failed to process job {filename}: {e}")
                     try:
                         if not filename.endswith(".corrupt"):
-                            if claimed_path:
+                            if claimed_path: # type: ignore
                                 corrupt_path = f"{claimed_path}.corrupt"
                             else:
                                 logging.error("Failed to claim file and no claimed path available", exc_info=True)
@@ -95,12 +98,11 @@ class FileJobQueue(BaseJobQueue):
                             try:
                                 if os.path.exists(claimed_path):
                                     os.rename(claimed_path, corrupt_path)
-                                    return claimed_path
                             except PermissionError:
                                 logging.error(f"Failed to mark claimed job as corrupt {claimed_path}: {e}")
                                 continue
                     except Exception:
-                        if claimed_path:
+                        if claimed_path: # type: ignore
                             safe_remove(claimed_path)
                     continue
         return jobs
