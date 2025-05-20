@@ -166,17 +166,23 @@ Full test suite with mocks and assertions is planned for v0.3.
 - Test coverage: unit tests + concurrency stress test
 - `BaseJobQueue` abstraction for future Redis/SQLite queues
 
-🛠️ **v0.4 (in progress)**
+✅ **v0.4**
 
 - Execution Engine & Batching Runtime
-- Support for ThreadPoolExecutor with configurable worker behavior
-- Batch-aware task execution: on_batch() and fallback to on_task()
+- Support for `ThreadPoolExecutor` with configurable worker behavior
+- Batch-aware task execution: `pop_batch()` and fallback to `dequeue()`
 - Graceful handling of task timeouts and cancellations
 - Internal deadline enforcement per job
-- Job-level metadata injection (e.g. job.retries_left, job.enqueued_at)
-- Async runtime integration: prototype asyncio support
-- Job lifecycle hooks (before_task, after_task, on_failure)
-- Performance benchmarks (vs. Celery on Windows and Unix)
+- Job-level metadata injection (e.g. `job.retries_left`, `job.enqueued_at`)
+- Job lifecycle hooks (`before_task`, `after_task`, `on_failure`)
+- Ready for scaling, debugging, and benchmarking
+
+🛠 **v0.5 Feature Goal**
+
+- Task Auto-discovery Recursively find `@task` functions in project, even if not imported
+- AST-based parsing   Avoid full imports, detect decorators statically
+- Lazy registration   Import tasks only when necessary (or in background)
+- Manifest fallback   | Production mode can use precomputed manifest for speed
 
 ### 👨‍💻 Contributing
 
