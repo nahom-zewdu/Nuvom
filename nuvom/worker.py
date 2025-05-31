@@ -7,43 +7,29 @@
 import threading
 import time
 from rich import print
-from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
 from nuvom.config import get_settings
 from nuvom.queue import get_queue_backend
 from nuvom.result_store import set_result, set_error
+from nuvom.execution.job_runner import JobRunner
 
 _shutdown_event = threading.Event()
 
-def worker_loop(worker_id: int, batch_size: int, timeout: int):
+def worker_loop(worker_id: int, batch_size: int, default_timeout: int):
     q = get_queue_backend()
     
     print(f"[green][ ✔ ] Worker {worker_id} started. {q.qsize()} [/green]")
+
     while not _shutdown_event.is_set():
-        jobs = q.pop_batch(batch_size=batch_size, timeout=timeout)
+        jobs = q.pop_batch(batch_size=batch_size, timeout=default_timeout)
         if not jobs:
             continue
-        for job in jobs:
-            job.mark_running()
-            try:
-                print(f"[blue][Worker-{worker_id}] Running job: {job.to_dict()}[/blue]")
-                result = job.run()
-                if job.store_result:
-                    set_result(job.id, result)
-                
-                job.mark_success(result)
-            except Exception as e:
-                job.mark_failed(e)
-                
-                retries = job.retries_left
-                if retries > 0:
-                    print(f"[yellow][Worker-{worker_id}] 🔁 Retrying Job {job.func_name} {job.max_retries - job.retries_left} time [/yellow]")
-                    q.enqueue(job)  
-                else:
-                    if job.store_result:
-                        set_error(job.id, str(e))
-                    print(f"[red][Worker-{worker_id}] ❌ Job {job.func_name} failed after {job.max_retries} retries[/red]")
 
+        for job in jobs:
+            print(f"[blue][Worker-{worker_id}] Executing job {job.id} ({job.func_name})[/blue]")
+            runner = JobRunner(job, worker_id=worker_id, default_timeout=default_timeout)
+            runner.run()
 
 def start_worker_pool():
     settings = get_settings()

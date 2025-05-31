@@ -1,35 +1,32 @@
 # nuvom/registry.py
 
-# let @task auto-register task functions so workers can call them by name.
+from threading import RLock
 
-from typing import Callable, Dict, Optional
+class TaskRegistry:
+    _instance = None
+    _lock = RLock()
+    # _tasks = {}
 
-_task_registry: Dict[str, Callable] = {}
+    def __new__(cls):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance = super().__new__(cls)
+                cls._instance._tasks = {}
+            return cls._instance
 
+    def register(self, task):
+        with self._lock:
+            if task.name in self._tasks:
+                raise ValueError(f"Task '{task.name}' is already registered.")
+            self._tasks[task.name] = task
 
-def task(fn: Optional[Callable] = None, *, name: Optional[str] = None):
-    """
-    Decorator to mark a function as a Nuvom task.
-    Registers the function in the global task registry.
-    """
-    def decorator(func: Callable):
-        task_name = name or func.__name__
-        if task_name in _task_registry:
-            raise ValueError(f"Task name '{task_name}' already registered.")
-        _task_registry[task_name] = func
-        return func
+    def get(self, name):
+        with self._lock:
+            return self._tasks.get(name)
 
-    # Handle both @task and @task()
-    if fn is None:
-        return decorator
-    return decorator(fn)
+    def all(self):
+        with self._lock:
+            return list(self._tasks.values())
 
-
-def resolve_task(name: str) -> Callable:
-    if name not in _task_registry:
-        raise KeyError(f"Task '{name}' not found in registry.")
-    return _task_registry[name]
-
-
-def list_tasks() -> Dict[str, Callable]:
-    return dict(_task_registry)
+# Global instance used by everything
+REGISTRY = TaskRegistry()
