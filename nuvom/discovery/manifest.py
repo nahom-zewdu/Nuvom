@@ -56,3 +56,32 @@ class ManifestManager:
 
     def get_all(self) -> List[TaskReference]:
         return self.tasks
+    
+    def diff_and_save(self, new_tasks: List[TaskReference]) -> dict:
+        old_set = {self._task_key(t): t for t in self.load()}
+        new_set = {self._task_key(t): t for t in new_tasks}
+
+        added = [t for k, t in new_set.items() if k not in old_set]
+        removed = [t for k, t in old_set.items() if k not in new_set]
+        modified = [
+            new_set[k] for k in new_set.keys() & old_set.keys()
+            if self._task_changed(old_set[k], new_set[k])
+        ]
+
+        changed = added or removed or modified
+        if changed:
+            self.save(new_tasks)
+
+        return {
+            "added": added,
+            "removed": removed,
+            "modified": modified,
+            "saved": bool(changed)
+        }
+
+    def _task_key(self, task: TaskReference) -> str:
+        return f"{task.module_name or task.file_path}:{task.func_name}"
+
+    def _task_changed(self, old: TaskReference, new: TaskReference) -> bool:
+        return (old.file_path != new.file_path or old.module_name != new.module_name)
+
