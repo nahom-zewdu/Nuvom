@@ -13,7 +13,7 @@ def discover_tasks(
     include: List[str] = ["**/tasks.py"],
     exclude: List[str] = ["**/tests/**", "**/migrations/**"]
 ) -> List[TaskReference]:
-    task_refs = []
+    task_refs: List[TaskReference] = []
     files = get_python_files(root_path, include, exclude)
 
     for file in files:
