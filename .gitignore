@@ -74,3 +74,4 @@ requirements-dev.txt
 # === project local  ===
 job_results/
 nuvom_queue/
+.nuvom/
