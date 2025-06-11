@@ -10,8 +10,8 @@ from nuvom.discovery.reference import TaskReference
 
 def discover_tasks(
     root_path: str = ".",
-    include: List[str] = ["**/tasks.py"],
-    exclude: List[str] = ["**/tests/**", "**/migrations/**"]
+    include: List[str] = [],
+    exclude: List[str] = []
 ) -> List[TaskReference]:
     task_refs: List[TaskReference] = []
     files = get_python_files(root_path, include, exclude)
