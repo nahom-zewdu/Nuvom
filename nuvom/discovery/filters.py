@@ -1,15 +1,18 @@
 # nuvom/discovery/filters.py
 
-import fnmatch
 from typing import List
+import pathspec
 
-def match_patterns(path: str, patterns: List[str]) -> bool:
+
+class PathspecMatcher:
     """
-    Return True if the given path matches *any* of the provided glob-style patterns.
+    Wrapper around pathspec to handle gitignore-style pattern matching.
     """
-    normalized_path = path.replace("\\", "/")  # Ensure consistent path separators
-    for pattern in patterns:
-        normalized_pattern = pattern.replace("\\", "/")
-        if fnmatch.fnmatch(normalized_path, normalized_pattern):
-            return True
-    return False
+    def __init__(self, patterns: List[str]):
+        clean_patterns = [p for p in patterns if p.strip()]
+        self.spec = pathspec.PathSpec.from_lines("gitwildmatch", clean_patterns)
+
+    def matches(self, path: str) -> bool:
+        # path must be relative to root (or at least use POSIX separators)
+        normalized_path = path.replace("\\", "/")
+        return self.spec.match_file(normalized_path)
