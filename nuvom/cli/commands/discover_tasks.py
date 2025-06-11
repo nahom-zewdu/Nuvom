@@ -13,8 +13,8 @@ discover_app = typer.Typer(name="discover", help="Scan project for @task definit
 @discover_app.command("tasks")
 def discover_tasks_cli(
     root: str = ".",
-    include: List[str] = typer.Option(["**/tasks.py"], help="Glob patterns to include"),
-    exclude: List[str] = typer.Option(["**/tests/**", "**/migrations/**"], help="Glob patterns to exclude")
+    include: List[str] = typer.Option([], help="Glob patterns to include"),
+    exclude: List[str] = typer.Option([], help="Glob patterns to exclude")
 ):
     """
     Discover @task definitions and update the manifest.
