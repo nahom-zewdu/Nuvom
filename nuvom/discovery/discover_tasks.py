@@ -4,7 +4,7 @@ from typing import List
 from pathlib import Path
 from nuvom.discovery.walker import get_python_files
 from nuvom.discovery.parser import find_task_defs
-from nuvom.discovery.loader import compute_module_path
+from nuvom.discovery.compute_path import compute_module_path
 from nuvom.discovery.reference import TaskReference
 
 
