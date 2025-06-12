@@ -104,6 +104,7 @@ nuvom --help
 | `config`         | Show current config loaded from `.env`         |
 | `runworker`      | Start local worker pool                        |
 | `status <job_id>` | Show the result or error of a specific job     |
+| `discover tasks` | Traverse project directory and parse nuvom tasks|
 
 ### 🔍 Internals
 
