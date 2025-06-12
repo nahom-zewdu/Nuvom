@@ -7,7 +7,7 @@ from typing import List
 
 def find_task_defs(file_path: Path) -> List[str]:
     try:
-        source = file_path.read_text()
+        source = file_path.read_text(encoding="utf-8")
     except Exception as e:
         print(f"[warn] Cannot read {file_path}: {e}")
         return []
