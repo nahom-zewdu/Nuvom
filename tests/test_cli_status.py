@@ -2,7 +2,7 @@
 
 import pytest
 from typer.testing import CliRunner
-from nuvom.cli.cli import app
+from nuvom.cli import app
 from nuvom.result_store import set_result, set_error
 
 runner = CliRunner()

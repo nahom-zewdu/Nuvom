@@ -1,5 +1,5 @@
 # run.py
-from nuvom.cli.cli import main
+from nuvom.cli import main
 
 if __name__ == "__main__":
     main()
