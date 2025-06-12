@@ -26,4 +26,10 @@ def find_task_defs(file_path: Path) -> List[str]:
                     tasks.append(node.name)
                 elif isinstance(decorator, ast.Attribute) and decorator.attr == "task":
                     tasks.append(node.name)
+                elif isinstance(decorator, ast.Call):
+                    # Check if decorator is a call to `task` or `x.task`
+                    func = decorator.func
+                    if (isinstance(func, ast.Name) and func.id == "task") or \
+                    (isinstance(func, ast.Attribute) and func.attr == "task"):
+                        tasks.append(node.name)
     return tasks
