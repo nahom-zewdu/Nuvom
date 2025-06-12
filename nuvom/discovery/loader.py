@@ -22,13 +22,18 @@ def load_module_from_path(path: str, module_name: str = "dynamic_task_mod") -> M
 def load_task(ref: TaskReference) -> Callable:
     """
     Dynamically load the task function from a TaskReference.
+    Tries to import using module name first, then falls back to file path.
     """
+    module = None
+
     if ref.module_name:
         try:
             module = importlib.import_module(ref.module_name)
         except ImportError as e:
-            raise ImportError(f"Failed to import module '{ref.module_name}': {e}")
-    else:
+            print(f"[warn] Failed to import '{ref.module_name}': {e}")
+            print("[info] Falling back to loading from file path...")
+    
+    if module is None:
         module = load_module_from_path(ref.file_path)
 
     if not hasattr(module, ref.func_name):
