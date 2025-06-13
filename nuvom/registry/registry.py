@@ -12,10 +12,10 @@ class TaskRegistry:
         self._tasks: Dict[str, Callable] = {}
         self._registry_lock = threading.Lock()
 
-    def register(self, name: str, func: Callable):
+    def register(self, name: str, func: Callable, force: bool=False):
         with self._registry_lock:
-            if name in self._tasks:
-                raise ValueError(f"Task name '{name}' already registered.")
+            if name in self._tasks and not force:
+                return  # Already registered
             self._tasks[name] = func
 
     def get(self, name: str) -> Optional[Callable]:
