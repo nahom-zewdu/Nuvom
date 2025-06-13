@@ -65,4 +65,5 @@ class JobRunner:
         else:
             if job.store_result:
                 set_error(job.id, str(error))
+                job.result = str(error)
             print(f"[red][Runner-{self.worker_id}] ❌ Job {job.func_name} failed after {job.max_retries} retries[/red]")
