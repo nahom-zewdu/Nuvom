@@ -31,6 +31,8 @@ def worker_loop(worker_id: int, batch_size: int, default_timeout: int):
             print(f"[blue][Worker-{worker_id}] Executing job {job.id} ({job.func_name})[/blue]")
             runner = JobRunner(job, worker_id=worker_id, default_timeout=default_timeout)
             runner.run()
+            
+            print(f"[green][Worker-{worker_id}] Task: {runner.job.func_name}, args: {runner.job.args}, Result: {runner.job.result} [/green]")
 
 def start_worker_pool():
     
