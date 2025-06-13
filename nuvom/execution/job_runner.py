@@ -39,6 +39,8 @@ class JobRunner:
                 if job.store_result:
                     set_result(job.id, result)
                 job.mark_success(result)
+                
+                return job
 
             except FutureTimeoutError:
                 self._handle_failure("Job execution timed out.")
