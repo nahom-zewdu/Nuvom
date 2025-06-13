@@ -13,6 +13,7 @@ from nuvom.config import get_settings
 from nuvom.queue import get_queue_backend
 from nuvom.result_store import set_result, set_error
 from nuvom.execution.job_runner import JobRunner
+from nuvom.registry.auto_register import auto_register_from_manifest
 
 _shutdown_event = threading.Event()
 
@@ -30,8 +31,13 @@ def worker_loop(worker_id: int, batch_size: int, default_timeout: int):
             print(f"[blue][Worker-{worker_id}] Executing job {job.id} ({job.func_name})[/blue]")
             runner = JobRunner(job, worker_id=worker_id, default_timeout=default_timeout)
             runner.run()
+            
+            print(f"[green][Worker-{worker_id}] Task: {runner.job.func_name}, args: {runner.job.args}, Result: {runner.job.result} [/green]")
 
 def start_worker_pool():
+    
+    auto_register_from_manifest() # Auto-register all discovered tasks from the manifest into the global task registry.
+
     settings = get_settings()
     max_workers = settings.max_workers
     batch_size = settings.batch_size

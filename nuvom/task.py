@@ -4,7 +4,7 @@ from typing import Callable, Optional, Any
 import functools
 import warnings
 
-from nuvom.registry import REGISTRY
+from nuvom.registry.registry import get_task_registry
 from nuvom.job import Job
 from nuvom.queue import get_queue_backend
 
@@ -35,7 +35,7 @@ class Task:
         self.after_job = after_job
         self.on_error = on_error
         
-        REGISTRY.register(self)
+        get_task_registry().register(self.name, self.func)
 
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs)
@@ -92,4 +92,4 @@ def task(_func=None, *, name=None, retries=0, store_result=True, before_job=None
 
 
 def get_task(name):
-    return REGISTRY.get(name)
+    return get_task_registry().get(name)
