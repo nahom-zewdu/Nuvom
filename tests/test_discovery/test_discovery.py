@@ -99,3 +99,21 @@ def test_discover_respects_exclude_and_nuvomignore(tmp_path: Path):
     task_names = [t.func_name for t in tasks]
     assert "visible_task" in task_names
     assert "hidden_task" not in task_names
+
+def test_discover_task_with_call_decorator(tmp_path: Path):
+    project_dir = tmp_path / "project"
+    project_dir.mkdir()
+    
+    file_path = project_dir / "with_call.py"
+    file_path.write_text(textwrap.dedent("""
+        from nuvom.task import task
+
+        @task()
+        def called_decorator():
+            pass
+    """))
+
+    tasks = discover_tasks(str(project_dir))
+
+    names = [t.func_name for t in tasks]
+    assert "called_decorator" in names
