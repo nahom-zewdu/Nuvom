@@ -9,7 +9,7 @@ from nuvom import __version__
 from nuvom.config import get_settings
 from nuvom.worker import start_worker_pool
 from nuvom.result_store import get_result, get_error
-from nuvom.cli.commands import discover_tasks
+from nuvom.cli.commands import discover_tasks, list_tasks
 
 app = typer.Typer(help="Nuvom — Task Queue CLI")
 
@@ -57,6 +57,7 @@ def status(job_id: str):
     print("[cyan]🕒 PENDING[/cyan]")
 
 app.add_typer(discover_tasks.discover_app, name="discover")
+app.add_typer(list_tasks.list_app, name="list")
 
 def main():
     app()
