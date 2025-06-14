@@ -16,10 +16,11 @@ def discover_tasks(
     task_refs: List[TaskReference] = []
     files = get_python_files(root_path, include, exclude)
 
+    root = Path(root_path).resolve()
     for file in files:
         task_names = find_task_defs(file)
         for name in task_names:
-            module_path = compute_module_path(file)
+            module_path = compute_module_path(file, root_path=root)
             task_refs.append(TaskReference(str(file), name, module_path))
 
     return task_refs
