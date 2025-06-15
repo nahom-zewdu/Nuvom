@@ -12,10 +12,30 @@ class TaskRegistry:
         self._tasks: Dict[str, Callable] = {}
         self._registry_lock = threading.Lock()
 
-    def register(self, name: str, func: Callable, force: bool=False):
+    def register(
+        self,
+        name: str,
+        func: Callable,
+        *,
+        force: bool = False,
+        silent: bool = False
+    ):
+        """
+        Register a task by name.
+        
+        - If `force=True`, overwrite existing.
+        - If `silent=True`, skip duplicates silently.
+        - By default, raises ValueError on conflict.
+        """
         with self._registry_lock:
-            if name in self._tasks and not force:
-                return  # Already registered
+            if name in self._tasks:
+                if force:
+                    self._tasks[name] = func
+                    return
+                elif silent:
+                    return
+                else:
+                    raise ValueError(f"Task name '{name}' already registered.")
             self._tasks[name] = func
 
     def get(self, name: str) -> Optional[Callable]:
