@@ -16,7 +16,7 @@ def auto_register_from_manifest(manifest_path: str = None):
     for ref in discovered_tasks:
         try:
             func = load_task(ref)
-            registry.register(ref.func_name, func)
+            registry.register(ref.func_name, func, force=True)
         except Exception as e:
             print(f"[warn] Failed to load task '{ref.func_name}' from {ref.module_name}: {e}")
     
