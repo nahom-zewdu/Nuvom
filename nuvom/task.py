@@ -47,7 +47,7 @@ class Task:
             warnings.warn(
                 f"Task '{self.name}' may interfere with pytest collection.", stacklevel=3
             )
-        get_task_registry().register(self.name, self)
+        get_task_registry().register(self.name, self, silent=True)
 
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs)
