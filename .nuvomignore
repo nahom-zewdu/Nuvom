@@ -1,0 +1,42 @@
+# Ignore common Python cache/build dirs
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache
+
+# Virtual environments
+.venv/
+.env/
+env/
+.venv.bak/
+
+# Git internals
+.git/
+.gitignore
+
+# IDE configs
+.vscode/
+.idea/
+*.swp
+
+# Tests and fixtures
+tests/
+**/test_*.py
+**/tests/**
+
+# Django/ORM noise
+migrations/
+**/migrations/**
+
+# Nuvom artifacts
+.nuvom/
+nuvom/
+nuvom_queue/
+nuvom.egg-ingo
+.nuvom-cache/
+*.msgpack
+*.corrupt
+
+
