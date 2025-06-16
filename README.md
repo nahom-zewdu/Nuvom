@@ -152,37 +152,73 @@ nuvom --help
 
 ---
 
-## 🗂 Roadmap
+## 🛣️ Nuvom Roadmap
 
-✅ **v0.1**
-
-* Basic task queue with threading and simple worker
-
-✅ **v0.2**
-
-* Result backends and CLI improvements
-
-✅ **v0.3**
-
-* Pluggable queue backends and improved persistence
-
-✅ **v0.4**
-
-* Batch-aware execution engine with lifecycle hooks
-
-✅ **v0.5**
-
-* Recursive, AST-powered task auto-discovery with manifest caching
-* Thread-safe registry and enhanced task decorator API
-* Rich CLI commands for task listing and manifest management
-
-🛠 **v0.6 Goal**
-
-* Runtime execution refactor for scalability and debugging mode
-* Job tracing and enhanced error handling
-* Support for distributed execution and monitoring
+Feature progression and version intentions for Nuvom.
+Versions are milestone-based — not strictly semver.
 
 ---
+
+## ✅ v0.1 — Core Foundations
+
+* [x] Minimal `@task` decorator and delay mechanism
+* [x] In-memory task queue
+* [x] Threaded worker pool execution
+
+---
+
+## ✅ v0.2 — Result Backends & CLI
+
+* [x] Pluggable result backend architecture
+* [x] Memory and file-based result stores
+* [x] CLI (`nuvom runworker`) to start worker threads
+* [x] Job polling via `pop_batch()` with batching
+
+---
+
+## ✅ v0.3 — Pluggable Queues
+
+* [x] Queue backends: `MemoryJobQueue`, `FileJobQueue`
+* [x] Batch-aware dequeuing with fallback
+* [x] Corrupt job quarantine support (`.corrupt` file handling)
+* [x] `.msgpack` based serialization
+* [x] Concurrency stress tests & safe multi-thread file locks
+
+---
+
+## ✅ v0.4 — Execution Runtime & Lifecycle Hooks
+
+* [x] Job execution via `ExecutionEngine` abstraction
+* [x] Runtime configuration: timeouts, batch size, max workers
+* [x] Job metadata injection (`job.retries_left`, `created_at`, etc.)
+* [x] Lifecycle hook support: `before_job`, `after_job`, `on_error`
+* [x] Retry-on-failure system with max attempt logic
+
+---
+
+## ✅ v0.5 — Static Task Discovery & Registry
+
+* [x] AST-based task scanning with `@task` decorator detection
+* [x] Recursive file walker with `.nuvomignore` support
+* [x] Pathspec-based include/exclude filtering (like `.gitignore`)
+* [x] Manifest system: caching parsed tasks with file hashes
+* [x] CLI: `nuvom discover tasks` to scan & update manifest
+* [x] Dynamic task loader via module or fallback to file path
+* [x] Auto-registration from manifest at worker startup
+* [x] Centralized thread-safe registry with duplicate control (`force`, `silent`, default=error)
+* [x] CLI: `nuvom tasks list` with metadata
+
+---
+
+## 🧪 Future (Backlog Ideas)
+
+* [ ] Redis & SQLite queue backends
+* [ ] DAG/task chaining support (like `job1.then(job2)`)
+* [ ] Task versioning & signature validation
+* [ ] Built-in dashboards & Prometheus metrics
+* [ ] Distributed execution (multi-host worker mesh)
+* [ ] Static `.nuvom_tasks.json` export for zero-import startup
+* [ ] VSCode extension: visual queue monitor, task explorer
 
 ## 👨‍💻 Contributing
 
