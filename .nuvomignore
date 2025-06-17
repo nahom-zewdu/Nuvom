@@ -34,9 +34,6 @@ migrations/
 .nuvom/
 nuvom/
 nuvom_queue/
-nuvom.egg-ingo
 .nuvom-cache/
 *.msgpack
 *.corrupt
-
-
