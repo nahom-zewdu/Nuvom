@@ -1,6 +1,6 @@
 # nuvom/task.py
 
-from typing import Callable, Optional, Any
+from typing import Callable, Optional, Any, List
 import functools
 import warnings
 
@@ -13,20 +13,26 @@ class Task:
     """
     Represents a task wrapper that enables delayed and mapped execution.
     Handles registration, retries, lifecycle hooks, and result persistence.
+    Supports optional metadata (description, tags, category)
     """
 
     def __init__(
         self,
         func: Callable,
-        *,
         name: Optional[str] = None,
         retries: int = 0,
         store_result: bool = True,
         timeout_secs: Optional[int] = None,
+        tags: Optional[List[str]] = None,
+        description: Optional[str] = None,
+        category: Optional[str] = None,
         before_job: Optional[Callable[[], None]] = None,
         after_job: Optional[Callable[[Any], None]] = None,
         on_error: Optional[Callable[[Exception], None]] = None,
     ):
+        """
+        Wraps a Python function as a Nuvom task with metadata and execution options.
+        """
         functools.update_wrapper(self, func)
 
         self.func = func
@@ -34,6 +40,11 @@ class Task:
         self.retries = retries
         self.store_result = store_result
         self.timeout_secs = timeout_secs
+        
+        self.tags = tags or []
+        self.description = description or ""
+        self.category = category or "default"
+
 
         self.before_job = before_job
         self.after_job = after_job
@@ -47,7 +58,11 @@ class Task:
             warnings.warn(
                 f"Task '{self.name}' may interfere with pytest collection.", stacklevel=3
             )
-        get_task_registry().register(self.name, self, silent=True)
+        get_task_registry().register(self.name, self, silent=True, metadata={
+            "tags": self.tags,
+            "description": self.description,
+            "category": self.category,
+        })
 
     def __call__(self, *args, **kwargs):
         return self.func(*args, **kwargs)
@@ -86,6 +101,9 @@ def task(
     retries: int = 0,
     store_result: bool = True,
     timeout_secs: Optional[int] = None,
+    tags=None,
+    description=None,
+    category= None,
     before_job: Optional[Callable[[], None]] = None,
     after_job: Optional[Callable[[Any], None]] = None,
     on_error: Optional[Callable[[Exception], None]] = None,
@@ -102,6 +120,9 @@ def task(
             retries=retries,
             store_result=store_result,
             timeout_secs=timeout_secs,
+            tags=tags,
+            description=description,
+            category=category,
             before_job=before_job,
             after_job=after_job,
             on_error=on_error,

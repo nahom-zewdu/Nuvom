@@ -1,3 +1,5 @@
+# nuvom/cli/commands/discover_tasks.py
+
 import typer
 from typing import List
 from rich import print
