@@ -7,8 +7,6 @@ from typing import Literal
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from nuvom.log import logger
-
 # Project root + .env path resolution
 ROOT_DIR = Path(__file__).resolve().parent.parent
 ENV_PATH = ROOT_DIR / ".env"
@@ -53,6 +51,7 @@ class NuvomSettings(BaseSettings):
 
     def display(self) -> None:
         """Log the config summary to console."""
+        from nuvom.log import logger  # Delayed import to avoid circular import
         logger.info("Nuvom Configuration:")
         for key, value in self.summary().items():
             logger.info(f"{key:20} = {value}")
@@ -67,8 +66,13 @@ def get_settings(force_reload: bool = False) -> NuvomSettings:
     """
     global _settings
     if _settings is None or force_reload:
-        logger.debug(f"Loading settings from: {ENV_PATH}")
+        print(f"[debug] Loading settings from: {ENV_PATH}")
         _settings = NuvomSettings()
+
+        # Setup logger immediately after settings load
+        from nuvom.log import setup_logger
+        setup_logger()
+
     return _settings
 
 def override_settings(**kwargs):
