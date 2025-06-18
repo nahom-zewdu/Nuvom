@@ -1,3 +1,5 @@
+# nuvom/config.py
+
 import os
 from pathlib import Path
 from typing import Literal
@@ -5,11 +7,18 @@ from typing import Literal
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from nuvom.log import logger
+
 # Project root + .env path resolution
 ROOT_DIR = Path(__file__).resolve().parent.parent
 ENV_PATH = ROOT_DIR / ".env"
 
 class NuvomSettings(BaseSettings):
+    """
+    Holds all environment-based configuration values for Nuvom.
+    Uses Pydantic for validation and type safety.
+    """
+
     model_config = SettingsConfigDict(
         env_file=ENV_PATH,
         env_prefix="NUVOM_",
@@ -29,6 +38,7 @@ class NuvomSettings(BaseSettings):
     job_timeout_secs: int = Field(60, validation_alias="JOB_TIMEOUT_SECS")
 
     def summary(self) -> dict:
+        """Return key configuration values as a dictionary summary."""
         return {
             "env": self.environment,
             "log_level": self.log_level,
@@ -42,23 +52,30 @@ class NuvomSettings(BaseSettings):
         }
 
     def display(self) -> None:
-        print("Nuvom Configuration:")
+        """Log the config summary to console."""
+        logger.info("Nuvom Configuration:")
         for key, value in self.summary().items():
-            print(f"{key:20} = {value}")
+            logger.info(f"{key:20} = {value}")
 
 # Internal global config state
 _settings: NuvomSettings | None = None
 
 def get_settings(force_reload: bool = False) -> NuvomSettings:
-    """Get global Nuvom settings. Use `force_reload=True` only when needed."""
+    """
+    Get global Nuvom settings. Uses singleton pattern.
+    Use `force_reload=True` to re-read from env.
+    """
     global _settings
     if _settings is None or force_reload:
-        print(f"[debug] Loading settings from: {ENV_PATH}")
+        logger.debug(f"Loading settings from: {ENV_PATH}")
         _settings = NuvomSettings()
     return _settings
 
 def override_settings(**kwargs):
-    """Override config values for tests or runtime tweaks. Avoid in prod logic."""
+    """
+    Override settings (used in tests/dev only).
+    Raises if the key is invalid.
+    """
     global _settings
     if _settings is None:
         _settings = NuvomSettings()
