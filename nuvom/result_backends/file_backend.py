@@ -17,6 +17,7 @@ class FileResultBackend(BaseResultBackend):
         return os.path.join(self.result_dir, f"{job_id}.err")
 
     def set_result(self, job_id, result):
+        os.makedirs(self.result_dir, exist_ok=True)  # Add here too
         with open(self._path(job_id), "wb") as f:
             f.write(serialize(result))
 
@@ -28,6 +29,7 @@ class FileResultBackend(BaseResultBackend):
             return deserialize(f.read())
 
     def set_error(self, job_id, error):
+        os.makedirs(self.result_dir, exist_ok=True)
         with open(self._err_path(job_id), "w") as f:
             f.write(str(error))
 
