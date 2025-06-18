@@ -1,29 +1,55 @@
 # nuvom/execution/job_runner.py
 
+"""
+JobRunner executes a single job with timeout handling, lifecycle hooks, retries, 
+and result/error persistence. Uses a thread pool for task execution isolation.
+"""
+
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from nuvom.result_store import set_result, set_error
 from nuvom.queue import get_queue_backend
-from rich import print
+from nuvom.log import logger
+
 
 class JobRunner:
+    """
+    Executes a job, managing hooks, retries, timeouts, and result storage.
+
+    Args:
+        job: The Job instance to execute.
+        worker_id: Identifier of the worker running the job.
+        default_timeout: Default timeout seconds if job does not specify one.
+
+    Methods:
+        run() -> Job: Runs the job with error and retry handling.
+    """
+
     def __init__(self, job, worker_id: int, default_timeout: int):
         self.job = job
         self.worker_id = worker_id
         self.default_timeout = default_timeout
         self.q = get_queue_backend()
 
-    def run(self):
+    def run(self) -> "Job":
+        """
+        Execute the job with lifecycle hooks and timeout.
+        Handles retries and stores results or errors.
+
+        Returns:
+            The job instance with updated status.
+        """
         timeout_secs = self.job.timeout_secs or self.default_timeout
         job = self.job
 
-        # Metadata injection already handled at job creation
         job.mark_running()
+        logger.debug(f"[Runner-{self.worker_id}] Starting job '{job.func_name}' with timeout {timeout_secs}s.")
 
         if job.before_job:
             try:
                 job.before_job()
+                logger.debug(f"[Runner-{self.worker_id}] before_job hook executed successfully.")
             except Exception as e:
-                print(f"[yellow][Runner-{self.worker_id}] ⚠️ before_job hook failed: {e}[/yellow]")
+                logger.warning(f"[Runner-{self.worker_id}] before_job hook failed: {e}")
 
         with ThreadPoolExecutor(max_workers=1) as executor:
             future = executor.submit(job.run)
@@ -33,13 +59,16 @@ class JobRunner:
                 if job.after_job:
                     try:
                         job.after_job(result)
+                        logger.debug(f"[Runner-{self.worker_id}] after_job hook executed successfully.")
                     except Exception as e:
-                        print(f"[yellow][Runner-{self.worker_id}] ⚠️ after_job hook failed: {e}[/yellow]")
+                        logger.warning(f"[Runner-{self.worker_id}] after_job hook failed: {e}")
 
                 if job.store_result:
                     set_result(job.id, result)
+                    logger.debug(f"[Runner-{self.worker_id}] Result stored for job '{job.func_name}'.")
+
                 job.mark_success(result)
-                
+                logger.info(f"[Runner-{self.worker_id}] Job '{job.func_name}' completed successfully.")
                 return job
 
             except FutureTimeoutError:
@@ -49,21 +78,30 @@ class JobRunner:
                 self._handle_failure(e)
 
     def _handle_failure(self, error):
+        """
+        Handles job failure, runs on_error hook if present,
+        marks job as failed, retries if possible, and stores error.
+
+        Args:
+            error: The Exception or error message causing failure.
+        """
         job = self.job
 
         if job.on_error:
             try:
                 job.on_error(error)
+                logger.debug(f"[Runner-{self.worker_id}] on_error hook executed.")
             except Exception as e:
-                print(f"[yellow][Runner-{self.worker_id}] ⚠️ on_error hook failed: {e}[/yellow]")
+                logger.warning(f"[Runner-{self.worker_id}] on_error hook failed: {e}")
 
         job.mark_failed(error)
 
         if job.retries_left > 0:
-            print(f"[yellow][Runner-{self.worker_id}] 🔁 Retrying Job {job.func_name} (Retry {job.max_retries - job.retries_left + 1})[/yellow]")
+            retry_count = job.max_retries - job.retries_left + 1
+            logger.warning(f"[Runner-{self.worker_id}] Retrying job '{job.func_name}' (Retry {retry_count}/{job.max_retries}).")
             self.q.enqueue(job)
         else:
             if job.store_result:
                 set_error(job.id, str(error))
                 job.result = str(error)
-            print(f"[red][Runner-{self.worker_id}] ❌ Job {job.func_name} failed after {job.max_retries} retries[/red]")
+            logger.error(f"[Runner-{self.worker_id}] Job '{job.func_name}' failed after {job.max_retries} retries: {error}")
