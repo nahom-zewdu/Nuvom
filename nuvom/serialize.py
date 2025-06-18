@@ -1,14 +1,20 @@
 # nuvom/serialize.py
 
-# Handles serialization and deserialization
-# Starts with msgpack, swappable to protobuf, etc.
+"""
+Serialization abstraction layer for Nuvom.
+Delegates to the selected backend (currently msgpack).
+"""
 
 from nuvom.serialization.msgpack_serializer import MsgpackSerializer
 from nuvom.config import get_settings
 
 _serializer = None
 
+
 def get_serializer():
+    """
+    Lazily initializes and returns the global serializer backend.
+    """
     global _serializer
     if _serializer is not None:
         return _serializer
@@ -22,8 +28,14 @@ def get_serializer():
 
 
 def serialize(obj: object) -> bytes:
+    """
+    Serializes a Python object into bytes using the active backend.
+    """
     return get_serializer().serialize(obj=obj)
 
-def deserialize(data: bytes) -> object:
-    return get_serializer().deserialize(data)
 
+def deserialize(data: bytes) -> object:
+    """
+    Deserializes bytes back into a Python object using the active backend.
+    """
+    return get_serializer().deserialize(data)

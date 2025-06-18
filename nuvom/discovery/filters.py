@@ -1,5 +1,10 @@
 # nuvom/discovery/filters.py
 
+"""
+Provides a wrapper around pathspec for gitignore-style pattern matching,
+enabling inclusion/exclusion of files based on user-defined glob patterns.
+"""
+
 from typing import List
 import pathspec
 

@@ -1,8 +1,10 @@
-# Maintains the job buffer (FIFO or priority)
-# Supports optional batch pulls
-# Backpressure handling if needed
+# nuvom/queue.py
 
-# nuvom/job_queue.py
+"""
+Queue management interface for jobs.
+Uses a configurable backend to manage job lifecycles.
+"""
+
 from typing import List, Optional
 
 from nuvom.config import get_settings
@@ -12,38 +14,58 @@ from nuvom.job import Job
 
 _global_queue = None
 
+
 def get_queue_backend():
+    """
+    Returns the active queue backend, initializing it if necessary.
+    """
     global _global_queue
     if _global_queue is not None:
         return _global_queue
 
     backend_name = get_settings().queue_backend.lower()
-    
+
     if backend_name == "file":
         _global_queue = FileJobQueue()
     elif backend_name == "memory":
         _global_queue = MemoryJobQueue()
     else:
         raise ValueError(f"Unsupported queue backend: {backend_name}")
-    
+
     return _global_queue
 
+
 def enqueue(job: Job):
-    """Add a job to the queue."""
+    """
+    Add a job to the queue.
+    """
     get_queue_backend().enqueue(job)
 
+
 def dequeue(timeout: int = 1) -> Optional[Job]:
-    """Remove and return a job from the queue."""
+    """
+    Remove and return a job from the queue, blocking up to `timeout` seconds.
+    """
     return get_queue_backend().dequeue(timeout)
 
+
 def pop_batch(batch_size: int = 1, timeout: int = 1) -> List[Job]:
-    """Remove and return up to batch_size jobs."""
+    """
+    Remove and return up to `batch_size` jobs from the queue.
+    """
     return get_queue_backend().pop_batch(batch_size=batch_size, timeout=timeout)
 
+
 def qsize() -> int:
-    """Return the number of jobs in the queue."""
+    """
+    Return the number of jobs currently in the queue.
+    """
     return get_queue_backend().qsize()
 
+
 def clear() -> int:
-    """Clear out the queue."""
+    """
+    Clear all jobs from the queue.
+    Returns the number of jobs cleared.
+    """
     return get_queue_backend().clear()

@@ -4,13 +4,13 @@ import threading
 import time
 import queue
 from typing import List
-from rich import print
 
 from nuvom.config import get_settings
 from nuvom.queue import get_queue_backend
 from nuvom.result_store import set_result, set_error
 from nuvom.execution.job_runner import JobRunner
 from nuvom.registry.auto_register import auto_register_from_manifest
+from nuvom.log import logger  # ✅ Use rich-powered logger
 
 _shutdown_event = threading.Event()
 
@@ -29,7 +29,7 @@ class WorkerThread(threading.Thread):
         self._lock = threading.Lock()
 
     def run(self):
-        print(f"[green][ ✔ ] Worker-{self.worker_id} online.[/green]")
+        logger.info(f"[Worker-{self.worker_id}] Online.")
 
         while not _shutdown_event.is_set():
             try:
@@ -40,10 +40,12 @@ class WorkerThread(threading.Thread):
             with self._lock:
                 self._in_flight += 1
 
-            print(f"[blue][Worker-{self.worker_id}] Executing job {job.id} ({job.func_name})[/blue]")
+            logger.debug(f"[Worker-{self.worker_id}] Executing job {job.id} ({job.func_name})")
+
             runner = JobRunner(job, worker_id=self.worker_id, default_timeout=self.job_timeout)
             runner.run()
-            print(f"[green][Worker-{self.worker_id}] Task: {runner.job.func_name}, args: {runner.job.args}, Result: {runner.job.result}[/green]")
+
+            logger.info(f"[Worker-{self.worker_id}] Completed {runner.job.func_name} → {runner.job.result}")
 
             with self._lock:
                 self._in_flight -= 1
@@ -69,7 +71,7 @@ class DispatcherThread(threading.Thread):
         self.queue = get_queue_backend()
 
     def run(self):
-        print("[yellow][Dispatcher] Started dispatching jobs.[/yellow]")
+        logger.info("[Dispatcher] Started.")
 
         while not _shutdown_event.is_set():
             jobs = self.queue.pop_batch(batch_size=self.batch_size, timeout=self.job_timeout)
@@ -79,7 +81,7 @@ class DispatcherThread(threading.Thread):
             for job in jobs:
                 target = min(self.workers, key=lambda w: w.load())
                 target.submit(job)
-                print(f"[magenta][Dispatcher] Assigned job {job.id} → Worker-{target.worker_id}[/magenta]")
+                logger.debug(f"[Dispatcher] Job {job.id} → Worker-{target.worker_id}")
 
 
 def start_worker_pool():
@@ -94,7 +96,7 @@ def start_worker_pool():
     batch_size = settings.batch_size
     job_timeout = settings.job_timeout_secs
 
-    print(f"[blue][Nuvom] Spawning {max_workers} smart workers...[/blue]")
+    logger.info(f"[Nuvom] Spawning {max_workers} smart workers...")
 
     workers = []
     for i in range(max_workers):
@@ -109,9 +111,9 @@ def start_worker_pool():
         while not _shutdown_event.is_set():
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\n[red][ ! ] Shutdown requested. Stopping...[/red]")
+        logger.warning("[Shutdown] Interrupt received. Cleaning up...")
         _shutdown_event.set()
         dispatcher.join()
         for w in workers:
             w.join()
-        print("[green][ ✔ ] All workers stopped cleanly.[/green]")
+        logger.info("[Nuvom] All workers stopped cleanly.")
