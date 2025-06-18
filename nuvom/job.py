@@ -172,4 +172,5 @@ class Job:
         logger.error(f"[job:{self.id}] Marked as FAILED. Error: {error}")
 
     def can_retry(self):
-        """R
+        """Return True if job is eligible for retry."""
+        return self.retries_left > 0
