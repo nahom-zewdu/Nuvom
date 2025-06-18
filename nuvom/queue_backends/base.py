@@ -1,5 +1,10 @@
 # nuvom/queue_backends/base.py
-# Define an interface (i.e., base class) that all queue backends must follow.
+
+"""
+Abstract base class defining the interface for job queue backends.
+Specifies required queue operations like enqueue, dequeue, batch pop,
+size query, and clear, to be implemented by concrete backends.
+"""
 
 from abc import ABC, abstractmethod
 from typing import List, Optional
@@ -28,5 +33,5 @@ class BaseJobQueue(ABC):
     
     @abstractmethod
     def clear(self):
-        # raise NotImplementedError()
+        """Clear all jobs from the queue."""
         pass
