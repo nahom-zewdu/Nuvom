@@ -5,15 +5,21 @@ from rich.logging import RichHandler
 import logging
 import sys
 
-# Global console instance for direct rich printing if needed
+from nuvom.config import get_settings
+
+# Global console instance for optional direct Rich output
 console = Console()
 
-def setup_logger(level: str = "INFO") -> logging.Logger:
+def setup_logger(level: str | None = None) -> logging.Logger:
     """
-    Set up and return the global logger instance.
+    Set up and return the global logger instance using RichHandler.
     
-    All logs go through rich and are colored with contextual info.
+    - Respects the level set in Nuvom config (NUVOM_LOG_LEVEL)
+    - Enables markup, rich tracebacks, and disables noisy paths
     """
+    config = get_settings()
+    level = level or config.log_level
+
     logger = logging.getLogger("nuvom")
     logger.setLevel(level.upper())
 
