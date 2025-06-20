@@ -1,6 +1,6 @@
 # Nuvom — A Lightweight Python Task Queue (v0.6)
 
-![status](https://img.shields.io/badge/version-v0.5-blue)
+![status](https://img.shields.io/badge/version-v0.6-blue)
 ![python](https://img.shields.io/badge/python-3.8%2B-yellow)
 ![license](http://www.apache.org/licenses/)
 
@@ -213,12 +213,12 @@ Versions are milestone-based — not strictly semver.
 
 ## What’s New in v0.6?
 
-- **Smart Worker Load Balancing:** Dynamic dispatching assigns jobs to the least busy worker, maximizing throughput and minimizing wait time.
-- **Enhanced Task Metadata:** Tag and describe tasks directly in your code, then explore them with `nuvom list tasks`.
-- **Developer Mode Auto-Reload:** Use `--dev` to auto-refresh your task registry on code or manifest changes—no need to restart workers.
-- **Rich Logging & Error Display:** See colorful, structured logs and tracebacks that make debugging easier and faster.
-- **Manifest Warm-Reload:** Manifest updates apply seamlessly during worker runtime.
-- **Improved CLI Experience:** Manifest diffs, detailed task listings, and more—all powered by Rich.
+* **Smart Worker Load Balancing:** Dynamic dispatching assigns jobs to the least busy worker, maximizing throughput and minimizing wait time.
+* **Enhanced Task Metadata:** Tag and describe tasks directly in your code, then explore them with `nuvom list tasks`.
+* **Developer Mode Auto-Reload:** Use `--dev` to auto-refresh your task registry on code or manifest changes—no need to restart workers.
+* **Rich Logging & Error Display:** See colorful, structured logs and tracebacks that make debugging easier and faster.
+* **Manifest Warm-Reload:** Manifest updates apply seamlessly during worker runtime.
+* **Improved CLI Experience:** Manifest diffs, detailed task listings, and more—all powered by Rich.
 
 ---
 
