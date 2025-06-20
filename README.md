@@ -210,6 +210,17 @@ Versions are milestone-based — not strictly semver.
 
 ---
 
+## What’s New in v0.6?
+
+- **Smart Worker Load Balancing:** Dynamic dispatching assigns jobs to the least busy worker, maximizing throughput and minimizing wait time.
+- **Enhanced Task Metadata:** Tag and describe tasks directly in your code, then explore them with `nuvom list tasks`.
+- **Developer Mode Auto-Reload:** Use `--dev` to auto-refresh your task registry on code or manifest changes—no need to restart workers.
+- **Rich Logging & Error Display:** See colorful, structured logs and tracebacks that make debugging easier and faster.
+- **Manifest Warm-Reload:** Manifest updates apply seamlessly during worker runtime.
+- **Improved CLI Experience:** Manifest diffs, detailed task listings, and more—all powered by Rich.
+
+---
+
 ## 🧪 Future (Backlog Ideas)
 
 * [ ] Redis & SQLite queue backends
@@ -222,6 +233,7 @@ Versions are milestone-based — not strictly semver.
 
 ## 👨‍💻 Contributing
 
+Nuvom continues to champion **simplicity, power, and developer happiness** in background task processing.
 Want to help build Redis/SQLite backends or advanced scheduling? Contributions welcome! Open an issue or PR.
 
 ---
