@@ -1,4 +1,4 @@
-# Nuvom — A Lightweight Python Task Queue (v0.5)
+# Nuvom — A Lightweight Python Task Queue (v0.6)
 
 ![status](https://img.shields.io/badge/version-v0.5-blue)
 ![python](https://img.shields.io/badge/python-3.8%2B-yellow)
@@ -85,11 +85,12 @@ Nuvom loads settings from `.env` files via `pydantic-settings`.
 NUVOM_ENVIRONMENT=dev
 NUVOM_LOG_LEVEL=INFO
 NUVOM_RESULT_BACKEND=file
+NUVOM_QUEUE_BACKEND=file
 NUVOM_MAX_WORKERS=4
 NUVOM_BATCH_SIZE=10
 NUVOM_JOB_TIMEOUT_SECS=60
 NUVOM_QUEUE_MAXSIZE=0
-NUVOM_MANIFEST_PATH=.nuvom_manifest.json
+NUVOM_MANIFEST_PATH=.manifest.json
 ```
 
 ### 📖 `NUVOM_RESULT_BACKEND` Options
