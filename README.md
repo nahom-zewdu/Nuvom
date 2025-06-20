@@ -1,4 +1,4 @@
-# Nuvom — A Lightweight Python Task Queue (v0.5)
+# Nuvom — A Lightweight Python Task Queue (v0.6)
 
 ![status](https://img.shields.io/badge/version-v0.5-blue)
 ![python](https://img.shields.io/badge/python-3.8%2B-yellow)
@@ -85,11 +85,12 @@ Nuvom loads settings from `.env` files via `pydantic-settings`.
 NUVOM_ENVIRONMENT=dev
 NUVOM_LOG_LEVEL=INFO
 NUVOM_RESULT_BACKEND=file
+NUVOM_QUEUE_BACKEND=file
 NUVOM_MAX_WORKERS=4
 NUVOM_BATCH_SIZE=10
 NUVOM_JOB_TIMEOUT_SECS=60
 NUVOM_QUEUE_MAXSIZE=0
-NUVOM_MANIFEST_PATH=.nuvom_manifest.json
+NUVOM_MANIFEST_PATH=.manifest.json
 ```
 
 ### 📖 `NUVOM_RESULT_BACKEND` Options
@@ -210,6 +211,17 @@ Versions are milestone-based — not strictly semver.
 
 ---
 
+## What’s New in v0.6?
+
+- **Smart Worker Load Balancing:** Dynamic dispatching assigns jobs to the least busy worker, maximizing throughput and minimizing wait time.
+- **Enhanced Task Metadata:** Tag and describe tasks directly in your code, then explore them with `nuvom list tasks`.
+- **Developer Mode Auto-Reload:** Use `--dev` to auto-refresh your task registry on code or manifest changes—no need to restart workers.
+- **Rich Logging & Error Display:** See colorful, structured logs and tracebacks that make debugging easier and faster.
+- **Manifest Warm-Reload:** Manifest updates apply seamlessly during worker runtime.
+- **Improved CLI Experience:** Manifest diffs, detailed task listings, and more—all powered by Rich.
+
+---
+
 ## 🧪 Future (Backlog Ideas)
 
 * [ ] Redis & SQLite queue backends
@@ -222,6 +234,7 @@ Versions are milestone-based — not strictly semver.
 
 ## 👨‍💻 Contributing
 
+Nuvom continues to champion **simplicity, power, and developer happiness** in background task processing.
 Want to help build Redis/SQLite backends or advanced scheduling? Contributions welcome! Open an issue or PR.
 
 ---

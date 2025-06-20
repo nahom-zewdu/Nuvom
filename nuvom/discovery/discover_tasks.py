@@ -1,5 +1,11 @@
 # nuvom/discovery/discover_tasks.py
 
+"""
+Core logic to scan a directory tree and discover all @task definitions.
+Returns a list of TaskReference objects representing discovered tasks.
+Supports filtering files via include and exclude glob patterns.
+"""
+
 from typing import List
 from pathlib import Path
 from nuvom.discovery.walker import get_python_files

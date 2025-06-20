@@ -27,8 +27,8 @@ def test_all_returns_all_tasks():
 
     assert "task1" in all_tasks
     assert "task2" in all_tasks
-    assert all_tasks["task1"] is sample_task
-    assert all_tasks["task2"] is another_task
+    assert all_tasks["task1"].func is sample_task
+    assert all_tasks["task2"].func is another_task
 
 def test_clear_removes_all_tasks():
     registry = get_task_registry()

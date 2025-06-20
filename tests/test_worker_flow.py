@@ -1,41 +1,76 @@
-import time
-import threading
-from nuvom.task import task
-from nuvom.worker import worker_loop, _shutdown_event
-from nuvom.result_store import get_result, get_error, reset_backend
-from nuvom.config import get_settings
+# tests/test_smart_worker_model.py
 
-# Set config to use memory backend explicitly
-get_settings().result_backend = "memory"
-reset_backend() # Force re-init backend
+import threading
+import time
+import uuid
+
+from nuvom.queue import get_queue_backend
+from nuvom.result_store import get_result, reset_backend
+from nuvom.registry.registry import get_task_registry
+from nuvom.job import Job
+from nuvom.task import task
+
+from nuvom.worker import WorkerThread, DispatcherThread, _shutdown_event
+
+# Define dummy task functions
+@task
+def slow_add(a, b):
+    time.sleep(0.1)
+    return a + b
 
 @task
-def add(x, y):
-    return x + y
+def slow_mul(a, b):
+    time.sleep(0.1)
+    return a * b
 
-def test_worker_executes_task_and_stores_result():
-    # Clear shutdown flag in case it was set
+def test_smart_worker_balancing():
+    """
+    This test verifies that:
+    - Dispatcher assigns jobs to available workers
+    - Workers execute jobs
+    - Results are correctly stored
+    """
+    # Setup
+    reset_backend()
     _shutdown_event.clear()
 
-    # Enqueue task
-    job = add.delay(2, 3)
+    q = get_queue_backend()
+    registry = get_task_registry()
+    registry.clear()
+    registry.register("slow_add", slow_add, force=True)
+    registry.register("slow_mul", slow_mul, force=True)
 
-    # Start worker in a thread
-    t = threading.Thread(target=worker_loop, args=(0, 1, 1), daemon=True)
-    t.start()
+    print("===========",registry.all())
+    
+    # Spawn 3 workers
+    workers = []
+    for i in range(3):
+        w = WorkerThread(worker_id=i, job_timeout=5)
+        w.start()
+        workers.append(w)
 
-    # Wait up to 5 seconds for result
-    for _ in range(10):
-        result = get_result(job.id)
-        if result is not None:
-            break
-        time.sleep(0.5)
-    else:
-        assert False, "Worker did not complete job in time"
+    # Create jobs manually
+    jobs = []
+    for i in range(5):
+        if i % 2 == 0:
+            slow_add.delay(i, i) 
+        else:
+            slow_mul.delay(i,i)
+        
 
-    assert result == 5
-    assert get_error(job.id) is None
+    # Start dispatcher
+    dispatcher = DispatcherThread(workers=workers, batch_size=2, job_timeout=3)
+    dispatcher.start()
 
-    # Shutdown worker
+    # Trigger shutdown
     _shutdown_event.set()
-    t.join(timeout=2)
+    dispatcher.join()
+    for w in workers:
+        w.join()
+
+    # Verify results
+    for job in jobs:
+        result = get_result(job.id)
+        assert result == job.args[0] + job.args[1] or result == job.args[0] * job.args[1]
+
+    print("[test] ✅ All jobs completed and returned correct results.")

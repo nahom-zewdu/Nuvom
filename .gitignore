@@ -68,12 +68,9 @@ pip-wheel-metadata/
 
 # === Lock Files (optional, if you're using pip-tools or poetry) ===
 poetry.lock
-requirements.txt
 requirements-dev.txt
 
 # === project local  ===
 job_results/
 nuvom_queue/
-tasks/
 .nuvom/
-.nuvomignore

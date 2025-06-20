@@ -1,13 +1,17 @@
+# nuvom/cli/commands/discover_tasks.py
+
 import typer
 from typing import List
-from rich import print
+from rich.console import Console
 from rich.table import Table
 from pathlib import Path
 
 from nuvom.discovery.discover_tasks import discover_tasks
 from nuvom.discovery.reference import TaskReference
 from nuvom.discovery.manifest import ManifestManager
+from nuvom.log import logger
 
+console = Console()
 discover_app = typer.Typer(name="discover", help="Scan project for @task definitions")
 
 @discover_app.command("tasks")
@@ -16,20 +20,18 @@ def discover_tasks_cli(
     include: List[str] = typer.Option([], help="Glob patterns to include"),
     exclude: List[str] = typer.Option([], help="Glob patterns to exclude")
 ):
-    """
-    Discover @task definitions and update the manifest.
-    """
+    """Discover @task definitions and update the manifest."""
     root_path = Path(root).resolve()
-    print(f"[bold]🔍 Scanning tasks in:[/bold] {root_path}")
+    console.print(f"[bold]🔍 Scanning tasks in:[/bold] {root_path}")
+    logger.debug("Starting task discovery in %s with include=%s and exclude=%s", root_path, include, exclude)
 
     all_refs: List[TaskReference] = discover_tasks(root_path=root, include=include, exclude=exclude)
-
-    print(f"[cyan]🔎 Found {len(all_refs)} task(s).[/cyan]")
+    logger.info("Discovered %d task(s)", len(all_refs))
+    console.print(f"[cyan]🔎 Found {len(all_refs)} task(s).[/cyan]")
 
     manager = ManifestManager()
     diff = manager.diff_and_save(all_refs)
 
-    # Display changes
     table = Table(title="Manifest Changes", show_lines=True)
     table.add_column("Type", style="bold magenta")
     table.add_column("Task", style="yellow")
@@ -42,7 +44,10 @@ def discover_tasks_cli(
         table.add_row("[blue]~ Modified[/blue]", str(t))
 
     if not (diff["added"] or diff["removed"] or diff["modified"]):
-        print("[dim]No manifest changes detected.[/dim]")
+        console.print("[dim]No manifest changes detected.[/dim]")
+        logger.debug("No manifest changes detected")
     else:
-        print(table)
-        print("[green]✅ Manifest updated.[/green]")
+        console.print(table)
+        console.print("[green]✅ Manifest updated.[/green]")
+        logger.info("Manifest updated with %d additions, %d removals, %d modifications",
+                    len(diff["added"]), len(diff["removed"]), len(diff["modified"]))
