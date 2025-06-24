@@ -12,7 +12,7 @@ def clear_backend():
     reset_backend()
 
 def test_inspect_command_runs_and_outputs_table():
-    set_result("job-inspect-test", 100, args=[1], kwargs={"a": 2}, created_at="2024-01-01", attempts=1)
+    set_result("job-inspect-test", 'test', 100, args=[1], kwargs={"a": 2}, created_at="2024-01-01", attempts=1)
     result = runner.invoke(app, ["inspect", "job", "job-inspect-test"])
     assert result.exit_code == 0
     assert "job-inspect-test" in result.stdout
