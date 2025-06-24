@@ -35,6 +35,7 @@ class MemoryResultBackend(BaseResultBackend):
         Store the result of a successful job along with metadata.
         """
         self._store[job_id] = {
+            "job_id": job_id,
             "status": "SUCCESS",
             "result": serialize(result),
             "error": None,
@@ -60,6 +61,7 @@ class MemoryResultBackend(BaseResultBackend):
         Store a failed job's error with structured traceback and metadata.
         """
         self._store[job_id] = {
+            "job_id": job_id,
             "status": "FAILED",
             "result": None,
             "error": {
