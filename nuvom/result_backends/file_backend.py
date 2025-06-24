@@ -129,3 +129,19 @@ class FileResultBackend(BaseResultBackend):
             return None
         with open(meta_path, "rb") as f:
             return deserialize(f.read())
+
+    def list_jobs(self) -> list[dict]:
+        """
+        Return full metadata for all jobs in the result directory.
+
+        Returns:
+            List of job metadata dicts (as returned by get_full()).
+        """
+        jobs = []
+        for file in os.listdir(self.result_dir):
+            if file.endswith(".meta"):
+                job_id = file.rsplit(".", 1)[0]
+                full = self.get_full(job_id)
+                if full:
+                    jobs.append(full)
+        return jobs
