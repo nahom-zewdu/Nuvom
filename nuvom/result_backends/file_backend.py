@@ -37,6 +37,7 @@ class FileResultBackend(BaseResultBackend):
     def set_result(
         self,
         job_id: str,
+        func_name:str,
         result: Any,
         *,
         args: Optional[tuple] = None,
@@ -49,6 +50,7 @@ class FileResultBackend(BaseResultBackend):
         """Store full result metadata to a `.meta` file."""
         data = {
             "job_id": job_id,
+            "func_name":func_name,
             "status": "SUCCESS",
             "result": result,
             "args": args or [],
@@ -78,6 +80,7 @@ class FileResultBackend(BaseResultBackend):
     def set_error(
         self,
         job_id: str,
+        func_name:str,
         error: Exception,
         *,
         args: Optional[tuple] = None,
@@ -91,6 +94,7 @@ class FileResultBackend(BaseResultBackend):
         tb_str = traceback.format_exc()
         data = {
             "job_id": job_id,
+            "func_name":func_name,
             "status": "FAILED",
             "error": {
                 "type": type(error).__name__,
