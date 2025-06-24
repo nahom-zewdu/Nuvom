@@ -17,7 +17,7 @@ def test_set_and_get_error(backend):
     job_id = "job-err"
     error_msg = "Something went wrong"
     backend.set_error(job_id, error_msg)
-    assert backend.get_error(job_id) == error_msg
+    assert backend.get_error(job_id).get('message') == error_msg
 
 def test_get_result_missing(backend):
     assert backend.get_result("missing-job") is None
