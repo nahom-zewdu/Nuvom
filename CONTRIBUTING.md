@@ -159,4 +159,8 @@ Feel free to open an issue with questions, bugs, or ideas. PRs are great, but ev
 
 ---
 
+For more details, see the [`README`](/README.md) and [`ARCHITECTURE`](docs/architecture.md).
+
+---
+
 Happy contributing! 🧠💡
