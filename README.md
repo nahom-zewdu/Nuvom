@@ -222,8 +222,7 @@ nuvom/
 ├── result_backends/     # Pluggable result stores
 ├── registry/            # Task registry singleton
 ├── task.py              # Task decorator logic
-├── worker.py            # Threaded worker pool
-├── dispatcher.py        # Task dispatching and retries
+├── worker.py            # Threaded worker pool, Task dispatching and retries
 ├── utils/               # File ops, serializers, etc.
 ├── log.py               # Rich-based logger
 ```
