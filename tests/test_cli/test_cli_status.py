@@ -1,4 +1,4 @@
-# tests/test_cli_status.py
+# tests/test_cli/test_cli_status.py
 
 import pytest
 from typer.testing import CliRunner
