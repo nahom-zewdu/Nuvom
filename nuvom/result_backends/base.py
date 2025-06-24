@@ -27,6 +27,7 @@ class BaseResultBackend(ABC):
     def set_result(
         self,
         job_id: str,
+        func_name:str,
         result: Any,
         *,
         args: Optional[tuple] = None,
@@ -68,6 +69,7 @@ class BaseResultBackend(ABC):
     def set_error(
         self,
         job_id: str,
+        func_name:str,
         error: Exception,
         *,
         args: Optional[tuple] = None,
