@@ -1,155 +1,231 @@
-# Nuvom — A Lightweight Python Task Queue (v0.6)
+# `nuvom`
+
+> 🧠 Lightweight, plugin-first task queue for Python. No Redis, Windows-native, AST-powered task discovery, and extensible by design.
 
 ![status](https://img.shields.io/badge/version-v0.6-blue)
 ![python](https://img.shields.io/badge/python-3.8%2B-yellow)
-![license](http://www.apache.org/licenses/)
-
-**Nuvom** is a lightweight, developer-first task queue for Python designed for high performance, extensibility, and ease of use. It features pluggable result backends, recursive task auto-discovery with AST parsing, efficient job execution, CLI integration, and a robust runtime built for scaling and debugging.
+![license](https://img.shields.io/badge/license-Apache--2.0-green)
 
 ---
 
-## 🔥 Features
+## ✨ Why Nuvom?
 
-* ✅ Background task registration with `.delay()` and `.map()`
-* ✅ Recursive AST-based task auto-discovery across projects (no imports needed)
-* ✅ Persistent task manifest caching (`.nuvom_manifest.json`) for fast CLI operations
-* ✅ Thread-safe singleton task registry with duplicate detection
-* ✅ Worker pool with batch fetching and graceful shutdown
-* ✅ Configurable result backends: memory, file (and planned Redis/SQLite)
-* ✅ Retry logic and job lifecycle hooks (`before_job`, `after_job`, `on_error`)
-* ✅ Rich CLI tooling for task discovery, listing, worker control, and job inspection
-* ✅ `.env`-based configuration with `pydantic-settings`
-* ✅ Minimal dependencies, no external service requirements
+Nuvom is a developer-first job execution engine that helps you queue, execute, and persist background tasks—without needing Redis, Celery, or any external services. Designed to be fully **Windows-compatible**, Nuvom favors **simplicity**, **smart defaults**, and **pluggable architecture** over complexity and vendor lock-in.
+
+Key philosophies:
+
+* 🪟 **Runs on Windows** (no Linux-only assumptions)
+* 🔌 **Plugin-first**: easily extend queues, backends, task loaders
+* ⚙️ **No Redis**, **no brokers**, and **no infrastructure**
+* 📜 **AST-powered static task discovery** (no imports required)
+* 📂 **Manifest caching** for blazing-fast CLI performance
 
 ---
 
-## 🚀 Getting Started
+## 🧠 Core Concepts
 
-### 1. Install
+| Concept    | Description                                       |
+| ---------- | ------------------------------------------------- |
+| `@task`    | Decorator to register an executable function      |
+| Job        | A serialized instance of a task to be executed    |
+| Worker     | Thread that pulls and runs jobs from a queue      |
+| Dispatcher | Orchestrates job dispatching and retries          |
+| Backend    | Stores job results or errors                      |
+| Registry   | Maps task names to callables and metadata         |
+| Discovery  | Uses AST parsing to auto-discover all tasks       |
+| CLI        | Full-featured developer CLI for control & insight |
+
+---
+
+## 📦 Installation
+
+> Nuvom is currently in active development. Until v1.0, install locally:
 
 ```bash
+git clone https://github.com/your-org/nuvom
+cd nuvom
 pip install -e .
 ```
 
-Dependencies: `rich`, `typer`, `pydantic-settings`.
+### 🔧 Dependencies
 
-### 2. Define a Task
+* `rich`
+* `typer`
+* `pydantic-settings`
+* `msgpack`
+
+---
+
+## ⚙️ Quickstart
+
+### 1. Define a Task
 
 ```python
 # tasks.py
 from nuvom.task import task
 
-@task(retries=3, store_result=True)
+@task(retries=2, store_result=True)
 def add(x, y):
     return x + y
 ```
 
-### 3. Submit a Job
+### 2. Queue a Job
 
 ```python
-# main.py
 from tasks import add
 
-job = add.delay(2, 3)
-print(f"Job queued with ID: {job.id}")
+job = add.delay(5, 7)
+print(job.id)
 ```
 
-### 4. List Discovered Tasks
-
-```bash
-nuvom list tasks            # Uses cached manifest
-nuvom discover tasks  # scans project recursively and builds manifest
-```
-
-### 5. Start the Worker Pool
+### 3. Start the Worker Pool
 
 ```bash
 nuvom runworker
 ```
 
-### 6. Check Job Status
+### 4. Check Job Result
 
 ```bash
-nuvom status <job-id>
+nuvom status <job_id>
 ```
 
 ---
 
-## ⚙️ Configuration
+## 🚀 Features
 
-Nuvom loads settings from `.env` files via `pydantic-settings`.
-
-### 🔧 Sample `.env`
-
-```env
-NUVOM_ENVIRONMENT=dev
-NUVOM_LOG_LEVEL=INFO
-NUVOM_RESULT_BACKEND=file
-NUVOM_QUEUE_BACKEND=file
-NUVOM_MAX_WORKERS=4
-NUVOM_BATCH_SIZE=10
-NUVOM_JOB_TIMEOUT_SECS=60
-NUVOM_QUEUE_MAXSIZE=0
-NUVOM_MANIFEST_PATH=.manifest.json
-```
-
-### 📖 `NUVOM_RESULT_BACKEND` Options
-
-| Value    | Description                                  |
-| -------- | -------------------------------------------- |
-| `memory` | In-memory (fast, ephemeral)                  |
-| `file`   | File-based persistent storage                |
-| `redis`  | \[Planned] Production-grade persistent store |
-| `sqlite` | \[Planned] Embedded persistent store         |
+✅ `@task()` decorator with `.delay()` and `.map()` support
+✅ No import side-effects: AST-based task discovery
+✅ Pluggable queue and result backends
+✅ Rich-powered logging with tracebacks
+✅ File and in-memory queue support
+✅ Retry logic and lifecycle hooks
+✅ Fast startup via task manifest cache
+✅ CLI to list, discover, and inspect jobs
+✅ `.env`-based configuration via `pydantic-settings`
 
 ---
 
-## 🧪 CLI Commands
+## 🧪 CLI Overview
 
 ```bash
 nuvom --help
 ```
 
-| Command                | Description                                         |
-| ---------------------- | --------------------------------------------------- |
-| `config`               | Show current configuration loaded from `.env`       |
-| `runworker`            | Start local worker pool                             |
-| `status <job_id>`      | Show result or error of a specific job              |
-| `list tasks`           | List all discovered `@task` functions from manifest |
-| `discover tasks` | Scan project recursively and discover tasks     |
+| Command                | Description                           |
+| ---------------------- | ------------------------------------- |
+| `nuvom runworker`      | Start worker threads                  |
+| `nuvom status <id>`    | Get job result or error               |
+| `nuvom list tasks`     | List all discovered `@task` functions |
+| `nuvom discover tasks` | Scan project and generate manifest    |
+| `nuvom config`         | Print current configuration           |
 
 ---
 
-## 🔍 Internals
+## 🔧 Configuration
 
-### Task Auto-Discovery
+Nuvom loads settings from `.env` via `pydantic-settings`.
 
-* Recursive project scanning using `walker.py`
-* `.nuvomignore` and glob-based filtering
-* AST parsing of Python files to detect `@task` and `@task()` decorators without importing
-* Static metadata extraction and task manifest caching
+### Example `.env`
 
-### Task Registry
+```env
+NUVOM_ENVIRONMENT=dev
+NUVOM_LOG_LEVEL=DEBUG
+NUVOM_RESULT_BACKEND=file
+NUVOM_QUEUE_BACKEND=file
+NUVOM_MAX_WORKERS=4
+NUVOM_BATCH_SIZE=10
+NUVOM_JOB_TIMEOUT_SECS=30
+NUVOM_MANIFEST_PATH=.nuvom/manifest.json
+```
 
-* Thread-safe singleton `TaskRegistry` with duplicate task name detection
-* Dynamic runtime registration via `@task` decorator
-* Provides fast `get_task(name)` access for dispatching
+---
 
-### Task Decorator (`task.py`)
+## 📚 Internals
 
-* Registers functions as Nuvom tasks with metadata: retries, timeout, lifecycle hooks
-* Supports async job scheduling with `.delay()` and bulk `.map()`
+### Task Discovery
 
-### Worker Runtime
+* Parses files with AST to find `@task` decorators
+* Skips `.nuvomignore` and filtered paths
+* Writes results to `.nuvom/manifest.json`
+* Loaded during runtime or via `nuvom discover tasks`
 
-* Multi-threaded worker pool with batch job fetching for efficiency
-* Graceful shutdown and retry logic
-* Job lifecycle hooks execution
+### Worker Execution
 
-### Result Backends
+* Multi-threaded workers pull jobs in batches
+* Jobs are executed with timeouts and retries
+* Lifecycle hooks are respected: `before_job`, `after_job`, `on_error`
 
-* Pluggable interface (`BaseResultBackend`)
-* Implemented: memory and file backends
+### Backends
+
+* Memory and file-based backends
+* Fully pluggable via interface (`BaseJobQueue`, `BaseResultBackend`)
+
+---
+
+## 🧩 Architecture Diagram
+
+```text
+    +---------------------+
+    |    @task decorator  |
+    +---------------------+
+               |
+               v
+    +---------------------+        +---------------------+
+    |    Task Registry    |<-----> |  Manifest Manager   |
+    +---------------------+        +---------------------+
+               |                               |
+               v                               v
+    +---------------------+        +---------------------+
+    |     Dispatcher      |------> |   Queue Backend     |
+    +---------------------+        +---------------------+
+               |                               |
+               v                               v
+          +-----------+                +------------------+
+          |  Worker   |--------------->|   Job Runner     |
+          +-----------+                +------------------+
+                                                 |
+                                                 v
+                                     +--------------------------+
+                                     |   Result Backend (Mem)   |
+                                     +--------------------------+
+```
+
+---
+
+## 🛠 Extending Nuvom
+
+Add your own backend:
+
+```python
+from nuvom.queue_backends.base import BaseJobQueue
+
+class MyCustomQueue(BaseJobQueue):
+    def enqueue(self, job): ...
+    def dequeue(self, timeout=1): ...
+    ...
+```
+
+Then configure it via `.env` or code.
+
+---
+
+## 📁 Project Layout
+
+``` text
+nuvom/
+├── cli/                 # Typer-based CLI commands
+├── config.py            # .env configuration manager
+├── discovery/           # Task discovery, parsing, manifest
+├── execution/           # JobRunner + execution logic
+├── queue_backends/      # File & memory queues
+├── result_backends/     # Pluggable result stores
+├── registry/            # Task registry singleton
+├── task.py              # Task decorator logic
+├── worker.py            # Threaded worker pool, Task dispatching and retries
+├── utils/               # File ops, serializers, etc.
+├── log.py               # Rich-based logger
+```
 
 ---
 
@@ -211,16 +287,15 @@ Versions are milestone-based — not strictly semver.
 
 ---
 
-## What’s New in v0.6?
+### ✅ v0.6
 
-* **Smart Worker Load Balancing:** Dynamic dispatching assigns jobs to the least busy worker, maximizing throughput and minimizing wait time.
-* **Enhanced Task Metadata:** Tag and describe tasks directly in your code, then explore them with `nuvom list tasks`.
-* **Developer Mode Auto-Reload:** Use `--dev` to auto-refresh your task registry on code or manifest changes—no need to restart workers.
-* **Rich Logging & Error Display:** See colorful, structured logs and tracebacks that make debugging easier and faster.
-* **Manifest Warm-Reload:** Manifest updates apply seamlessly during worker runtime.
-* **Improved CLI Experience:** Manifest diffs, detailed task listings, and more—all powered by Rich.
-
----
+* [x] Dynamic dispatching assigns jobs to the least busy worker, maximizing throughput and minimizing wait time.
+* [x] Tag and describe tasks directly in your code, then explore them with `nuvom list tasks`.
+* [x] Use `--dev` to auto-refresh your task registry on code or manifest changes—no need to restart workers.
+* [x] See colorful, structured logs and tracebacks that make debugging easier and faster.
+* [x] Manifest updates apply seamlessly during worker runtime.
+* [x] Manifest diffs, detailed task listings, and more—all powered by Rich.
+* [x] Robust error handling
 
 ## 🧪 Future (Backlog Ideas)
 
@@ -232,16 +307,27 @@ Versions are milestone-based — not strictly semver.
 * [ ] Static `.nuvom_tasks.json` export for zero-import startup
 * [ ] VSCode extension: visual queue monitor, task explorer
 
-## 👨‍💻 Contributing
+---
 
-Nuvom continues to champion **simplicity, power, and developer happiness** in background task processing.
-Want to help build Redis/SQLite backends or advanced scheduling? Contributions welcome! Open an issue or PR.
+## 🧠 Philosophy
+
+We believe tools should be:
+
+* 🔧 Easy to extend
+* 🪶 Light on assumptions
+* 🪟 Friendly for Windows and cross-platform devs
+* 🧠 Predictable and observable
+
+---
+
+## 👥 Contributing
+
+Pull requests are welcome! See [`ARCHITECTURE`](docs/architecture.md) and [`CONTRIBUTING.md`](CONTRIBUTING.md) to get started.
 
 ---
 
 ## 🪪 License
 
-Apache License: Version 2.0, January 2004.
-![license](http://www.apache.org/licenses/)
+Apache 2.0 — use it freely, build responsibly.
 
 ---
