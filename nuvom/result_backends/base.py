@@ -120,7 +120,7 @@ class BaseResultBackend(ABC):
     @abstractmethod
     def list_jobs(self) -> List[Dict]:
         """
-        Return all job metadata stored in memory.
+        Return all job metadata.
 
         Returns:
             List[Dict]: All job records.
