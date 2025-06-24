@@ -322,7 +322,7 @@ We believe tools should be:
 
 ## 👥 Contributing
 
-Pull requests are welcome! See [`CONTRIBUTING.md`](CONTRIBUTING.md) to get started.
+Pull requests are welcome! See [`ARCHITECTURE`](docs/architecture.md) and [`CONTRIBUTING.md`](CONTRIBUTING.md) to get started.
 
 ---
 
