@@ -32,12 +32,13 @@ class MemoryResultBackend(BaseResultBackend):
     def __init__(self):
         self._store = {}
 
-    def set_result(self, job_id, result, *, args=None, kwargs=None, retries_left=None, attempts=None, created_at=None, completed_at=None):
+    def set_result(self, job_id, func_name, result, *, args=None, kwargs=None, retries_left=None, attempts=None, created_at=None, completed_at=None):
         """
         Store the result of a successful job along with metadata.
         """
         self._store[job_id] = {
             "job_id": job_id,
+            "func_name": func_name,
             "status": "SUCCESS",
             "result": serialize(result),
             "error": None,
@@ -46,7 +47,7 @@ class MemoryResultBackend(BaseResultBackend):
             "retries_left": retries_left,
             "attempts": attempts,
             "created_at": created_at or time.time(),
-            "completed_at": time.time()
+            "completed_at": completed_at
         }
 
     def get_result(self, job_id):
@@ -58,12 +59,13 @@ class MemoryResultBackend(BaseResultBackend):
             return deserialize(entry["result"])
         return None
 
-    def set_error(self, job_id, error, *, args=None, kwargs=None, retries_left=None, attempts=None, created_at=None, completed_at=None):
+    def set_error(self, job_id, func_name, error, *, args=None, kwargs=None, retries_left=None, attempts=None, created_at=None, completed_at=None):
         """
         Store a failed job's error with structured traceback and metadata.
         """
         self._store[job_id] = {
             "job_id": job_id,
+            "func_name":func_name,
             "status": "FAILED",
             "result": None,
             "error": {
@@ -76,7 +78,7 @@ class MemoryResultBackend(BaseResultBackend):
             "retries_left": retries_left,
             "attempts": attempts,
             "created_at": created_at or time.time(),
-            "completed_at": time.time()
+            "completed_at": completed_at,
         }
 
     def get_error(self, job_id):
