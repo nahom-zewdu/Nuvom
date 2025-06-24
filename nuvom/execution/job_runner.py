@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 from nuvom.result_store import set_result, set_error
 from nuvom.queue import get_queue_backend
 from nuvom.log import logger
-
+from nuvom.job import Job
 
 class JobRunner:
     """
@@ -30,7 +30,7 @@ class JobRunner:
         self.default_timeout = default_timeout
         self.q = get_queue_backend()
 
-    def run(self) -> "Job":
+    def run(self) -> Job:
         """
         Execute the job with lifecycle hooks and timeout.
         Handles retries and stores results or errors.
@@ -64,7 +64,15 @@ class JobRunner:
                         logger.warning(f"[Runner-{self.worker_id}] after_job hook failed: {e}")
 
                 if job.store_result:
-                    set_result(job.id, result)
+                    set_result(
+                            job.id, result,
+                            args=job.args,
+                            kwargs=job.kwargs,
+                            retries_left=job.retries_left,
+                            attempts=job.max_retries - job.retries_left,
+                            created_at=job.created_at
+                        )
+
                     logger.debug(f"[Runner-{self.worker_id}] Result stored for job '{job.func_name}'.")
 
                 job.mark_success(result)
@@ -102,6 +110,14 @@ class JobRunner:
             self.q.enqueue(job)
         else:
             if job.store_result:
-                set_error(job.id, str(error))
+                set_error(
+                        job.id, error,
+                        args=job.args,
+                        kwargs=job.kwargs,
+                        retries_left=job.retries_left,
+                        attempts=job.max_retries - job.retries_left,
+                        created_at=job.created_at
+                    )
+
                 job.result = str(error)
             logger.error(f"[Runner-{self.worker_id}] Job '{job.func_name}' failed after {job.max_retries} retries: {error}")
