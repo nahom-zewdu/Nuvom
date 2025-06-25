@@ -2,7 +2,7 @@
 
 > 🧠 Lightweight, plugin-first task queue for Python. No Redis, Windows-native, AST-powered task discovery, and extensible by design.
 
-![status](https://img.shields.io/badge/version-v0.6-blue)
+![status](https://img.shields.io/badge/version-v0.7-blue)
 ![python](https://img.shields.io/badge/python-3.8%2B-yellow)
 ![license](https://img.shields.io/badge/license-Apache--2.0-green)
 
