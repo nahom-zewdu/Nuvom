@@ -8,7 +8,6 @@ to store and retrieve both successful results and error messages.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional, List, Dict
 
 
 class BaseResultBackend(ABC):
@@ -16,114 +15,56 @@ class BaseResultBackend(ABC):
     Interface for result backends used to persist job results and errors.
 
     Methods:
-        set_result: Persist result along with job metadata.
-        get_result: Retrieve deserialized result.
-        set_error: Persist error along with job metadata and traceback.
-        get_error: Retrieve error message.
-        get_full: Retrieve all metadata associated with a job.
+        set_result(job_id, result): Persist the result of a completed job.
+        get_result(job_id): Retrieve the result for a given job ID.
+        set_error(job_id, error): Persist an error message for a failed job.
+        get_error(job_id): Retrieve the error message for a given job ID.
     """
 
     @abstractmethod
-    def set_result(
-        self,
-        job_id: str,
-        func_name:str,
-        result: Any,
-        *,
-        args: Optional[tuple] = None,
-        kwargs: Optional[dict] = None,
-        retries_left: Optional[int] = None,
-        attempts: Optional[int] = None,
-        created_at: Optional[float] = None,
-        completed_at: Optional[float] = None,
-    ):
+    def set_result(self, job_id: str, result: object):
         """
-        Store the result of a completed job with full metadata.
+        Store the result of a completed job.
 
         Args:
             job_id: Unique identifier for the job.
             result: The result object to store.
-            args: The positional arguments used by the job.
-            kwargs: The keyword arguments used by the job.
-            retries_left: Number of retries remaining.
-            attempts: Number of attempts made.
-            created_at: Timestamp when job was created.
-            completed_at: Timestamp when job finished.
         """
         pass
 
     @abstractmethod
-    def get_result(self, job_id: str) -> Any:
+    def get_result(self, job_id: str) -> object:
         """
-        Retrieve only the result for a given job ID.
+        Retrieve the result for a completed job.
 
         Args:
             job_id: Unique identifier for the job.
 
         Returns:
-            The stored result object or None.
+            The stored result object.
         """
         pass
 
     @abstractmethod
-    def set_error(
-        self,
-        job_id: str,
-        func_name:str,
-        error: Exception,
-        *,
-        args: Optional[tuple] = None,
-        kwargs: Optional[dict] = None,
-        retries_left: Optional[int] = None,
-        attempts: Optional[int] = None,
-        created_at: Optional[float] = None,
-        completed_at: Optional[float] = None,
-    ):
+    def set_error(self, job_id: str, error: str):
         """
-        Store an error for a failed job with full metadata and traceback.
+        Store an error message for a failed job.
 
         Args:
             job_id: Unique identifier for the job.
-            error: The error/exception to store.
-            args: Arguments used in the job.
-            kwargs: Keyword arguments used in the job.
-            retries_left: Number of retries remaining.
-            attempts: Number of attempts made.
-            created_at: Timestamp when job was created.
-            completed_at: Timestamp when job failed.
+            error: Error message to store.
         """
         pass
 
     @abstractmethod
-    def get_error(self, job_id: str) -> Optional[str]:
+    def get_error(self, job_id: str) -> str:
         """
-        Retrieve only the error message or traceback string.
+        Retrieve the error message for a failed job.
 
         Args:
             job_id: Unique identifier for the job.
 
         Returns:
-            Error string or None.
+            The stored error message.
         """
         pass
-
-    @abstractmethod
-    def get_full(self, job_id: str) -> Optional[dict]:
-        """
-        Return a full dictionary of job metadata, whether success or failure.
-
-        Args:
-            job_id: Unique identifier for the job.
-
-        Returns:
-            Dict containing status, args, result/error, timestamps, etc.
-        """
-        pass
-    @abstractmethod
-    def list_jobs(self) -> List[Dict]:
-        """
-        Return all job metadataa.
-
-        Returns:
-            List[Dict]: All job records.
-        """

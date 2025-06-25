@@ -1,4 +1,4 @@
-# tests/test_cli/test_cli_status.py
+# tests/test_cli_status.py
 
 import pytest
 from typer.testing import CliRunner
@@ -10,7 +10,7 @@ runner = CliRunner()
 def test_status_success():
     job_id = "job-success"
     result = {"data": 123}
-    set_result(job_id, 'test', result)
+    set_result(job_id, result)
     
     result = runner.invoke(app, ["status", job_id])
     assert result.exit_code == 0
@@ -18,7 +18,7 @@ def test_status_success():
 
 def test_status_failure():
     job_id = "job-fail"
-    set_error(job_id, 'test', "Something broke")
+    set_error(job_id, "Something broke")
     
     result = runner.invoke(app, ["status", job_id])
     assert result.exit_code == 0

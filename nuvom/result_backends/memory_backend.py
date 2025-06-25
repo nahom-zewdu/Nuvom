@@ -1,15 +1,11 @@
-# nuvom/result_backends/memory_backend.py
+# nuvom/backends/memory_backend.py
 
 """
 MemoryResultBackend provides an in-memory implementation of the result backend.
 
-Useful for testing and non-persistent environments. Stores full job result
-metadata in-memory, including status, return value, error details, and lifecycle info.
+Useful for testing and non-persistent environments. Stores serialized job results
+and error messages in dictionaries. All data is lost on process termination.
 """
-
-import traceback
-import time
-from typing import List, Dict
 
 from nuvom.serialize import serialize, deserialize
 from nuvom.result_backends.base import BaseResultBackend
@@ -17,91 +13,65 @@ from nuvom.result_backends.base import BaseResultBackend
 
 class MemoryResultBackend(BaseResultBackend):
     """
-    In-memory result backend storing detailed job result metadata.
-    Suitable for testing and non-persistent workflows.
+    In-memory result backend for storing job results and errors temporarily.
 
-    Each job record includes:
-        - status: "SUCCESS" | "FAILED"
-        - result: serialized return value
-        - error: type, message, traceback (on failure)
-        - args, kwargs: job input
-        - retries_left, attempts
-        - created_at, completed_at: timestamps
+    Attributes:
+        _results (dict): Maps job_id to serialized result.
+        _errors (dict): Maps job_id to error message strings.
+
+    Methods:
+        set_result(job_id, result): Serialize and store the job result.
+        get_result(job_id): Deserialize and return stored result.
+        set_error(job_id, error): Store job error as string.
+        get_error(job_id): Return stored error string.
     """
 
     def __init__(self):
-        self._store = {}
+        """Initialize in-memory result and error stores."""
+        self._results = {}
+        self._errors = {}
 
-    def set_result(self, job_id, func_name, result, *, args=None, kwargs=None, retries_left=None, attempts=None, created_at=None, completed_at=None):
+    def set_result(self, job_id, result):
         """
-        Store the result of a successful job along with metadata.
+        Store a job's result in serialized form.
+
+        Args:
+            job_id (str): Unique identifier for the job.
+            result (Any): The result object to store.
         """
-        self._store[job_id] = {
-            "job_id": job_id,
-            "func_name": func_name,
-            "status": "SUCCESS",
-            "result": serialize(result),
-            "error": None,
-            "args": args or [],
-            "kwargs": kwargs or {},
-            "retries_left": retries_left,
-            "attempts": attempts,
-            "created_at": created_at or time.time(),
-            "completed_at": completed_at
-        }
+        self._results[job_id] = serialize(result)
 
     def get_result(self, job_id):
         """
-        Return the deserialized result value if available.
-        """
-        entry = self._store.get(job_id)
-        if entry and entry["status"] == "SUCCESS":
-            return deserialize(entry["result"])
-        return None
+        Retrieve and deserialize a stored job result.
 
-    def set_error(self, job_id, func_name, error, *, args=None, kwargs=None, retries_left=None, attempts=None, created_at=None, completed_at=None):
-        """
-        Store a failed job's error with structured traceback and metadata.
-        """
-        self._store[job_id] = {
-            "job_id": job_id,
-            "func_name":func_name,
-            "status": "FAILED",
-            "result": None,
-            "error": {
-                "type": type(error).__name__,
-                "message": str(error),
-                "traceback": traceback.format_exc()
-            },
-            "args": args or [],
-            "kwargs": kwargs or {},
-            "retries_left": retries_left,
-            "attempts": attempts,
-            "created_at": created_at or time.time(),
-            "completed_at": completed_at,
-        }
-
-    def get_error(self, job_id):
-        """
-        Return the error message of a failed job, if present.
-        """
-        entry = self._store.get(job_id)
-        if entry and entry["status"] == "FAILED":
-            return entry["error"]
-        return None
-
-    def get_full(self, job_id):
-        """
-        Return the full metadata dict for a job.
-        Used by `nuvom inspect`.
-        """
-        return self._store.get(job_id)
-
-    def list_jobs(self) -> List[Dict]:
-        """
-        Return all job metadata stored in memory.
+        Args:
+            job_id (str): Unique identifier for the job.
 
         Returns:
-            List[Dict]: All job records.
+            Any or None: The deserialized result, or None if not found.
         """
-        return list(self._store.values())
+        raw = self._results.get(job_id)
+        return deserialize(raw) if raw else None
+
+    def set_error(self, job_id, error):
+        """
+        Store an error message for a failed job.
+
+        Args:
+            job_id (str): Unique identifier for the job.
+            error (str): The error message.
+        """
+        self._errors[job_id] = str(error)
+
+    def get_error(self, job_id) -> str:
+        """
+        Retrieve the error message for a failed job.
+
+        Args:
+            job_id (str): Unique identifier for the job.
+
+        Returns:
+            str or None: The stored error message, or None if not found.
+        """
+        return self._errors.get(job_id)

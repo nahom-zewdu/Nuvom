@@ -3,7 +3,6 @@
 import os
 from pathlib import Path
 from typing import Literal
-from dotenv import load_dotenv
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -11,10 +10,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # Project root + .env path resolution
 ROOT_DIR = Path(__file__).resolve().parent.parent
 ENV_PATH = ROOT_DIR / ".env"
-
-# Load environment variables from .env file FIRST
-# This ensures os.environ is populated before PydanticSettings tries to read it
-load_dotenv(dotenv_path=ENV_PATH)
 
 class NuvomSettings(BaseSettings):
     """
@@ -28,17 +23,17 @@ class NuvomSettings(BaseSettings):
         extra="ignore",
     )
 
-    environment: Literal["dev", "prod", "test"] = "dev"
-    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
+    environment: Literal["dev", "prod", "test"] = Field("dev", validation_alias="ENVIRONMENT")
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = Field("INFO", validation_alias="LOG_LEVEL")
 
-    result_backend: Literal["file", "redis", "sqlite", "memory"] = "file"
-    queue_backend: Literal["file", "redis", "sqlite", "memory"] = "file"
-    serialization_backend: Literal["json", "msgpack", "pickle"] = "msgpack"
+    result_backend: Literal["file", "redis", "sqlite", "memory"] = Field("file", validation_alias="RESULT_BACKEND")
+    queue_backend: Literal["file", "redis", "sqlite", "memory"] = Field("file", validation_alias="QUEUE_BACKEND")
+    serialization_backend: Literal["json", "msgpack", "pickle"] = Field("msgpack", validation_alias="SERIALIZATION_BACKEND")
 
-    queue_maxsize: int = 0
-    max_workers: int = 4
-    batch_size: int = 1
-    job_timeout_secs: int = 1
+    queue_maxsize: int = Field(0, validation_alias="QUEUE_MAXSIZE")
+    max_workers: int = Field(4, validation_alias="MAX_WORKERS")
+    batch_size: int = Field(1, validation_alias="BATCH_SIZE")
+    job_timeout_secs: int = Field(60, validation_alias="JOB_TIMEOUT_SECS")
 
     def summary(self) -> dict:
         """Return key configuration values as a dictionary summary."""
@@ -71,6 +66,7 @@ def get_settings(force_reload: bool = False) -> NuvomSettings:
     """
     global _settings
     if _settings is None or force_reload:
+        print(f"[debug] Loading settings from: {ENV_PATH}")
         _settings = NuvomSettings()
 
         # Setup logger immediately after settings load
