@@ -79,6 +79,11 @@ class DispatcherThread(threading.Thread):
                 continue
 
             for job in jobs:
+                if job.next_retry_at and job.next_retry_at > time.time():
+                    # Not ready – push back into queue
+                    self.queue.enqueue(job)
+                    continue
+                
                 target = min(self.workers, key=lambda w: w.load())
                 target.submit(job)
                 logger.debug(f"[Dispatcher] Job {job.id} → Worker-{target.worker_id}")
