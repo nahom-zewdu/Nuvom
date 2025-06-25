@@ -9,6 +9,7 @@ from typing import Optional
 
 from nuvom.result_store import get_backend
 from nuvom.log import logger
+from nuvom.serialize import deserialize
 
 inspect_app = typer.Typer(name='inspect', help="Inspect a completed job by ID. Shows full metadata (result, error, args, tracebacks, etc).")
 console = Console()
@@ -41,6 +42,12 @@ def inspect_job(
     logger.debug("Inspected job %s with format='%s'", job_id, format)
 
 def _render_table(data: dict):
+    if data.get("status") == "SUCCESS" and isinstance(data.get("result"), (bytes, bytearray)):
+        try:
+            data["result"] = deserialize(data["result"])
+        except Exception:  # leave raw if it can’t be decoded
+            pass
+        
     table = Table(show_header=True, header_style="bold cyan")
     table.add_column("Field", style="bold")
     table.add_column("Value", style="")
