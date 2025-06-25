@@ -118,7 +118,6 @@ class Job:
         """
         from nuvom.task import get_task
 
-        self.retries_left -= 1
         task = get_task(self.func_name)
         if not task:
             raise ValueError(f"Task '{self.func_name}' not found.")
