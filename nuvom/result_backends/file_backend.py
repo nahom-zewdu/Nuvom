@@ -1,13 +1,15 @@
 # nuvom/result_backends/file_backend.py
 
 """
-FileResultBackend provides a simple file-based implementation of the result backend.
+FileResultBackend provides a persistent file-based implementation of the result backend.
 
-Results are serialized and stored in a dedicated directory, with each job's result
-and error saved in separate files. Supports persistence across restarts.
+Stores job results and error metadata in serialized files using a dedicated directory.
+Persists all job metadata to `.meta` files for inspection and introspection support.
 """
 
 import os
+import traceback
+from typing import Optional, Any
 
 from nuvom.result_backends.base import BaseResultBackend
 from nuvom.serialize import serialize, deserialize
@@ -15,85 +17,135 @@ from nuvom.serialize import serialize, deserialize
 
 class FileResultBackend(BaseResultBackend):
     """
-    A file-based result backend for persisting job results and errors.
+    A file-based result backend that persists job outcomes to disk.
+
+    Stores structured metadata (status, args, tracebacks, timestamps, etc.)
+    in `.meta` files for each job. Falls back to legacy `.out` and `.err`.
 
     Attributes:
-        result_dir (str): Directory where result and error files are stored.
-
-    Methods:
-        set_result(job_id, result): Store a job's result to disk.
-        get_result(job_id): Load a job's result from disk.
-        set_error(job_id, error): Store a job's error to disk.
-        get_error(job_id): Load a job's error message from disk.
+        result_dir (str): Directory for all job result files.
     """
 
     def __init__(self):
-        """
-        Initialize the result backend and create the results directory if needed.
-        """
         self.result_dir = "job_results"
         os.makedirs(self.result_dir, exist_ok=True)
 
-    def _path(self, job_id):
-        """Construct the file path for storing the job result."""
-        return os.path.join(self.result_dir, f"{job_id}.out")
+    def _path(self, job_id, ext: str = "meta") -> str:
+        """Construct the full file path for a job's metadata file."""
+        return os.path.join(self.result_dir, f"{job_id}.{ext}")
 
-    def _err_path(self, job_id):
-        """Construct the file path for storing the job error message."""
-        return os.path.join(self.result_dir, f"{job_id}.err")
-
-    def set_result(self, job_id, result):
-        """
-        Store the serialized result of a job in a file.
-
-        Args:
-            job_id (str): Unique job identifier.
-            result (Any): Result object to serialize and store.
-        """
-        os.makedirs(self.result_dir, exist_ok=True)
+    def set_result(
+        self,
+        job_id: str,
+        func_name:str,
+        result: Any,
+        *,
+        args: Optional[tuple] = None,
+        kwargs: Optional[dict] = None,
+        retries_left: Optional[int] = None,
+        attempts: Optional[int] = None,
+        created_at: Optional[float] = None,
+        completed_at: Optional[float] = None,
+    ):
+        """Store full result metadata to a `.meta` file."""
+        data = {
+            "job_id": job_id,
+            "func_name":func_name,
+            "status": "SUCCESS",
+            "result": result,
+            "args": args or [],
+            "kwargs": kwargs or {},
+            "retries_left": retries_left,
+            "attempts": attempts,
+            "created_at": created_at,
+            "completed_at": completed_at,
+        }
         with open(self._path(job_id), "wb") as f:
-            f.write(serialize(result))
+            f.write(serialize(data))
 
-    def get_result(self, job_id):
-        """
-        Retrieve and deserialize the result for a job.
+    def get_result(self, job_id: str) -> Optional[Any]:
+        """Load only the result value from metadata or fallback `.out`."""
+        meta_path = self._path(job_id)
+        if os.path.exists(meta_path):
+            with open(meta_path, "rb") as f:
+                return deserialize(f.read()).get("result")
 
-        Args:
-            job_id (str): Unique job identifier.
+        # fallback: legacy file
+        out_path = self._path(job_id, "out")
+        if os.path.exists(out_path):
+            with open(out_path, "rb") as f:
+                return deserialize(f.read())
+        return None
 
-        Returns:
-            Any: The deserialized result, or None if not found.
-        """
-        path = self._path(job_id)
-        if not os.path.exists(path):
+    def set_error(
+        self,
+        job_id: str,
+        func_name:str,
+        error: Exception,
+        *,
+        args: Optional[tuple] = None,
+        kwargs: Optional[dict] = None,
+        retries_left: Optional[int] = None,
+        attempts: Optional[int] = None,
+        created_at: Optional[float] = None,
+        completed_at: Optional[float] = None,
+    ):
+        """Store full error metadata to a `.meta` file."""
+        tb_str = traceback.format_exc()
+        data = {
+            "job_id": job_id,
+            "func_name":func_name,
+            "status": "FAILED",
+            "error": {
+                "type": type(error).__name__,
+                "message": str(error),
+                "traceback": tb_str,
+            },
+            "args": args or [],
+            "kwargs": kwargs or {},
+            "retries_left": retries_left,
+            "attempts": attempts,
+            "created_at": created_at,
+            "completed_at": completed_at,
+        }
+
+        with open(self._path(job_id), "wb") as f:
+            f.write(serialize(data))
+
+    def get_error(self, job_id: str) -> Optional[str]:
+        """Retrieve the error message from metadata or fallback `.err` file."""
+        meta_path = self._path(job_id)
+        if os.path.exists(meta_path):
+            with open(meta_path, "rb") as f:
+                data = deserialize(f.read())
+                return data.get("error", {}).get("message")
+
+        err_path = self._path(job_id, "err")
+        if os.path.exists(err_path):
+            with open(err_path, "r") as f:
+                return f.read()
+        return None
+
+    def get_full(self, job_id: str) -> Optional[dict]:
+        """Return full job state metadata from `.meta` file if available."""
+        meta_path = self._path(job_id)
+        if not os.path.exists(meta_path):
             return None
-        with open(path, "rb") as f:
+        with open(meta_path, "rb") as f:
             return deserialize(f.read())
 
-    def set_error(self, job_id, error):
+    def list_jobs(self) -> list[dict]:
         """
-        Store the error message of a failed job in a file.
-
-        Args:
-            job_id (str): Unique job identifier.
-            error (str): Error message to store.
-        """
-        os.makedirs(self.result_dir, exist_ok=True)
-        with open(self._err_path(job_id), "w") as f:
-            f.write(str(error))
-
-    def get_error(self, job_id):
-        """
-        Retrieve the stored error message for a failed job.
-
-        Args:
-            job_id (str): Unique job identifier.
+        Return full metadata for all jobs in the result directory.
 
         Returns:
-            str | None: The error message, or None if not found.
+            List of job metadata dicts (as returned by get_full()).
         """
-        path = self._err_path(job_id)
-        if not os.path.exists(path):
-            return None
-        with open(path, "r") as f:
-            return f.read()
+        jobs = []
+        for file in os.listdir(self.result_dir):
+            if file.endswith(".meta"):
+                job_id = file.rsplit(".", 1)[0]
+                full = self.get_full(job_id)
+                if full:
+                    jobs.append(full)
+        return jobs
