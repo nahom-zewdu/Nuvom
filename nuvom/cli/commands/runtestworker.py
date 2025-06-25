@@ -16,6 +16,7 @@ from rich.panel import Panel
 
 from nuvom.job import Job
 from nuvom.log import logger
+from nuvom.registry.auto_register import auto_register_from_manifest
 
 runtest_app = typer.Typer(help="Run a single job JSON deterministically (CI/dev)")
 
@@ -53,6 +54,8 @@ def runtestworker(
     logger.info("[TestWorker] Running %s with args=%s kwargs=%s", func_name, job.args, job.kwargs)
 
     try:
+        auto_register_from_manifest() # Register tasks
+        
         result = job.run()
         console.print(Panel(f"[bold green]Result:[/bold green] {result}", title="SUCCESS", style="green"))
         sys.exit(0)
