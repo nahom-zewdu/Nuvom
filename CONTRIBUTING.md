@@ -55,7 +55,7 @@ Most Nuvom components are extensible via base interfaces. To add your own:
 ### ➕ New Result Backend
 
 1. Subclass `BaseResultBackend` from `nuvom.result_backends.base`.
-2. Implement: `set_result`, `get_result`, `set_error`, `get_error`.
+2. Implement: `set_result`, `get_result`, `set_error`, `get_error`, `get_full`, `list_jobs`.
 3. Add tests and update `nuvom.config.get_backend()` if needed.
 
 ---
