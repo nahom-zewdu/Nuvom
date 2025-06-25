@@ -127,10 +127,12 @@ Backends:
 
 All backends implement:
 
-- `set_result(job_id, result)`
+- `set_result(job_id, func_name result)`
 - `get_result(job_id)`
-- `set_error(job_id, error)`
+- `set_error(job_id, func_name, error)`
 - `get_error(job_id)`
+- `get_full(job_id)`
+- `list_jobs()`
 
 ---
 
@@ -178,6 +180,9 @@ You can easily extend Nuvom by:
    - Calls `after_job()` or `on_error()`
    - Stores result or error
    - Retries if needed
+
+7. `nuvom inspect job <job_id>` shows detailed metadata for executed jobs.
+8. `nuvom history recent` with `--limit` and `--status` flag shows list of jobs with their metadata.
 
 ---
 

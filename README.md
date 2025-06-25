@@ -87,7 +87,13 @@ nuvom runworker
 ### 4. Check Job Result
 
 ```bash
-nuvom status <job_id>
+nuvom inspect job <job_id>
+```
+
+### 4. Check Result of Multiple Jobs
+
+```bash
+nuvom history recent --limit 10 --status SUCCESS
 ```
 
 ---
@@ -119,6 +125,8 @@ nuvom --help
 | `nuvom list tasks`     | List all discovered `@task` functions |
 | `nuvom discover tasks` | Scan project and generate manifest    |
 | `nuvom config`         | Print current configuration           |
+| `nuvom inspect job <job_id>`| Inspect job result               |
+| `nuvom history recent` | Inspect result of multiple jobs       |
 
 ---
 
@@ -296,6 +304,19 @@ Versions are milestone-based — not strictly semver.
 * [x] Manifest updates apply seamlessly during worker runtime.
 * [x] Manifest diffs, detailed task listings, and more—all powered by Rich.
 * [x] Robust error handling
+
+---
+
+### ✅ v0.7
+
+Nuvom now has first-class observability:
+
+* [x] Tracebacks and rich metadata
+* [x] CLI inspection tools
+* [x] Historical job queries
+* [x] Designed for both dev and production debugging
+
+---
 
 ## 🧪 Future (Backlog Ideas)
 
