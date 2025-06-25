@@ -12,8 +12,10 @@ authors = [
 
 dependencies = [
   "rich>=13.0.0",
+  "pydantic-settings>=2.9.1",
   "pydantic>=2.0.0",
-  "typer>=0.7.0"
+  "typer>=0.7.0",
+  "python-dotenv>=1.1.0",
 ]
 
 [build-system]
