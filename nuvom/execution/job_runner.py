@@ -4,8 +4,10 @@
 JobRunner executes a single job with timeout handling, lifecycle hooks, retries, 
 and result/error persistence. Uses a thread pool for task execution isolation.
 """
+import time
 
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
+
 from nuvom.result_store import set_result, set_error
 from nuvom.queue import get_queue_backend
 from nuvom.log import logger
@@ -65,12 +67,15 @@ class JobRunner:
 
                 if job.store_result:
                     set_result(
-                            job.id, result,
+                            job_id=job.id,
+                            func_name=job.func_name,
+                            result=result,
                             args=job.args,
                             kwargs=job.kwargs,
                             retries_left=job.retries_left,
                             attempts=job.max_retries - job.retries_left,
-                            created_at=job.created_at
+                            created_at=job.created_at,
+                            completed_at=time.time(),
                         )
 
                     logger.debug(f"[Runner-{self.worker_id}] Result stored for job '{job.func_name}'.")
@@ -111,12 +116,15 @@ class JobRunner:
         else:
             if job.store_result:
                 set_error(
-                        job.id, error,
+                        job_id=job.id,
+                        func_name=job.func_name,
+                        error=error,
                         args=job.args,
                         kwargs=job.kwargs,
                         retries_left=job.retries_left,
                         attempts=job.max_retries - job.retries_left,
-                        created_at=job.created_at
+                        created_at=job.created_at,
+                        completed_at=time.time(),
                     )
 
                 job.result = str(error)

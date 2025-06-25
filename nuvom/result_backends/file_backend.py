@@ -37,6 +37,7 @@ class FileResultBackend(BaseResultBackend):
     def set_result(
         self,
         job_id: str,
+        func_name:str,
         result: Any,
         *,
         args: Optional[tuple] = None,
@@ -49,6 +50,7 @@ class FileResultBackend(BaseResultBackend):
         """Store full result metadata to a `.meta` file."""
         data = {
             "job_id": job_id,
+            "func_name":func_name,
             "status": "SUCCESS",
             "result": result,
             "args": args or [],
@@ -78,6 +80,7 @@ class FileResultBackend(BaseResultBackend):
     def set_error(
         self,
         job_id: str,
+        func_name:str,
         error: Exception,
         *,
         args: Optional[tuple] = None,
@@ -91,6 +94,7 @@ class FileResultBackend(BaseResultBackend):
         tb_str = traceback.format_exc()
         data = {
             "job_id": job_id,
+            "func_name":func_name,
             "status": "FAILED",
             "error": {
                 "type": type(error).__name__,
@@ -129,3 +133,19 @@ class FileResultBackend(BaseResultBackend):
             return None
         with open(meta_path, "rb") as f:
             return deserialize(f.read())
+
+    def list_jobs(self) -> list[dict]:
+        """
+        Return full metadata for all jobs in the result directory.
+
+        Returns:
+            List of job metadata dicts (as returned by get_full()).
+        """
+        jobs = []
+        for file in os.listdir(self.result_dir):
+            if file.endswith(".meta"):
+                job_id = file.rsplit(".", 1)[0]
+                full = self.get_full(job_id)
+                if full:
+                    jobs.append(full)
+        return jobs

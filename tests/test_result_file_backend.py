@@ -22,7 +22,7 @@ def backend():
 def test_success_result_metadata(backend):
     job_id = "file-success"
     result = [1, 2, 3]
-    backend.set_result(job_id, result, args=(1,), kwargs={"k": 1}, retries_left=1, attempts=1)
+    backend.set_result(job_id, 'test', result, args=(1,), kwargs={"k": 1}, retries_left=1, attempts=1)
 
     assert backend.get_result(job_id) == result
     assert backend.get_error(job_id) is None
@@ -38,7 +38,7 @@ def test_error_metadata(backend):
     try:
         raise ValueError("disk gone")
     except Exception as e:
-        backend.set_error(job_id, e, args=(4,), kwargs={}, retries_left=0, attempts=1)
+        backend.set_error(job_id, 'test', e, args=(4,), kwargs={}, retries_left=0, attempts=1)
 
     assert backend.get_result(job_id) is None
     assert "disk gone" in backend.get_error(job_id)

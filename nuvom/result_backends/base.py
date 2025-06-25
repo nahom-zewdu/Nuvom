@@ -8,7 +8,7 @@ to store and retrieve both successful results and error messages.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any, Optional, List, Dict
 
 
 class BaseResultBackend(ABC):
@@ -27,6 +27,7 @@ class BaseResultBackend(ABC):
     def set_result(
         self,
         job_id: str,
+        func_name:str,
         result: Any,
         *,
         args: Optional[tuple] = None,
@@ -68,6 +69,7 @@ class BaseResultBackend(ABC):
     def set_error(
         self,
         job_id: str,
+        func_name:str,
         error: Exception,
         *,
         args: Optional[tuple] = None,
@@ -117,3 +119,11 @@ class BaseResultBackend(ABC):
             Dict containing status, args, result/error, timestamps, etc.
         """
         pass
+    @abstractmethod
+    def list_jobs(self) -> List[Dict]:
+        """
+        Return all job metadataa.
+
+        Returns:
+            List[Dict]: All job records.
+        """

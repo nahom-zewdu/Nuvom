@@ -40,17 +40,20 @@ def reset_backend():
     _backend = None
 
 
-def set_result(job_id, result, *, args=None, kwargs=None, retries_left=None, attempts=None, created_at=None):
+def set_result(job_id, func_name, result, *, args=None, kwargs=None, retries_left=None, attempts=None, created_at=None, completed_at=None):
     """
     Store the result for a given job ID, with full metadata.
     """
     get_backend().set_result(
-        job_id, result,
+        job_id=job_id, 
+        func_name=func_name,
+        result=result,
         args=args,
         kwargs=kwargs,
         retries_left=retries_left,
         attempts=attempts,
-        created_at=created_at
+        created_at=created_at,
+        completed_at=completed_at,
     )
 
 
@@ -62,17 +65,20 @@ def get_result(job_id):
 
 
 
-def set_error(job_id, error, *, args=None, kwargs=None, retries_left=None, attempts=None, created_at=None):
+def set_error(job_id, func_name, error, *, args=None, kwargs=None, retries_left=None, attempts=None, created_at=None, completed_at=None):
     """
     Store an error for a given job ID, with full metadata.
     """
     get_backend().set_error(
-        job_id, error,
+        job_id=job_id,
+        func_name=func_name,
+        error=error,
         args=args,
         kwargs=kwargs,
         retries_left=retries_left,
         attempts=attempts,
-        created_at=created_at
+        created_at=created_at,
+        completed_at=completed_at
     )
 
 def get_error(job_id):

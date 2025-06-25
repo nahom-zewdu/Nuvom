@@ -10,7 +10,7 @@ from nuvom import __version__
 from nuvom.config import get_settings
 from nuvom.worker import start_worker_pool
 from nuvom.result_store import get_result, get_error
-from nuvom.cli.commands import discover_tasks, list_tasks, inspect_job
+from nuvom.cli.commands import discover_tasks, list_tasks, inspect_job, history
 from nuvom.log import logger
 
 console = Console()
@@ -77,6 +77,7 @@ def status(job_id: str):
 app.add_typer(discover_tasks.discover_app, name="discover")
 app.add_typer(list_tasks.list_app, name="list")
 app.add_typer(inspect_job.inspect_app, name="inspect")
+app.add_typer(history.history_app, name="history")
 
 def main():
     app()
