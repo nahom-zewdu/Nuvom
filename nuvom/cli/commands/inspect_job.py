@@ -5,7 +5,7 @@ Inspect a completed job by ID and display full metadata.
 Supported output formats:
     • table  (default)
     • json
-    • raw   ← NEW: pretty JSON + traceback panel
+    • raw
 """
 
 import json
@@ -35,7 +35,7 @@ def inspect_job(
         "table",
         "--format",
         "-f",
-        help="Output format: table (default), json, raw",  # NEW: mention raw
+        help="Output format: table (default), json, raw",
     ),
 ):
     """
@@ -51,7 +51,7 @@ def inspect_job(
     if format == "json":
         console.print_json(data=metadata)
 
-    elif format == "raw":  # NEW
+    elif format == "raw":
         _render_raw(metadata)
 
     elif format == "table":
@@ -63,10 +63,6 @@ def inspect_job(
 
     logger.debug("Inspected job %s with format='%s'", job_id, format)
 
-
-# ---------------------------------------------------------------------------
- 
-
 def _render_table(data: dict):
     """
     Render job metadata in a Rich table. If an error has a traceback,
@@ -75,7 +71,7 @@ def _render_table(data: dict):
     if data.get("status") == "SUCCESS" and isinstance(data.get("result"), (bytes, bytearray)):
         try:
             data["result"] = deserialize(data["result"])
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
 
     table = Table(show_header=True, header_style="bold cyan")
@@ -85,14 +81,14 @@ def _render_table(data: dict):
     for key in [
         "job_id",
         "status",
-        "func_name",        # NEW: show func name in table view
+        "func_name",
         "args",
         "kwargs",
         "result",
         "error",
         "retries_left",
         "attempts",
-        "timeout_policy",   # NEW: show timeout policy
+        "timeout_policy",
         "created_at",
         "completed_at",
     ]:
@@ -115,11 +111,7 @@ def _render_table(data: dict):
 
     console.print(table)
 
-
-# --- NEW helper ------------------------------------------------------------
-
-
-def _render_raw(data: dict):  # NEW
+def _render_raw(data: dict):
     """
     Raw mode:
     1. Pretty-print complete JSON metadata.
