@@ -22,11 +22,16 @@ from nuvom.log import logger
 
 inspect_app = typer.Typer(
     name="inspect",
-    help="Inspect a completed job’s metadata (result, error, tracebacks, etc.).",
-)
+    help=(
+        "Inspect stored job metadata.\n\n"
+        "Examples:\n"
+        "  nuvom inspect job <id>           # table view\n"
+        "  nuvom inspect job <id> -f json   # machine-readable\n"
+        "  nuvom inspect job <id> -f raw    # raw JSON + traceback\n"
+        ),
+    )
 
 console = Console()
-
 
 @inspect_app.command("job")
 def inspect_job(
@@ -35,9 +40,10 @@ def inspect_job(
         "table",
         "--format",
         "-f",
-        help="Output format: table (default), json, raw",
-    ),
-):
+        case_sensitive=False,
+        help="table (default) | json | raw",
+        ),
+    ):
     """
     Inspect the stored metadata for a finished job.
     """
