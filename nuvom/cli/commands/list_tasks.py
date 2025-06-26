@@ -1,4 +1,7 @@
 # nuvom/cli/commands/list_tasks.py
+"""
+List registered @task definitions and their metadata.
+"""
 
 import typer
 from rich.console import Console
@@ -9,11 +12,22 @@ from nuvom.registry.registry import get_task_registry, TaskInfo
 from nuvom.log import logger
 
 console = Console()
-list_app = typer.Typer(name="list", help="List registered @task definitions and their metadata.")
+
+list_app = typer.Typer(
+    name="list",
+    help=(
+        "List tasks discovered in the manifest and registered at runtime.\n\n"
+        "Examples:\n"
+        "  nuvom list tasks                 # table of tasks\n"
+        "  nuvom discover tasks && nuvom list tasks  # rescan then list\n"
+    ),
+    rich_help_panel="🌟  Core Commands",
+)
+
 
 @list_app.command("tasks")
 def list_tasks():
-    """List @task definitions with their metadata."""
+    """Render a table of all @task definitions with metadata columns."""
     manifest = ManifestManager()
     discovered_tasks = manifest.load()
     registry = get_task_registry()
@@ -35,8 +49,7 @@ def list_tasks():
         table.add_row(task.func_name, task.module_name, task.file_path, tags, description)
 
     if not discovered_tasks:
-        console.print("[dim]No task definitions found.[/dim]")
-        logger.info("No tasks found to list")
+        console.print("[yellow]No task definitions found.[/yellow]")
     else:
         console.print(table)
         logger.info("Listed %d tasks", len(discovered_tasks))
