@@ -12,6 +12,7 @@ from nuvom.result_store import set_result, set_error
 from nuvom.queue import get_queue_backend
 from nuvom.log import logger
 from nuvom.job import Job
+from nuvom.config import get_settings
 
 class JobRunner:
     """
@@ -110,9 +111,13 @@ class JobRunner:
         job.mark_failed(error)
 
         if job.retries_left > 0:
-            retry_count = job.max_retries - job.retries_left + 1
+            job.retries_left -= 1
+            retry_count = job.max_retries - job.retries_left
+            delay = job.retry_delay_secs or get_settings().retry_delay_secs
+            job.next_retry_at = time.time() + delay
+            
             logger.warning(f"[Runner-{self.worker_id}] Retrying job '{job.func_name}' (Retry {retry_count}/{job.max_retries}).")
-            self.q.enqueue(job)
+            get_queue_backend().enqueue(job)
         else:
             if job.store_result:
                 set_error(

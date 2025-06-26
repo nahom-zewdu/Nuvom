@@ -38,17 +38,35 @@ def test_runtestworker_success():
     assert "Result:" in result.stdout
     assert "5" in result.stdout
 
-
 def test_runtestworker_failure():
+    import textwrap
+
+    # Step 1: Create a temp task module with fail_task
+    temp_task_module = tempfile.NamedTemporaryFile(delete=False, suffix=".py", mode="w", encoding="utf-8")
+    temp_task_module.write(textwrap.dedent("""
+        from nuvom.task import task
+
+        @task()
+        def fail_task():
+            raise RuntimeError("Intentional failure")
+    """))
+    temp_task_module.close()
+
+    # Step 2: Create the job file
     job_file = write_job_file({
         "func_name": "fail_task"
     })
 
-    result = runner.invoke(app, ["runtestworker", "run", str(job_file)])
+    # Step 3: Pass --task-module to the CLI
+    result = runner.invoke(app, [
+        "runtestworker", "run", str(job_file),
+        "--task-module", temp_task_module.name
+    ])
+
+    # Step 4: Validate output
     assert result.exit_code != 0
     assert "FAILED" in result.stdout
     assert "RuntimeError" in result.stdout
-
 
 def test_runtestworker_missing_func_name():
     job_file = write_job_file({

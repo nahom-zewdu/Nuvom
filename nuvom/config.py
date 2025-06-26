@@ -28,6 +28,7 @@ class NuvomSettings(BaseSettings):
         extra="ignore",
     )
 
+    retry_delay_secs: int = 5
     environment: Literal["dev", "prod", "test"] = "dev"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
 
