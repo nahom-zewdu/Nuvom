@@ -3,11 +3,11 @@
 import uuid
 import time
 from enum import Enum
-from typing import Callable, Optional, Any
+from typing import Callable, Optional, Any, Literal
 
 from nuvom.log import logger
 from nuvom.result_store import get_backend
-
+from nuvom.config import get_settings
 
 class JobStatus(str, Enum):
     """Enumeration of possible job states in Nuvom's lifecycle."""
@@ -34,7 +34,8 @@ class Job:
                  args=None, kwargs=None, 
                  retries=0, store_result=True, 
                  timeout_secs=None, 
-                 retry_delay_secs: int | None = None, 
+                 timeout_policy: Literal["fail", "retry", "ignore"] | None = None,
+                 retry_delay_secs: int | None = None,
                  before_job: Optional[Callable[[], None]] = None, 
                  after_job: Optional[Callable[[Any], None]] = None, 
                  on_error: Optional[Callable[[Exception], None]] = None
@@ -54,6 +55,8 @@ class Job:
         
         self.retry_delay_secs = retry_delay_secs
         self.next_retry_at: float | None = None
+        
+        self.timeout_policy = timeout_policy or get_settings().timeout_policy
         
         self.before_job = before_job
         self.after_job = after_job
@@ -78,6 +81,7 @@ class Job:
             "error": self.error,
             "retry_delay_secs": self.retry_delay_secs,
             "next_retry_at": self.next_retry_at,
+            "timeout_policy": self.timeout_policy,
             "hooks": {
                 "before_job": bool(self.before_job),
                 "after_job": bool(self.after_job),
@@ -96,6 +100,7 @@ class Job:
             retries=data.get("max_retries", 0),
             store_result=data.get("store_result", True),
             retry_delay_secs=data.get("retry_delay_secs"),
+            timeout_policy=data.get("timeout_policy", None),
         )
         job.id = data.get("id")
         job.status = data.get("status", JobStatus.PENDING)
