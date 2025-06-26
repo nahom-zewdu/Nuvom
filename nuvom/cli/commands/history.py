@@ -5,18 +5,32 @@ from typing import Optional
 
 from nuvom.result_store import get_backend
 
-history_app = typer.Typer(name="history", help="Show recent jobs executed by Nuvom")
+history_app = typer.Typer(
+    name="history",
+    help=(
+        "Show recent jobs (reads backend metadata).\n\n"
+        "Examples:\n"
+        "  nuvom history recent --limit 20\n"
+        "  nuvom history recent --status FAILED\n"
+    ),
+)
+
 console = Console()
 
 
 @history_app.command("recent")
 def show_recent(
-    limit: Optional[int] = typer.Option(None, help="Limit the number of results"),
-    status: Optional[str] = typer.Option(None, help="Filter by status: SUCCESS | FAILED | PENDING")
-):
-    """
-    Show recent job executions.
-    """
+    limit: int = typer.Option(20),
+    status: Optional[str] = typer.Option(
+        None,
+        "--status",
+        "-s",
+        help="Filter by status: SUCCESS | FAILED | PENDING",
+        case_sensitive=False,
+        ),
+    ):
+    """Pretty table of recent jobs (newest first)."""
+    
     backend = get_backend()
 
     if not hasattr(backend, "list_jobs"):
