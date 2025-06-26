@@ -19,10 +19,10 @@ app = typer.Typer(
     help=(
         "Nuvom – lightweight, plugin-first task-queue.\n\n"
         "Common commands:\n"
-        "  nuvom discover tasks       # scan & update manifest\n"
-        "  nuvom runworker            # start local workers\n"
-        "  nuvom inspect job <id> -f table|json|raw\n"
-        "  nuvom history recent --limit 10\n"
+        "  nuvom discover tasks       # scan & update manifest\n\n"
+        "  nuvom runworker            # start local workers\n\n"
+        "  nuvom inspect job <id> -f table|json|raw\n\n"
+        "  nuvom history recent --limit 10\n\n"
     ),
     rich_help_panel="🌟  Core Commands",
 )
@@ -98,11 +98,11 @@ def status(job_id: str):
     logger.info("Job %s is pending", job_id)
 
 #  ------ sub-apps (now displayed under dedicated help panels) --------------
-app.add_typer(discover_tasks.discover_app,  name="discover", help="Task discovery")
-app.add_typer(list_tasks.list_app,          name="list",     help="List registry")
-app.add_typer(inspect_job.inspect_app,      name="inspect",  help="Inspect jobs")
-app.add_typer(history.history_app,          name="history",  help="Job history")
-app.add_typer(runtestworker.runtest_app,    name="runtestworker", help="Sync CI/dev runner [dev-only]", rich_help_panel="⚙  Dev Tools")
+app.add_typer(discover_tasks.discover_app,  name="discover",)
+app.add_typer(list_tasks.list_app,          name="list",    )
+app.add_typer(inspect_job.inspect_app,      name="inspect", )
+app.add_typer(history.history_app,          name="history", )
+app.add_typer(runtestworker.runtest_app,    name="runtestworker", rich_help_panel="⚙  Dev Tools")
 
 def main():
     app()
