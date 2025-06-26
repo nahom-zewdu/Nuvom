@@ -86,7 +86,41 @@ class JobRunner:
                 return job
 
             except FutureTimeoutError:
-                self._handle_failure("Job execution timed out.")
+                # ✳️ NEW: TimeoutPolicy-aware handling
+                settings = get_settings()
+                policy = job.timeout_policy or settings.timeout_policy
+
+                logger.warning(f"[Runner-{self.worker_id}] Job '{job.func_name}' timed out. Applying policy: {policy}")
+
+                if policy == "retry" and job.retries_left > 0:
+                    job.retries_left -= 1
+                    delay = job.retry_delay_secs or settings.retry_delay_secs
+                    job.next_retry_at = time.time() + delay
+
+                    logger.info(f"[Runner-{self.worker_id}] Retrying due to timeout (delay={delay}s)")
+                    self.q.enqueue(job)
+                    return job
+
+                elif policy == "ignore":
+                    logger.info(f"[Runner-{self.worker_id}] Timeout ignored. Returning None.")
+                    if job.store_result:
+                        set_result(
+                            job_id=job.id,
+                            func_name=job.func_name,
+                            result=None,
+                            args=job.args,
+                            kwargs=job.kwargs,
+                            retries_left=job.retries_left,
+                            attempts=job.max_retries - job.retries_left,
+                            created_at=job.created_at,
+                            completed_at=time.time(),
+                        )
+                    job.mark_success(None)
+                    return job
+
+                else:
+                    # fallback: treat as hard failure
+                    self._handle_failure("Job execution timed out.")
 
             except Exception as e:
                 self._handle_failure(e)
