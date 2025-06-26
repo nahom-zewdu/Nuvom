@@ -25,9 +25,9 @@ inspect_app = typer.Typer(
     help=(
         "Inspect stored job metadata.\n\n"
         "Examples:\n"
-        "  nuvom inspect job <id>           # table view\n"
-        "  nuvom inspect job <id> -f json   # machine-readable\n"
-        "  nuvom inspect job <id> -f raw    # raw JSON + traceback\n"
+        "  nuvom inspect job <id>           # table view\n\n"
+        "  nuvom inspect job <id> -f json   # machine-readable\n\n"
+        "  nuvom inspect job <id> -f raw    # raw JSON + traceback\n\n"
         ),
     )
 
