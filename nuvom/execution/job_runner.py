@@ -143,6 +143,23 @@ class JobRunner:
                 logger.warning(f"[Runner-{self.worker_id}] on_error hook failed: {e}")
 
         job.mark_failed(error)
+        
+        if job.store_result:
+            set_error(
+                job_id=job.id,
+                func_name=job.func_name,
+                error=error,
+                args=job.args,
+                kwargs=job.kwargs,
+                retries_left=job.retries_left,
+                attempts=job.max_retries - job.retries_left,
+                created_at=job.created_at,
+                completed_at=time.time(),
+            )
+            logger.debug(f"[Runner-{self.worker_id}] Stored error metadata for job '{job.func_name}'.")
+        
+        job.result = str(error)
+        
 
         if job.retries_left > 0:
             job.retries_left -= 1
@@ -153,18 +170,4 @@ class JobRunner:
             logger.warning(f"[Runner-{self.worker_id}] Retrying job '{job.func_name}' (Retry {retry_count}/{job.max_retries}).")
             get_queue_backend().enqueue(job)
         else:
-            if job.store_result:
-                set_error(
-                        job_id=job.id,
-                        func_name=job.func_name,
-                        error=error,
-                        args=job.args,
-                        kwargs=job.kwargs,
-                        retries_left=job.retries_left,
-                        attempts=job.max_retries - job.retries_left,
-                        created_at=job.created_at,
-                        completed_at=time.time(),
-                    )
-
-                job.result = str(error)
             logger.error(f"[Runner-{self.worker_id}] Job '{job.func_name}' failed after {job.max_retries} retries: {error}")
