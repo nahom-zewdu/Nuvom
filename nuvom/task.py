@@ -1,6 +1,6 @@
 # nuvom/task.py
 
-from typing import Callable, Optional, Any, List
+from typing import Callable, Optional, Any, List, Literal
 import functools
 import warnings
 
@@ -23,6 +23,8 @@ class Task:
         retries: int = 0,
         store_result: bool = True,
         timeout_secs: Optional[int] = None,
+        timeout_policy: Literal["fail", "retry", "ignore"] | None = None,
+        retry_delay_secs: int | None = None,
         tags: Optional[List[str]] = None,
         description: Optional[str] = None,
         category: Optional[str] = None,
@@ -40,11 +42,12 @@ class Task:
         self.retries = retries
         self.store_result = store_result
         self.timeout_secs = timeout_secs
+        self.retry_delay_secs = retry_delay_secs
+        self.timeout_policy = timeout_policy
         
         self.tags = tags or []
         self.description = description or ""
         self.category = category or "default"
-
 
         self.before_job = before_job
         self.after_job = after_job
@@ -75,6 +78,8 @@ class Task:
             retries=self.retries,
             store_result=self.store_result,
             timeout_secs=self.timeout_secs,
+            retry_delay_secs = self.retry_delay_secs    
+            timeout_policy = self.timeout_policy
             before_job=self.before_job,
             after_job=self.after_job,
             on_error=self.on_error,
@@ -101,6 +106,8 @@ def task(
     retries: int = 0,
     store_result: bool = True,
     timeout_secs: Optional[int] = None,
+    timeout_policy: Literal["fail", "retry", "ignore"] | None = None,
+    retry_delay_secs: int | None = None,
     tags=None,
     description=None,
     category= None,
@@ -120,6 +127,8 @@ def task(
             retries=retries,
             store_result=store_result,
             timeout_secs=timeout_secs,
+            timeout_policy=timeout_policy,
+            retry_delay_secs=retry_delay_secs,
             tags=tags,
             description=description,
             category=category,
