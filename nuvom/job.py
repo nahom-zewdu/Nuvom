@@ -3,11 +3,11 @@
 import uuid
 import time
 from enum import Enum
-from typing import Callable, Optional, Any
+from typing import Callable, Optional, Any, Literal
 
 from nuvom.log import logger
 from nuvom.result_store import get_backend
-
+from nuvom.config import get_settings
 
 class JobStatus(str, Enum):
     """Enumeration of possible job states in Nuvom's lifecycle."""
@@ -34,6 +34,8 @@ class Job:
                  args=None, kwargs=None, 
                  retries=0, store_result=True, 
                  timeout_secs=None, 
+                 timeout_policy: Literal["fail", "retry", "ignore"] | None = None,
+                 retry_delay_secs: int | None = None,
                  before_job: Optional[Callable[[], None]] = None, 
                  after_job: Optional[Callable[[Any], None]] = None, 
                  on_error: Optional[Callable[[Exception], None]] = None
@@ -50,6 +52,11 @@ class Job:
         self.max_retries = retries
         self.result = None
         self.error = None
+        
+        self.retry_delay_secs = retry_delay_secs
+        self.next_retry_at: float | None = None
+        
+        self.timeout_policy = timeout_policy or get_settings().timeout_policy
         
         self.before_job = before_job
         self.after_job = after_job
@@ -72,6 +79,9 @@ class Job:
             "max_retries": self.max_retries,
             "result": self.result,
             "error": self.error,
+            "retry_delay_secs": self.retry_delay_secs,
+            "next_retry_at": self.next_retry_at,
+            "timeout_policy": self.timeout_policy,
             "hooks": {
                 "before_job": bool(self.before_job),
                 "after_job": bool(self.after_job),
@@ -89,6 +99,8 @@ class Job:
             timeout_secs=data.get("timeout_secs"),
             retries=data.get("max_retries", 0),
             store_result=data.get("store_result", True),
+            retry_delay_secs=data.get("retry_delay_secs"),
+            timeout_policy=data.get("timeout_policy", None),
         )
         job.id = data.get("id")
         job.status = data.get("status", JobStatus.PENDING)
@@ -96,6 +108,7 @@ class Job:
         job.retries_left = data.get("retries_left", job.max_retries)
         job.result = data.get("result")
         job.error = data.get("error")
+        job.next_retry_at = data.get("next_retry_at")
         return job
 
     def run(self):
@@ -110,7 +123,6 @@ class Job:
         """
         from nuvom.task import get_task
 
-        self.retries_left -= 1
         task = get_task(self.func_name)
         if not task:
             raise ValueError(f"Task '{self.func_name}' not found.")

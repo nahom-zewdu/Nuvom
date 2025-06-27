@@ -12,6 +12,7 @@ from nuvom.result_store import set_result, set_error
 from nuvom.queue import get_queue_backend
 from nuvom.log import logger
 from nuvom.job import Job
+from nuvom.config import get_settings
 
 class JobRunner:
     """
@@ -85,7 +86,41 @@ class JobRunner:
                 return job
 
             except FutureTimeoutError:
-                self._handle_failure("Job execution timed out.")
+                # ✳️ NEW: TimeoutPolicy-aware handling
+                settings = get_settings()
+                policy = job.timeout_policy or settings.timeout_policy
+
+                logger.warning(f"[Runner-{self.worker_id}] Job '{job.func_name}' timed out. Applying policy: {policy}")
+
+                if policy == "retry" and job.retries_left > 0:
+                    job.retries_left -= 1
+                    delay = job.retry_delay_secs or settings.retry_delay_secs
+                    job.next_retry_at = time.time() + delay
+
+                    logger.info(f"[Runner-{self.worker_id}] Retrying due to timeout (delay={delay}s)")
+                    self.q.enqueue(job)
+                    return job
+
+                elif policy == "ignore":
+                    logger.info(f"[Runner-{self.worker_id}] Timeout ignored. Returning None.")
+                    if job.store_result:
+                        set_result(
+                            job_id=job.id,
+                            func_name=job.func_name,
+                            result=None,
+                            args=job.args,
+                            kwargs=job.kwargs,
+                            retries_left=job.retries_left,
+                            attempts=job.max_retries - job.retries_left,
+                            created_at=job.created_at,
+                            completed_at=time.time(),
+                        )
+                    job.mark_success(None)
+                    return job
+
+                else:
+                    # fallback: treat as hard failure
+                    self._handle_failure("Job execution timed out.")
 
             except Exception as e:
                 self._handle_failure(e)
@@ -108,24 +143,31 @@ class JobRunner:
                 logger.warning(f"[Runner-{self.worker_id}] on_error hook failed: {e}")
 
         job.mark_failed(error)
+        
+        if job.store_result:
+            set_error(
+                job_id=job.id,
+                func_name=job.func_name,
+                error=error,
+                args=job.args,
+                kwargs=job.kwargs,
+                retries_left=job.retries_left,
+                attempts=job.max_retries - job.retries_left,
+                created_at=job.created_at,
+                completed_at=time.time(),
+            )
+            logger.debug(f"[Runner-{self.worker_id}] Stored error metadata for job '{job.func_name}'.")
+        
+        job.result = str(error)
+        
 
         if job.retries_left > 0:
-            retry_count = job.max_retries - job.retries_left + 1
+            job.retries_left -= 1
+            retry_count = job.max_retries - job.retries_left
+            delay = job.retry_delay_secs or get_settings().retry_delay_secs
+            job.next_retry_at = time.time() + delay
+            
             logger.warning(f"[Runner-{self.worker_id}] Retrying job '{job.func_name}' (Retry {retry_count}/{job.max_retries}).")
-            self.q.enqueue(job)
+            get_queue_backend().enqueue(job)
         else:
-            if job.store_result:
-                set_error(
-                        job_id=job.id,
-                        func_name=job.func_name,
-                        error=error,
-                        args=job.args,
-                        kwargs=job.kwargs,
-                        retries_left=job.retries_left,
-                        attempts=job.max_retries - job.retries_left,
-                        created_at=job.created_at,
-                        completed_at=time.time(),
-                    )
-
-                job.result = str(error)
             logger.error(f"[Runner-{self.worker_id}] Job '{job.func_name}' failed after {job.max_retries} retries: {error}")
