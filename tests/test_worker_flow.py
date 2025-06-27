@@ -34,13 +34,10 @@ def test_smart_worker_balancing():
     reset_backend()
     _shutdown_event.clear()
 
-    q = get_queue_backend()
     registry = get_task_registry()
     registry.clear()
     registry.register("slow_add", slow_add, force=True)
     registry.register("slow_mul", slow_mul, force=True)
-
-    print("===========",registry.all())
     
     # Spawn 3 workers
     workers = []

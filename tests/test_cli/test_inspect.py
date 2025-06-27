@@ -1,3 +1,5 @@
+# tests/test_cli/test_inspect
+
 import pytest
 from typer.testing import CliRunner
 from nuvom.cli.cli import app

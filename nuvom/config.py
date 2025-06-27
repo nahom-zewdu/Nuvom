@@ -28,6 +28,7 @@ class NuvomSettings(BaseSettings):
         extra="ignore",
     )
 
+    retry_delay_secs: int = 5
     environment: Literal["dev", "prod", "test"] = "dev"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
 
@@ -40,6 +41,8 @@ class NuvomSettings(BaseSettings):
     batch_size: int = 1
     job_timeout_secs: int = 1
 
+    timeout_policy: Literal["fail", "retry", "ignore"] = "fail"
+    
     def summary(self) -> dict:
         """Return key configuration values as a dictionary summary."""
         return {
@@ -52,6 +55,7 @@ class NuvomSettings(BaseSettings):
             "queue_backend": self.queue_backend,
             "result_backend": self.result_backend,
             "serialization_backend": self.serialization_backend,
+            "timeout_policy": self.timeout_policy,
         }
 
     def display(self) -> None:
