@@ -107,18 +107,18 @@ retry_job("<job_id>")
 
 ## 🚀 Features
 
-✅ `@task()` decorator with `.delay()` and `.map()` support
-✅ No import side-effects: AST-based task discovery
-✅ Pluggable queue and result backends
-✅ Rich-powered logging with tracebacks
-✅ File and in-memory queue support
-✅ Retry logic and lifecycle hooks
-✅ Fast startup via task manifest cache
-✅ CLI to list, discover, and inspect jobs
-✅ `.env`-based configuration via `pydantic-settings`
-✅ Retry delay and timeout control (`timeout_secs`, `retries`, `retry_delay_secs`)
-✅ CLI to retry jobs, view full metadata, and browse job history
-✅ Local dev runner to execute a job synchronously from JSON
+* ✅ `@task()` decorator with `.delay()` and `.map()` support
+* ✅ No import side-effects: AST-based task discovery
+* ✅ Pluggable queue and result backends
+* ✅ Rich-powered logging with tracebacks
+* ✅ File and in-memory queue support
+* ✅ Retry logic and lifecycle hooks
+* ✅ Fast startup via task manifest cache
+* ✅ CLI to list, discover, and inspect jobs
+* ✅ `.env`-based configuration via `pydantic-settings`
+* ✅ Retry delay and timeout control (`timeout_secs`, `retries`, `retry_delay_secs`)
+* ✅ CLI to retry jobs, view full metadata, and browse job history
+* ✅ Local dev runner to execute a job synchronously from JSON
 
 ---
 
@@ -356,6 +356,15 @@ Nuvom now has first-class observability:
 * [x] Designed for both dev and production debugging
 
 ---
+
+### ✅ v0.8  Reliability & DX Polish
+
+* [x] ✅ Retry System   Retry-on-failure, retry limits, delay support
+* [x] ✅ Timeouts       Per-job timeout and termination
+* [x] ✅ Observability  Tracebacks in CLI and SDK, job attempt metadata
+* [x] ✅ CLI Polish     `runtestworker`, formatted output modes, job history
+* [x] ✅ SDK Tools      `retry_job()` for re-enqueuing failed jobs
+* [x] ✅ Docs           Full README update for all new features
 
 ## 🧪 Future (Backlog Ideas)
 
