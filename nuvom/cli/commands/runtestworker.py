@@ -21,8 +21,12 @@ from nuvom.log import logger
 from nuvom.registry.auto_register import auto_register_from_manifest
 
 runtest_app = typer.Typer(
-    help="Run a single job JSON deterministically (CI / local dev)"
-)
+    help=(
+        "Run a single job JSON synchronously (ideal for CI).\n\n"
+        "Example:\n"
+        "  nuvom runtestworker run ./job.json\n"
+        ),
+    )
 
 console = Console()
 
@@ -55,12 +59,12 @@ def runtestworker(
     try:
         payload = json.loads(job_file.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        console.print(Panel(str(exc), title="Invalid JSON", style="red"))
+        console.print(Panel(str(exc), title="Invalid JSON", style="bold red"))
         sys.exit(1)
 
     func_name: str | None = payload.get("func_name")
     if not func_name:
-        console.print(Panel("Missing 'func_name' field", style="red"))
+        console.print(Panel("Missing 'func_name' field", style="bold red"))
         sys.exit(1)
 
     # ── Optional: dynamically import the supplied task module ───────────
@@ -73,7 +77,7 @@ def runtestworker(
             logger.debug("[TestWorker] Imported task module %s", task_module)
         else:
             console.print(
-                Panel(f"Could not import task module: {task_module}", style="red")
+                Panel(f"Could not import task module: {task_module}", style="bold red")
             )
             sys.exit(1)
     else:
@@ -114,7 +118,7 @@ def runtestworker(
             Panel(
                 f"[bold red]{type(exc).__name__}[/bold red]: {exc}",
                 title="FAILED",
-                style="red",
+                style="bold red",
             )
         )
         logger.exception("TestWorker failed")

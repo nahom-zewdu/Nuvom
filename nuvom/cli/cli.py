@@ -14,24 +14,42 @@ from nuvom.cli.commands import discover_tasks, list_tasks, inspect_job, history,
 from nuvom.log import logger
 
 console = Console()
-app = typer.Typer(help="Nuvom — Task Queue CLI")
+app = typer.Typer(
+    add_completion=False,
+    help=(
+        "Nuvom – lightweight, plugin-first task-queue.\n\n"
+        "Common commands:\n"
+        "  nuvom discover tasks       # scan & update manifest\n\n"
+        "  nuvom runworker            # start local workers\n\n"
+        "  nuvom inspect job <id> -f table|json|raw\n\n"
+        "  nuvom history recent --limit 10\n\n"
+    ),
+    rich_help_panel="🌟  Core Commands",
+)
 
-@app.command()
+@app.command(rich_help_panel="📦  Misc")
 def version():
     """Show current Nuvom version."""
     console.print(f"[bold green]NUVOM v{__version__}[/bold green]")
 
-@app.command()
+@app.command(rich_help_panel="📦  Misc")
 def config():
-    """Show current Nuvom config loaded from env/.env."""
+    """Print current settings loaded from .env / env vars."""
     settings = get_settings()
     console.print("[bold green]Nuvom Configuration:[/bold green]")
     for key, val in settings.summary().items():
         console.print(f"[cyan]{key}[/cyan] = {val}")
 
-@app.command()
-def runworker(dev: bool = typer.Option(False, help="Enable dev mode with manifest auto-reload")):
-    """Start a local worker pool to process jobs."""
+@app.command(rich_help_panel="🌟  Core Commands")
+def runworker(
+    dev: bool = typer.Option(
+        False,
+        "--dev",
+        help="Enable hot-reload on manifest changes (best for local dev)",
+        )
+    ):
+    """Start worker pool in the foreground."""
+    
     console.print("[yellow]🚀 Starting worker...[/yellow]")
     logger.info("Starting worker pool with dev=%s", dev)
 
@@ -56,9 +74,14 @@ def runworker(dev: bool = typer.Option(False, help="Enable dev mode with manifes
             observer.join()
             logger.debug("Manifest watcher stopped")
 
-@app.command()
+@app.command(rich_help_panel="🌟  Core Commands")
 def status(job_id: str):
-    """Check the status of a job by its ID."""
+    """
+    Quick one-off status check (success / failure / pending).
+
+    Example:
+        nuvom status a1b2c3d4
+    """
     error = get_error(job_id)
     if error:
         console.print(f"[bold red]❌ FAILED:[/bold red] {error}")
@@ -74,11 +97,12 @@ def status(job_id: str):
     console.print("[cyan]🕒 PENDING[/cyan]")
     logger.info("Job %s is pending", job_id)
 
-app.add_typer(discover_tasks.discover_app, name="discover")
-app.add_typer(list_tasks.list_app, name="list")
-app.add_typer(inspect_job.inspect_app, name="inspect")
-app.add_typer(history.history_app, name="history")
-app.add_typer(runtestworker.runtest_app, name="runtestworker")
+#  ------ sub-apps (now displayed under dedicated help panels) --------------
+app.add_typer(discover_tasks.discover_app,  name="discover",)
+app.add_typer(list_tasks.list_app,          name="list",    )
+app.add_typer(inspect_job.inspect_app,      name="inspect", )
+app.add_typer(history.history_app,          name="history", )
+app.add_typer(runtestworker.runtest_app,    name="runtestworker", rich_help_panel="⚙  Dev Tools")
 
 def main():
     app()
