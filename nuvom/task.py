@@ -78,8 +78,8 @@ class Task:
             retries=self.retries,
             store_result=self.store_result,
             timeout_secs=self.timeout_secs,
-            retry_delay_secs = self.retry_delay_secs    
-            timeout_policy = self.timeout_policy
+            retry_delay_secs = self.retry_delay_secs, 
+            timeout_policy = self.timeout_policy,
             before_job=self.before_job,
             after_job=self.after_job,
             on_error=self.on_error,
