@@ -1,6 +1,6 @@
 [project]
 name = "nuvom"
-version = "0.7.0"
+version = "0.8.0"
 description = "A Fast, Windows-First Task Queue for Python. Simple, Reliable, and Cross-Platform."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -16,6 +16,7 @@ dependencies = [
   "pydantic>=2.0.0",
   "typer>=0.7.0",
   "python-dotenv>=1.1.0",
+  "msgpack>=1.1.0"
 ]
 
 [build-system]

@@ -2,7 +2,7 @@
 
 > 🧠 Lightweight, plugin-first task queue for Python. No Redis, Windows-native, AST-powered task discovery, and extensible by design.
 
-![status](https://img.shields.io/badge/version-v0.7-blue)
+![status](https://img.shields.io/badge/version-v0.8-blue)
 ![python](https://img.shields.io/badge/python-3.8%2B-yellow)
 ![license](https://img.shields.io/badge/license-Apache--2.0-green)
 
@@ -64,7 +64,7 @@ pip install -e .
 # tasks.py
 from nuvom.task import task
 
-@task(retries=2, store_result=True)
+@task(retries=2, retry_delay_secs=5, timeout_secs=3, store_result=True)
 def add(x, y):
     return x + y
 ```
@@ -90,10 +90,17 @@ nuvom runworker
 nuvom inspect job <job_id>
 ```
 
-### 4. Check Result of Multiple Jobs
+### 5. Check Result of Multiple Jobs
 
 ```bash
 nuvom history recent --limit 10 --status SUCCESS
+```
+
+### 6. Retry a failed job (manual)
+
+```python
+from nuvom.sdk import retry_job
+retry_job("<job_id>")
 ```
 
 ---
@@ -109,6 +116,34 @@ nuvom history recent --limit 10 --status SUCCESS
 ✅ Fast startup via task manifest cache
 ✅ CLI to list, discover, and inspect jobs
 ✅ `.env`-based configuration via `pydantic-settings`
+✅ Retry delay and timeout control (`timeout_secs`, `retries`, `retry_delay_secs`)
+✅ CLI to retry jobs, view full metadata, and browse job history
+✅ Local dev runner to execute a job synchronously from JSON
+
+---
+
+---
+
+## ⏱ Retry Delay + Timeout Policy
+
+Nuvom v0.8 introduces full support for job retries and timeout policies with fine-grained control:
+
+| Field             | Purpose                                               |
+|-------------------|-------------------------------------------------------|
+| `timeout_policy`  | Timeout-policy support to Job for runtime control on timeout behavior|
+| `timeout_secs`    | Maximum time in seconds a job is allowed to run     |
+| `retries`         | How many times to retry a job after failure          |
+| `retry_delay_secs`| Wait time (in seconds) before retrying a failed job  |
+
+If a job fails and `retries > 0`, depending on the timeout-policy it will be retried automatically after the specified delay. All retry attempts and tracebacks are recorded in metadata.
+
+```python
+@task(retries=2, timeout_policy='retry', retry_delay_secs=5, timeout_secs=3)
+def unstable():
+    raise RuntimeError("Oops")
+
+enqueue(Job("unstable"))
+```
 
 ---
 
@@ -127,6 +162,7 @@ nuvom --help
 | `nuvom config`         | Print current configuration           |
 | `nuvom inspect job <job_id>`| Inspect job result               |
 | `nuvom history recent` | Inspect result of multiple jobs       |
+| `nuvom runtestworker run` | Run job locally from JSON file     |
 
 ---
 
@@ -137,14 +173,16 @@ Nuvom loads settings from `.env` via `pydantic-settings`.
 ### Example `.env`
 
 ```env
-NUVOM_ENVIRONMENT=dev
-NUVOM_LOG_LEVEL=DEBUG
-NUVOM_RESULT_BACKEND=file
-NUVOM_QUEUE_BACKEND=file
+NUVOM_ENVIRONMENT=dev|prod|test
+NUVOM_LOG_LEVEL=DEBUG|INFO|WARNING|ERROR|
+NUVOM_RESULT_BACKEND=file|memory
+NUVOM_QUEUE_BACKEND=file|memory
+NUVOM_SERIALIZATION_BACKEND=msgpack
 NUVOM_MAX_WORKERS=4
 NUVOM_BATCH_SIZE=10
 NUVOM_JOB_TIMEOUT_SECS=30
 NUVOM_MANIFEST_PATH=.nuvom/manifest.json
+NUVOM_TIMEOUT_POLICY=fail|retry|ignore
 ```
 
 ---
@@ -233,6 +271,7 @@ nuvom/
 ├── worker.py            # Threaded worker pool, Task dispatching and retries
 ├── utils/               # File ops, serializers, etc.
 ├── log.py               # Rich-based logger
+├── watcher.py           # Watches manifest file for changes and reloads tasks into the registry
 ```
 
 ---
