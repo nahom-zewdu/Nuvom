@@ -6,7 +6,7 @@ nuvom.worker
 Thread-based worker pool with *graceful* lifecycle management.
 
 Key upgrades (v0.9):
-    • SIGINT / SIGTERM are trapped and routed to a global ``shutdown_event``.
+    • SIGINT / SIGTERM are trapped and routed to a global ``_shutdown_event``.
     • Workers stop polling once the event is set *and* their personal queue is empty.
     • Dispatcher stops once the event is set and all jobs are assigned.
     • Clean join() logic prints progress and guarantees no thread leak.
@@ -27,7 +27,7 @@ from nuvom.queue import get_queue_backend
 from nuvom.registry.auto_register import auto_register_from_manifest
 
 # ------------------------------------------------------------------------- #
-shutdown_event = threading.Event()          # Global stop-flag for all threads
+_shutdown_event = threading.Event()          # Global stop-flag for all threads
 # ------------------------------------------------------------------------- #
 
 
@@ -72,7 +72,7 @@ class WorkerThread(threading.Thread):
 
         while True:
             # Break when shutdown is requested AND queue is empty
-            if shutdown_event.is_set() and self._job_queue.empty():
+            if _shutdown_event.is_set() and self._job_queue.empty():
                 logger.info("[Worker-%s] Drained – shutting down.", self.worker_id)
                 break
 
@@ -110,7 +110,7 @@ class DispatcherThread(threading.Thread):
     def run(self) -> None:  # noqa: D401 – documented above
         logger.info("[Dispatcher] Started.")
 
-        while not shutdown_event.is_set():
+        while not _shutdown_event.is_set():
             jobs = self.queue.pop_batch(self.batch_size, timeout=1)
             if not jobs:
                 continue
@@ -132,11 +132,11 @@ class DispatcherThread(threading.Thread):
 # Graceful Pool Entrypoint
 # ------------------------------------------------------------------------- #
 def _install_signal_handlers() -> None:
-    """Map SIGINT/SIGTERM to the global shutdown_event."""
+    """Map SIGINT/SIGTERM to the global _shutdown_event."""
 
     def _handler(signum, _frame):  # noqa: D401 – small internal func
         logger.warning("[Signal] %s received – initiating graceful shutdown.", signal.Signals(signum).name)
-        shutdown_event.set()
+        _shutdown_event.set()
 
     signal.signal(signal.SIGINT, _handler)
     signal.signal(signal.SIGTERM, _handler)
@@ -165,7 +165,7 @@ def start_worker_pool() -> None:
             dispatcher.join(timeout=0.5)
     finally:
         # Make sure global flag is set (covers KeyboardInterrupt path)
-        shutdown_event.set()
+        _shutdown_event.set()
         logger.info("[Pool] Awaiting %d worker threads…", len(workers))
 
         for w in workers:
