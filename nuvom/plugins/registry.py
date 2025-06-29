@@ -18,6 +18,9 @@ from typing import Dict, Type
 _QUEUE_BACKENDS: Dict[str, Type] = {}
 _RESULT_BACKENDS: Dict[str, Type] = {}
 
+# Track if we've already registered built-ins
+_BUILTINS_REGISTERED = False
+
 
 # --------------------------------------------------------------------------- #
 #  Registration helpers
@@ -43,23 +46,11 @@ def register_result_backend(name: str, cls: Type, *, override: bool = False) -> 
 
 
 # --------------------------------------------------------------------------- #
-#  Lookup helpers
+#  Lazy built-in registration
 # --------------------------------------------------------------------------- #
-def get_queue_backend_cls(name: str):
-    return _QUEUE_BACKENDS.get(name.lower())
-
-
-def get_result_backend_cls(name: str):
-    return _RESULT_BACKENDS.get(name.lower())
-
-
-# --------------------------------------------------------------------------- #
-#  Built‑in registrations (Memory / File)
-# --------------------------------------------------------------------------- #
-# These imports are intentionally local to avoid circulars.
 def _register_builtin_backends() -> None:
     """
-    Register the built‑in queue & result backends so that plugins can
+    Register the built-in queue & result backends so that plugins can
     safely override them later if desired.
     """
     from nuvom.queue_backends.memory_queue import MemoryJobQueue
@@ -76,4 +67,21 @@ def _register_builtin_backends() -> None:
     register_result_backend("sqlite", SQLiteResultBackend, override=True)
 
 
-_register_builtin_backends()
+def _ensure_builtins_registered() -> None:
+    global _BUILTINS_REGISTERED
+    if not _BUILTINS_REGISTERED:
+        _register_builtin_backends()
+        _BUILTINS_REGISTERED = True
+
+
+# --------------------------------------------------------------------------- #
+#  Lookup helpers (guarded by lazy init)
+# --------------------------------------------------------------------------- #
+def get_queue_backend_cls(name: str):
+    _ensure_builtins_registered()
+    return _QUEUE_BACKENDS.get(name.lower())
+
+
+def get_result_backend_cls(name: str):
+    _ensure_builtins_registered()
+    return _RESULT_BACKENDS.get(name.lower())
