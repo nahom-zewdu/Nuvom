@@ -29,8 +29,8 @@ def get_backend():
         _backend = FileResultBackend()
     elif backend_name == "memory":
         _backend = MemoryResultBackend()
-    elif backend_name == "sqlite":                      # NEW ✅
-        _backend = SQLiteResultBackend(settings.sqlite_db_path)
+    elif backend_name == "sqlite":
+        _backend = SQLiteResultBackend(settings.sqlite_db_path or ".nuvom/nuvom.db")
     else:
         raise ValueError(f"Unsupported result backend: {backend_name}")
 
