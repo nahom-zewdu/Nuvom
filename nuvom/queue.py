@@ -5,33 +5,52 @@ Queue management interface for jobs.
 Uses a configurable backend to manage job lifecycles.
 """
 
+"""
+Queue management interface for jobs, now plugin‑aware.
+"""
+
 from typing import List, Optional
 
 from nuvom.config import get_settings
+from nuvom.plugins.registry import get_queue_backend_cls, register_queue_backend
 from nuvom.queue_backends.file_queue import FileJobQueue
 from nuvom.queue_backends.memory_queue import MemoryJobQueue
 from nuvom.job import Job
+from nuvom.log import logger
 
+# --------------------------------------------------------------------------- #
+#  Register built‑in backends (redundant but explicit for clarity)
+# --------------------------------------------------------------------------- #
+register_queue_backend("file", FileJobQueue, override=True)
+register_queue_backend("memory", MemoryJobQueue, override=True)
+
+# --------------------------------------------------------------------------- #
+#  Global singleton
+# --------------------------------------------------------------------------- #
 _global_queue = None
+
+
+def _instantiate_backend(name: str):
+    """
+    Resolve `name` via plugin registry, falling back to ValueError if missing.
+    """
+    cls = get_queue_backend_cls(name)
+    if cls is None:
+        raise ValueError(f"Unsupported queue backend: {name}")
+    logger.debug("[Queue] Using backend '%s' (%s)", name, cls.__name__)
+    return cls()
 
 
 def get_queue_backend():
     """
-    Returns the active queue backend, initializing it if necessary.
+    Return a singleton instance of the configured queue backend.
     """
     global _global_queue
     if _global_queue is not None:
         return _global_queue
 
     backend_name = get_settings().queue_backend.lower()
-
-    if backend_name == "file":
-        _global_queue = FileJobQueue()
-    elif backend_name == "memory":
-        _global_queue = MemoryJobQueue()
-    else:
-        raise ValueError(f"Unsupported queue backend: {backend_name}")
-
+    _global_queue = _instantiate_backend(backend_name)
     return _global_queue
 
 
