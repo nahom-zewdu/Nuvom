@@ -29,11 +29,15 @@ class _Registry:
         bucket[name] = obj
 
     def get(self, cap: str, name: str | None = None) -> Any | None:
+        ensure_builtins_registered()  
         bucket = self._caps.get(cap, {})
         if name is not None:
             return bucket.get(name)
         # If only one implementation exists, return it implicitly
-        return next(iter(bucket.values()), None)
+        if len(bucket) == 1:
+            return next(iter(bucket.values()))
+        
+        raise LookupError(f"Multiple {cap} providers; specify one.")
 
 
 REGISTRY = _Registry()
@@ -86,4 +90,16 @@ def _register_builtins() -> None:
     REGISTRY.register("result_backend", "sqlite", SQLiteResultBackend, override=True)
 
 
-_register_builtins()
+_BUILTINS_REGISTERED = False
+_REGISTERING = False
+
+def ensure_builtins_registered() -> None:
+    global _BUILTINS_REGISTERED, _REGISTERING
+    if _BUILTINS_REGISTERED or _REGISTERING:
+        return
+    _REGISTERING = True
+    try:
+        _register_builtins()
+        _BUILTINS_REGISTERED = True
+    finally:
+        _REGISTERING = False
