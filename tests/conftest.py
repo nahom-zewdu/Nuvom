@@ -9,7 +9,7 @@ from nuvom.queue import clear as clear_queue, reset_backend as reset_q_backend
 from nuvom.result_store import reset_backend as reset_result_backend
 from nuvom.registry.registry import get_task_registry
 from nuvom.worker import _shutdown_event
-from nuvom.plugins import loader as plugload
+from nuvom.plugins import loader as plugload, registry as plugreg
 import nuvom.queue as nuvo_queue
 
 
@@ -30,12 +30,17 @@ def nuvom_isolate():
             t.join(timeout=0.5)
     _shutdown_event.clear()
 
+    plugreg._reset_for_tests()
     clear_queue()
+    
     yield
+    
     # ── TEAR‑DOWN ───────────────────────────────────────────────────────
     _shutdown_event.set()
     clear_queue()
     get_task_registry().clear()
     reset_result_backend()
     reset_q_backend()
+    
     plugload._LOADED.clear()
+    plugreg._reset_for_tests()
