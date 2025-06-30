@@ -38,7 +38,8 @@ def status() -> None:
             provider = getattr(obj, "__class__", type(obj)).__name__
             table.add_row(cap, name, provider, now)
 
-    if not REGISTRY._caps:                                   # type: ignore[attr-defined]
-        console.print("[yellow]No plugins loaded.[/yellow]")
+    if REGISTRY._caps:                                   # type: ignore[attr-defined]
+        console.print(table)
     else:
         console.print(table)
+        console.print("[yellow]No plugins loaded.[/yellow]")
