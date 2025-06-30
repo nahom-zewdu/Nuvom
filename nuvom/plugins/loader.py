@@ -142,3 +142,8 @@ def load_plugins(settings: dict | None = None) -> None:
 
         except Exception as exc:
             logger.exception("[Plugin] Failed to load %s – %s", spec, exc)
+            
+    for cap in ("queue_backend", "result_backend"):
+        for name, obj in REGISTRY._caps[cap].items():
+            if isinstance(obj, Plugin) and obj.name not in _LOADED:
+                _LOADED.add(obj.name)
