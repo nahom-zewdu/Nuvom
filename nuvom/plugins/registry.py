@@ -13,7 +13,7 @@ from typing import Any, Dict
 import warnings
 
 
-class _Registry:
+class Registry:
     """Internal generic registry backed by a bucket‑dict."""
 
     def __init__(self) -> None:
@@ -40,7 +40,7 @@ class _Registry:
         raise LookupError(f"Multiple {cap} providers; specify one.")
 
 
-REGISTRY = _Registry()
+REGISTRY = Registry()
 
 # --------------------------------------------------------- #
 # Back‑compat shims (will be removed in v1.0)
