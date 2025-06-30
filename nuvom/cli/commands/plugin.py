@@ -12,7 +12,7 @@ from rich.console import Console
 from datetime import datetime
 
 from nuvom.plugins.loader import load_plugins
-from nuvom.plugins.registry import REGISTRY
+from nuvom.plugins.registry import REGISTRY, ensure_builtins_registered
 
 plugin_app = typer.Typer(help="Manage Nuvom plugins (load status, scaffold, test).")
 console = Console()
@@ -23,6 +23,8 @@ def status() -> None:
     """
     Display all plugins that are registered / loaded in the current process.
     """
+    
+    ensure_builtins_registered()
     load_plugins()                           # ensure everything is imported
 
     table = Table(show_header=True, header_style="bold cyan")
