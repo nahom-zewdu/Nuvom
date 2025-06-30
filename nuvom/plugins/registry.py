@@ -1,87 +1,89 @@
 # nuvom/plugins/registry.py
 
 """
-Central registry for all Nuvom plugins.
+Generic capability registry (queue_backend, result_backend, …).
 
-Provides:
-    • register_queue_backend()
-    • register_result_backend()
-    • get_queue_backend_cls()
-    • get_result_backend_cls()
+Legacy helpers remain but emit a deprecation warning.
 """
 
-from typing import Dict, Type
+from __future__ import annotations
+from collections import defaultdict
+from typing import Any, Dict
 
-# --------------------------------------------------------------------------- #
-#  Internal storage
-# --------------------------------------------------------------------------- #
-_QUEUE_BACKENDS: Dict[str, Type] = {}
-_RESULT_BACKENDS: Dict[str, Type] = {}
-
-# Track if we've already registered built-ins
-_BUILTINS_REGISTERED = False
+import warnings
 
 
-# --------------------------------------------------------------------------- #
-#  Registration helpers
-# --------------------------------------------------------------------------- #
-def register_queue_backend(name: str, cls: Type, *, override: bool = False) -> None:
-    """
-    Register a queue backend under a short name (e.g. "sqlite", "redis").
-    """
-    _name = name.lower()
-    if _name in _QUEUE_BACKENDS and not override:
-        raise ValueError(f"Queue backend '{name}' already registered")
-    _QUEUE_BACKENDS[_name] = cls
+class _Registry:
+    """Internal generic registry backed by a bucket‑dict."""
+
+    def __init__(self) -> None:
+        self._caps: Dict[str, Dict[str, Any]] = defaultdict(dict)
+
+    # ----------------------------------------------------- #
+    # Public generic API
+    # ----------------------------------------------------- #
+    def register(self, cap: str, name: str, obj: Any, *, override: bool = False) -> None:
+        bucket = self._caps[cap]
+        if name in bucket and not override:
+            raise ValueError(f"{cap} provider '{name}' already registered")
+        bucket[name] = obj
+
+    def get(self, cap: str, name: str | None = None) -> Any | None:
+        bucket = self._caps.get(cap, {})
+        if name is not None:
+            return bucket.get(name)
+        # If only one implementation exists, return it implicitly
+        return next(iter(bucket.values()), None)
 
 
-def register_result_backend(name: str, cls: Type, *, override: bool = False) -> None:
-    """
-    Register a result backend under a short name (e.g. "sqlite", "mongo").
-    """
-    _name = name.lower()
-    if _name in _RESULT_BACKENDS and not override:
-        raise ValueError(f"Result backend '{name}' already registered")
-    _RESULT_BACKENDS[_name] = cls
+REGISTRY = _Registry()
+
+# --------------------------------------------------------- #
+# Back‑compat shims (will be removed in v1.0)
+# --------------------------------------------------------- #
+def _warn_legacy(fn: str) -> None:
+    warnings.warn(
+        f"{fn} is deprecated and will be removed in Nuvom 1.0. "
+        "Implement the Plugin protocol instead.",
+        DeprecationWarning,
+        stacklevel=3,
+    )
 
 
-# --------------------------------------------------------------------------- #
-#  Lazy built-in registration
-# --------------------------------------------------------------------------- #
-def _register_builtin_backends() -> None:
-    """
-    Register the built-in queue & result backends so that plugins can
-    safely override them later if desired.
-    """
+def register_queue_backend(name: str, cls: Any, *, override: bool = False) -> None:
+    _warn_legacy("register_queue_backend()")
+    REGISTRY.register("queue_backend", name.lower(), cls, override=override)
+
+
+def register_result_backend(name: str, cls: Any, *, override: bool = False) -> None:
+    _warn_legacy("register_result_backend()")
+    REGISTRY.register("result_backend", name.lower(), cls, override=override)
+
+
+def get_queue_backend_cls(name: str):
+    return REGISTRY.get("queue_backend", name.lower())
+
+
+def get_result_backend_cls(name: str):
+    return REGISTRY.get("result_backend", name.lower())
+
+
+# --------------------------------------------------------- #
+# Built‑ins (memory / file / sqlite) registered here
+# --------------------------------------------------------- #
+def _register_builtins() -> None:
     from nuvom.queue_backends.memory_queue import MemoryJobQueue
     from nuvom.queue_backends.file_queue import FileJobQueue
     from nuvom.result_backends.memory_backend import MemoryResultBackend
     from nuvom.result_backends.file_backend import FileResultBackend
     from nuvom.result_backends.sqlite_backend import SQLiteResultBackend
 
-    register_queue_backend("memory", MemoryJobQueue, override=True)
-    register_queue_backend("file", FileJobQueue, override=True)
+    REGISTRY.register("queue_backend", "memory", MemoryJobQueue, override=True)
+    REGISTRY.register("queue_backend", "file", FileJobQueue, override=True)
 
-    register_result_backend("memory", MemoryResultBackend, override=True)
-    register_result_backend("file", FileResultBackend, override=True)
-    register_result_backend("sqlite", SQLiteResultBackend, override=True)
-
-
-def _ensure_builtins_registered() -> None:
-    global _BUILTINS_REGISTERED
-    if not _BUILTINS_REGISTERED:
-        _register_builtin_backends()
-        _BUILTINS_REGISTERED = True
+    REGISTRY.register("result_backend", "memory", MemoryResultBackend, override=True)
+    REGISTRY.register("result_backend", "file", FileResultBackend, override=True)
+    REGISTRY.register("result_backend", "sqlite", SQLiteResultBackend, override=True)
 
 
-# --------------------------------------------------------------------------- #
-#  Lookup helpers (guarded by lazy init)
-# --------------------------------------------------------------------------- #
-def get_queue_backend_cls(name: str):
-    _ensure_builtins_registered()
-    return _QUEUE_BACKENDS.get(name.lower())
-
-
-def get_result_backend_cls(name: str):
-    _ensure_builtins_registered()
-    return _RESULT_BACKENDS.get(name.lower())
+_register_builtins()
