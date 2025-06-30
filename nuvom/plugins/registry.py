@@ -103,3 +103,13 @@ def ensure_builtins_registered() -> None:
         _BUILTINS_REGISTERED = True
     finally:
         _REGISTERING = False
+
+
+def _reset_for_tests():
+    """
+    Clear all buckets **and** built‑in registration flags.
+    Intended for pytest fixtures only.
+    """
+    global _BUILTINS_REGISTERED
+    REGISTRY._caps.clear()
+    _BUILTINS_REGISTERED = False
