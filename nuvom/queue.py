@@ -1,11 +1,19 @@
 # nuvom/queue.py
 
 """
-Queue management interface for jobs.
+nuvom/queue.py
+==============
 
-Delegates all persistence to a *configurable* backend class, which is resolved
-via Nuvom’s plugin registry (`nuvom.plugins.registry`).  This allows third‑party
-packages to add custom queue implementations without touching core code.
+Queue façade that delegates all persistence to a *pluggable* backend class.
+
+Key improvements in this revision
+---------------------------------
+1. **Automatic plugin discovery** – calls ``plugins.loader.load_plugins()`` the
+   first time a backend is requested, so “pip‑installed” queue providers are
+   picked up without any manual bootstrap code.
+
+2. **Reset helper for tests** – `reset_backend()` clears the singleton so
+   functional tests can swap implementations via ``override_settings()``.
 """
 
 from __future__ import annotations
@@ -14,68 +22,88 @@ from typing import List, Optional
 
 from nuvom.config import get_settings
 from nuvom.job import Job
+from nuvom.plugins.loader import load_plugins
 from nuvom.plugins.registry import get_queue_backend_cls
 
-# Cached singleton instance
-_global_queue = None
+# ─────────────────────────────────────────────────────────────────────────────
+# Module‑level cache (one backend instance per process)
+# ─────────────────────────────────────────────────────────────────────────────
+_backend_singleton = None
 
 
-# --------------------------------------------------------------------------- #
-#  Backend resolution
-# --------------------------------------------------------------------------- #
-def get_queue_backend():
+def _resolve_backend():
     """
-    Return the active queue backend (singleton).
+    Resolve & instantiate the concrete queue backend class.
 
-    • Uses the short name in ``NUVOM_QUEUE_BACKEND``  
-    • Looks up the concrete class from the plugin registry  
-    • Instantiates it lazily on first call
+    Resolution order
+    ----------------
+    1. Load *all* plugins (entry‑points **and** legacy TOML) exactly once.
+    2. Look up the short name from ``NUVOM_QUEUE_BACKEND`` in the plugin
+       registry.
+    3. Instantiate it (no‑arg ctor).  Raises ``ValueError`` if not found.
     """
-    global _global_queue
-    if _global_queue is not None:
-        return _global_queue
+    load_plugins()                                              # ensure registry is populated
 
-    settings = get_settings()
-    backend_name = settings.queue_backend.lower()
+    backend_name = get_settings().queue_backend.lower()
     backend_cls = get_queue_backend_cls(backend_name)
 
-    if backend_cls is None:
-        raise ValueError(f"Unsupported or unregistered queue backend: {backend_name}")
+    if backend_cls is None:                                     # defensive – mis‑configuration
+        raise ValueError(f"Unsupported or unregistered queue backend: {backend_name!r}")
 
-    _global_queue = backend_cls()
-    return _global_queue
+    return backend_cls()
 
 
-# --------------------------------------------------------------------------- #
-#  Thin convenience wrappers
-# --------------------------------------------------------------------------- #
+# ─────────────────────────────────────────────────────────────────────────────
+# Public helpers
+# ─────────────────────────────────────────────────────────────────────────────
+def get_queue_backend():
+    """Return a *singleton* instance of the active queue backend."""
+    global _backend_singleton
+    if _backend_singleton is None:
+        _backend_singleton = _resolve_backend()
+    return _backend_singleton
+
+
+def reset_backend() -> None:
+    """
+    **Testing‑only helper** – clear the cached instance so the next call to
+    :pyfunc:`get_queue_backend()` re‑creates it.  Useful when a test changes
+    ``override_settings(queue_backend="…")`` on the fly.
+    """
+    global _backend_singleton
+    _backend_singleton = None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Thin convenience wrappers – keep core code readable
+# ─────────────────────────────────────────────────────────────────────────────
 def enqueue(job: Job) -> None:
-    """Add a job to the active queue backend."""
+    """Add *job* to the configured backend."""
     get_queue_backend().enqueue(job)
 
 
 def dequeue(timeout: int = 1) -> Optional[Job]:
-    """Remove & return a job, blocking up to ``timeout`` seconds."""
+    """Blocking pop of a single job (``None`` if timed‑out)."""
     return get_queue_backend().dequeue(timeout)
 
 
 def pop_batch(batch_size: int = 1, timeout: int = 1) -> List[Job]:
-    """Remove & return up to ``batch_size`` jobs."""
+    """Return up to *batch_size* jobs (may be fewer if queue shorter)."""
     return get_queue_backend().pop_batch(batch_size=batch_size, timeout=timeout)
 
 
 def qsize() -> int:
-    """Return the current queue length."""
+    """Current length of the queue."""
     return get_queue_backend().qsize()
 
 
 def clear() -> int:
     """
-    Remove **all** jobs from the backend.
+    Remove **all** jobs from the queue backend.
 
     Returns
     -------
     int
-        Number of jobs removed.
+        Number of jobs removed (implementation‑specific).
     """
     return get_queue_backend().clear()
