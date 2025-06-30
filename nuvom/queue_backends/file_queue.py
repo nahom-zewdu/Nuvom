@@ -20,7 +20,7 @@ from nuvom.queue_backends.base import BaseJobQueue
 from nuvom.serialize import serialize, deserialize
 from nuvom.utils.file_utils.safe_remove import safe_remove
 from nuvom.log import logger
-
+from nuvom.plugins.contracts import Plugin, API_VERSION
 
 class FileJobQueue(BaseJobQueue):
     """
@@ -30,6 +30,16 @@ class FileJobQueue(BaseJobQueue):
         dir (str): Directory path where job files are stored.
         lock (Lock): Thread lock to synchronize queue operations.
     """
+    
+     # --- Plugin metadata --------------------------------------------------
+    api_version = API_VERSION
+    name        = "memory"
+    provides    = ["queue_backend"]
+    requires: list[str] = []
+
+    # start/stop are no‑ops for this lightweight backend
+    def start(self, settings: dict): ...
+    def stop(self): ...
 
     def __init__(self, directory: str = "nuvom_queue"):
         """
