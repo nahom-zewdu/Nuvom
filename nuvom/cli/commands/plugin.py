@@ -18,7 +18,18 @@ from nuvom.plugins.loader import load_plugins
 from nuvom.plugins.registry import REGISTRY, ensure_builtins_registered
 from nuvom.plugins.contracts import Plugin, API_VERSION
 
-plugin_app = typer.Typer(help="Manage Nuvom plugins (load status, scaffold, test).")
+plugin_app = typer.Typer(
+    name="plugin",
+    help=(
+        "Manage Nuvom plugins (status, scaffold, test).\n\n"
+        "Examples:\n"
+        "  nuvom plugin status                      # Show all loaded plugins\n"
+        "  nuvom plugin scaffold my_redis_backend   # Create plugin stub\n"
+        "  nuvom plugin test nuvom_hello.plugin     # Test installed plugin\n"
+        "  nuvom plugin test ./my_plugin.py         # Test from file\n"
+    ),
+    rich_help_panel="🔌 Plugin System",
+)
 console = Console()
 
 
