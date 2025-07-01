@@ -32,7 +32,7 @@ from nuvom.plugins.registry import REGISTRY                       # generic regi
 # --------------------------------------------------------------------------- #
 _TOML_PATH = Path(".nuvom_plugins.toml")
 _LOADED: Set[str] = set()            # memoised "module[:attr]" specs
-
+LOADED_PLUGINS: Set[Plugin] = set()  
 
 # --------------------------------------------------------------------------- #
 # Discovery helpers
@@ -159,7 +159,8 @@ def load_plugins(settings: dict | None = None) -> None:
 
                 plugin: Plugin = target()
                 plugin.start(cfg.get(plugin.name, {}))
-
+                LOADED_PLUGINS.add(plugin)
+                
                 # Register first advertised capability; plugin can register more itself
                 REGISTRY.register(plugin.provides[0], plugin.name, plugin, override=True)
                 logger.info("[Plugin] %s (%s) loaded", plugin.name, plugin.__class__.__name__)
