@@ -38,15 +38,45 @@ _LOADED: Set[str] = set()            # memoised "module[:attr]" specs
 # Discovery helpers
 # --------------------------------------------------------------------------- #
 def _toml_targets() -> list[str]:
-    """Read legacy TOML file and return the list of module specs."""
+    """
+    Collect *every* dotted‑path string from `.nuvom_plugins.toml`.
+
+    Supported layouts
+    -----------------
+    Legacy:
+        [plugins]
+        modules = ["pkg.mod", "pkg.other:Class"]
+
+    Capability‑specific (preferred):
+        [plugins]
+        queue_backend   = ["pkg.q:MyQ"]
+        result_backend  = ["pkg.r:MyR"]
+        observability   = ["pkg.foo"]
+    """
     if not _TOML_PATH.exists():
         return []
+
     try:
         data = tomllib.loads(_TOML_PATH.read_text("utf-8"))
-        return list(data.get("plugins", {}).get("modules", []))
     except tomllib.TOMLDecodeError as exc:
         logger.error("[Plugins] Invalid TOML in %s – %s", _TOML_PATH, exc)
         return []
+
+    plugin_block = data.get("plugins", {})
+    targets: list[str] = []
+
+    # 1. legacy `[plugins].modules`
+    targets.extend(plugin_block.get("modules", []))
+
+    # 2. every other list value in `[plugins]`
+    for key, value in plugin_block.items():
+        if key == "modules":
+            continue
+        if isinstance(value, list):
+            targets.extend(value)
+
+    return targets
+
 
 
 def _entry_point_targets() -> list[str]:
