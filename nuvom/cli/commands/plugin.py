@@ -11,9 +11,12 @@ import typer
 from rich.table import Table
 from rich.console import Console
 from datetime import datetime
+import importlib.util
+import traceback
 
 from nuvom.plugins.loader import load_plugins
 from nuvom.plugins.registry import REGISTRY, ensure_builtins_registered
+from nuvom.plugins.contracts import Plugin, API_VERSION
 
 plugin_app = typer.Typer(help="Manage Nuvom plugins (load status, scaffold, test).")
 console = Console()
@@ -87,3 +90,80 @@ class {class_name}(Plugin):
     except Exception as e:
         console.print(f"[red]❌ Failed to write file:[/red] {e}")
         raise typer.Exit(code=1)
+
+
+
+@plugin_app.command("test")
+def test_plugin(
+    target: str = typer.Argument(..., help="Path to plugin .py file OR python.module path"),
+) -> None:
+    """
+    Validate a plugin and run its `start/stop` hooks.
+
+    • Works with a standalone `.py` file or an installed module path.
+    • Emits a non‑zero exit‑code on failure (good for CI).
+    """
+    from nuvom.plugins.contracts import Plugin
+
+    # ------------------------
+    # Step 1: Load the module
+    # ------------------------
+    file_path = Path(target)
+    try:
+        if file_path.exists():  # Local .py file
+            spec = importlib.util.spec_from_file_location("plugin_under_test", str(file_path))
+            if spec is None or spec.loader is None:
+                raise RuntimeError("Could not load plugin file.")
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)  # type: ignore
+        else:  # Python module path
+            module = importlib.import_module(target)
+    except Exception as exc:
+        console.print(f"[red]❌ Import failed:[/red] {exc}")
+        raise typer.Exit(code=1)
+
+    # ------------------------
+    # Step 2: Find Plugin subclass
+    # ------------------------
+    plugin = None
+    for attr_name in dir(module):
+        attr = getattr(module, attr_name)
+        if isinstance(attr, type) and issubclass(attr, Plugin) and attr is not Plugin:
+            plugin = attr()
+            break
+
+    if not plugin:
+        console.print("[red]❌ No valid Plugin subclass found.[/red]")
+        raise typer.Exit(code=1)
+
+    # ------------------------
+    # Step 3: Validate metadata
+    # ------------------------
+    errors = []
+    if plugin.api_version.split(".")[0] != API_VERSION.split(".")[0]:
+        errors.append(f"API version mismatch: plugin={plugin.api_version}, core={API_VERSION}")
+    if not plugin.provides:
+        errors.append("Missing `provides`.")
+    if not callable(getattr(plugin, "start", None)):
+        errors.append("Missing or invalid `start()`.")
+    if not callable(getattr(plugin, "stop", None)):
+        errors.append("Missing or invalid `stop()`.")
+
+    if errors:
+        for err in errors:
+            console.print(f"[red]❌ {err}[/red]")
+        raise typer.Exit(code=1)
+
+    # ------------------------
+    # Step 4: Run start/stop hooks
+    # ------------------------
+    try:
+        plugin.start({})
+        plugin.stop()
+    except Exception as e:
+        console.print(f"[red]❌ start() or stop() raised exception:[/red] {e}")
+        traceback.print_exc()
+        raise typer.Exit(code=1)
+
+    # ✅ SUCCESS
+    console.print(f"[green]✅ Plugin {plugin.name} validated successfully.[/green]")
