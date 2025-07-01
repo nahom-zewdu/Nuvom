@@ -27,7 +27,7 @@ from typing import Any, Optional, Dict, List
 from nuvom.serialize import serialize, deserialize
 from nuvom.result_backends.base import BaseResultBackend
 from nuvom.log import logger
-
+from nuvom.plugins.contracts import Plugin, API_VERSION
 
 _SQLITE_THREAD_LOCAL = threading.local()
 
@@ -83,6 +83,16 @@ class SQLiteResultBackend(BaseResultBackend):
     def __init__(self, db_path: str | Path | None = None) -> None:
         self.db_path = Path(db_path or ".nuvom/nuvom.db")
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+
+     # --- Plugin metadata --------------------------------------------------
+    api_version = API_VERSION
+    name        = "memory"
+    provides    = ["queue_backend"]
+    requires: list[str] = []
+
+    # start/stop are no‑ops for this lightweight backend
+    def start(self, settings: dict): ...
+    def stop(self): ...
 
     def set_result(
         self,

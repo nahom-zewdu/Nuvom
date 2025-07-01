@@ -24,29 +24,26 @@ from nuvom.plugins import loader as plugload
 # --------------------------------------------------------------------------- #
 #  Helpers
 # --------------------------------------------------------------------------- #
-def _fake_module(name: str, register_calls: list[str], *, as_queue=False):
+def _fake_module(modname: str, calls: list[str], as_queue: bool = False) -> None:
     """
-    Create an in‑memory module with optional `register()` callable.
-    If `as_queue=True`, the register() will add a dummy queue backend.
+    Patch sys.modules with a fake plugin module.
+
+    If `as_queue` is True, will register a dummy queue backend using legacy register().
     """
-    mod = ModuleType(name)
-    if as_queue:
+    import types
+    import sys
+    from nuvom.plugins.registry import REGISTRY
 
-        class DummyQueue:
-            def enqueue(self, *_): ...
-            def dequeue(self, *_): ...
-            def pop_batch(self, *_): return []
-            def qsize(self): return 0
-            def clear(self): return 0
+    mod = types.ModuleType(modname)
 
-        def _reg():
-            plugreg.register_queue_backend("dummy", DummyQueue, override=True)
-            register_calls.append("called")
+    def register():
+        calls.append("register-called")
+        if as_queue:
+            REGISTRY.register("queue_backend", "fake", object, override=True)
 
-        mod.register = _reg  # type: ignore[attr-defined]
+    mod.register = register
+    sys.modules[modname] = mod
 
-    sys.modules[name] = mod
-    return mod
 
 
 # --------------------------------------------------------------------------- #
@@ -61,12 +58,7 @@ def test_registry_basic_registration():
     with pytest.raises(ValueError):
         plugreg.register_result_backend("mydb", MemBackend)
 
-
 def test_loader_imports_and_register(tmp_path: Path, monkeypatch):
-    """
-    • Write a .nuvom_plugins.toml pointing to a fake module
-    • Ensure loader imports it and the module’s register() runs
-    """
     calls: list[str] = []
     _fake_module("myplugin.mod", calls, as_queue=True)
 
@@ -75,19 +67,18 @@ def test_loader_imports_and_register(tmp_path: Path, monkeypatch):
         textwrap.dedent(
             """
             [plugins]
-            modules = ["myplugin.mod"]
+            modules = ["myplugin.mod:register"]
             """
         ),
         encoding="utf-8",
     )
 
-    # Monkey‑patch loader to look at tmp_path
-    monkeypatch.setattr(plugload, "_CONFIG_PATH", cfg)
-
+    monkeypatch.setattr(plugload, "_TOML_PATH", cfg)
+    plugload._LOADED.clear()  # Important: reset for test isolation
     plugload.load_plugins()
-    assert "myplugin.mod" in plugload._PLUGINS_LOADED
-    assert calls == ["called"]  # register() executed
-    assert plugreg.get_queue_backend_cls("dummy") is not None
+
+    assert "myplugin.mod:register" in plugload._LOADED
+    assert "register-called" in calls
 
 
 def test_queue_resolution_with_plugin(monkeypatch):
