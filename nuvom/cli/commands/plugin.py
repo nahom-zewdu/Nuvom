@@ -56,10 +56,16 @@ def scaffold(
     name: str = typer.Argument(..., help="Short name for your plugin (e.g. my_sqs_backend)"),
     out: Path = typer.Option(".", help="Directory to write the plugin file"),
     force: bool = typer.Option(False, "--force", "-f", help="Overwrite if file exists"),
+    capability: str = typer.Option("queue_backend", "--capability", "-c", help="Capability this plugin provides"),
+    test: bool = typer.Option(False, "--test", "-t", help="Run `plugin test` after scaffolding"),
 ):
     """
     Scaffold a new plugin stub that implements the Plugin protocol.
     """
+    if not name.isidentifier():
+        console.print(f"[red]❌ Invalid plugin name: {name}[/red]")
+        raise typer.Exit(code=1)
+
     class_name = "".join(part.capitalize() for part in name.split("_"))
     filename = out / f"{name}.py"
 
@@ -68,18 +74,21 @@ def scaffold(
         raise typer.Exit(code=1)
 
     plugin_stub = f'''\
+
 from nuvom.plugins.contracts import Plugin
 
 class {class_name}(Plugin):
     api_version = "1.0"
     name = "{name}"
-    provides = ["queue_backend"]      # or "result_backend"
-    requires = []                     # add any dependencies if needed
+    provides = ["{capability}"]      # "queue_backend", "result_backend", or other
+    requires = []                    # List dependencies this plugin needs
 
     def start(self, settings: dict) -> None:
+        # Initialize plugin (e.g. connect to service, configure hooks)
         pass
 
     def stop(self) -> None:
+        # Cleanup plugin resources
         pass
 '''
 
@@ -90,6 +99,16 @@ class {class_name}(Plugin):
     except Exception as e:
         console.print(f"[red]❌ Failed to write file:[/red] {e}")
         raise typer.Exit(code=1)
+
+    if test:
+        from nuvom.cli.cli import app as main_app
+        from typer.testing import CliRunner
+        console.print("[blue]Running plugin test...[/blue]")
+        result = CliRunner().invoke(main_app, ["plugin", "test", str(filename)])
+        console.print(result.output, highlight=False)
+        if result.exit_code != 0:
+            raise typer.Exit(code=1)
+
 
 
 
