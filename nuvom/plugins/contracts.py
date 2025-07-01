@@ -5,13 +5,11 @@ Plugin protocol & core version pinning.
 """
 
 from __future__ import annotations
-from typing import Protocol, runtime_checkable, Any
+from abc import ABC, abstractmethod
 
 API_VERSION = "1.0"
 
-
-@runtime_checkable
-class Plugin(Protocol):
+class Plugin(ABC):
     """
     Formal contract every third‑party plugin must implement.
 
@@ -33,5 +31,10 @@ class Plugin(Protocol):
     requires: list[str]
 
     # Minimal lifecycle hooks
-    def start(self, settings: dict[str, Any]) -> None: ...
-    def stop(self) -> None: ...
+    @abstractmethod
+    def start(self, settings: dict) -> None:
+        ...
+
+    @abstractmethod
+    def stop(self) -> None:
+        ...
