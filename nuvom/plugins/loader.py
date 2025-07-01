@@ -1,7 +1,6 @@
-"""
-nuvom/plugins/loader.py
-=======================
+# nuvom/plugins/loader.py
 
+"""
 Hybrid plugin loader (back‑compatible with v0.8).
 
 Discovery order
