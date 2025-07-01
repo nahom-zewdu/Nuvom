@@ -25,6 +25,8 @@ from nuvom.execution.job_runner import JobRunner
 from nuvom.log import logger
 from nuvom.queue import get_queue_backend
 from nuvom.registry.auto_register import auto_register_from_manifest
+from nuvom.plugins.loader import LOADED_PLUGINS
+from nuvom.plugins.loader import shutdown_plugins
 
 # ------------------------------------------------------------------------- #
 _shutdown_event = threading.Event()          # Global stop-flag for all threads
@@ -172,3 +174,7 @@ def start_worker_pool() -> None:
             w.join()
 
         logger.info("[Pool] All workers stopped cleanly.")
+        
+        # SHUT-DOWN all loaded plugins
+        shutdown_plugins()
+        logger.info("[Pool] Plugin shutdown complete.")

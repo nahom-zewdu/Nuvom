@@ -1,16 +1,18 @@
 # nuvom/plugins/loader.py
 
 """
-nuvom/plugins/loader.py
-=======================
-
 Hybrid plugin loader (back‑compatible with v0.8).
 
-• Discovers plugins from **Python entry‑points** *and* the legacy
-  `.nuvom_plugins.toml` file.
-• Accepts either a class implementing the `Plugin` protocol **or**
-  a legacy callable `register()` function (deprecation‑warned).
-• Guards against double‑loading by memoising every spec in `_LOADED`.
+Discovery order
+---------------
+1. Python entry‑points in the ``nuvom`` group
+2. ``.nuvom_plugins.toml`` (legacy + capability‑specific keys)
+
+Accepted plugin shapes
+----------------------
+• Class **sub‑classing** :class:`nuvom.plugins.contracts.Plugin`
+• Class that merely **duck‑types** the contract
+• Legacy callable ``register()`` (DEPRECATED — emits warning)
 """
 
 from __future__ import annotations
@@ -24,14 +26,15 @@ from types import ModuleType
 from typing import Any, Set
 
 from nuvom.log import logger
-from nuvom.plugins.contracts import API_VERSION, Plugin           # new protocol
-from nuvom.plugins.registry import REGISTRY                       # generic registry
+from nuvom.plugins.contracts import API_VERSION, Plugin
+from nuvom.plugins.registry import REGISTRY
 
 # --------------------------------------------------------------------------- #
 # Globals
 # --------------------------------------------------------------------------- #
 _TOML_PATH = Path(".nuvom_plugins.toml")
-_LOADED: Set[str] = set()            # memoised "module[:attr]" specs
+_LOADED: Set[str] = set()       # memoised "module[:attr]" specs
+LOADED_PLUGINS: Set[Plugin] = set()   # instantiated plugin objects
 
 
 # --------------------------------------------------------------------------- #
@@ -47,11 +50,10 @@ def _toml_targets() -> list[str]:
         [plugins]
         modules = ["pkg.mod", "pkg.other:Class"]
 
-    Capability‑specific (preferred):
+    Capability keys (preferred):
         [plugins]
-        queue_backend   = ["pkg.q:MyQ"]
-        result_backend  = ["pkg.r:MyR"]
-        observability   = ["pkg.foo"]
+        queue_backend  = ["pkg.q:MyQ"]
+        result_backend = ["pkg.r:MyR"]
     """
     if not _TOML_PATH.exists():
         return []
@@ -65,18 +67,15 @@ def _toml_targets() -> list[str]:
     plugin_block = data.get("plugins", {})
     targets: list[str] = []
 
-    # 1. legacy `[plugins].modules`
+    # 1) legacy
     targets.extend(plugin_block.get("modules", []))
 
-    # 2. every other list value in `[plugins]`
+    # 2) every other list under [plugins]
     for key, value in plugin_block.items():
-        if key == "modules":
-            continue
-        if isinstance(value, list):
+        if key != "modules" and isinstance(value, list):
             targets.extend(value)
 
     return targets
-
 
 
 def _entry_point_targets() -> list[str]:
@@ -94,17 +93,22 @@ def _iter_targets():
 
 
 # --------------------------------------------------------------------------- #
-# Import helpers
+# Import & helper utils
 # --------------------------------------------------------------------------- #
 def _import_target(spec: str) -> Any:
     """
-    Import `"package.module:attr"` or bare `"package.module"`.
-
-    Returns the attribute (callable/class) **or** the module object.
+    Import ``"package.module:attr"`` or bare ``"package.module"`` and return
+    the attribute (class/function) or the module object.
     """
     mod_path, _, attr = spec.partition(":")
     module: ModuleType = importlib.import_module(mod_path)
     return getattr(module, attr) if attr else module
+
+
+def _is_duck_plugin(cls: type) -> bool:
+    """True if *cls* has all required Plugin attributes / methods."""
+    required = ("api_version", "name", "provides", "start", "stop")
+    return all(hasattr(cls, attr) for attr in required)
 
 
 def _major_mismatch(core: str, plugin: str) -> bool:
@@ -120,10 +124,10 @@ def load_plugins(settings: dict | None = None) -> None:
 
     Parameters
     ----------
-    settings :
-        Optional dict of per‑plugin configuration (passed to `plugin.start()`).
+    settings:
+        Optional per‑plugin configuration passed to ``plugin.start()``.
     """
-    if _LOADED:
+    if _LOADED:        # already done in this process
         return
 
     cfg = settings or {}
@@ -135,45 +139,69 @@ def load_plugins(settings: dict | None = None) -> None:
         try:
             target = _import_target(spec)
 
-            # ── Legacy path: callable `register()` ----------------------
+            # ───────────────────────── Legacy callable path ────────────────────
             if callable(target) and not isinstance(target, type):
                 warnings.warn(
-                    "Legacy plugin register() style is deprecated and will "
-                    "be removed in Nuvom 1.0. Implement the Plugin protocol.",
+                    "Legacy plugin register() style is deprecated and will be "
+                    "removed in Nuvom 1.0. Implement the Plugin protocol.",
                     DeprecationWarning,
                     stacklevel=2,
                 )
-                target()
+                target()                         # run register()
                 logger.info("[Plugin‑Legacy] %s loaded", spec)
                 _LOADED.add(spec)
                 continue
 
-            # ── New path: class implementing `Plugin` -------------------
-            if isinstance(target, type) and issubclass(target, Plugin):
-                if _major_mismatch(API_VERSION, target.api_version):
+            # ───────────────────────── Class path ──────────────────────────────
+            if isinstance(target, type):
+                try:
+                    subclass_ok = issubclass(target, Plugin)
+                except TypeError:                # Protocol w/ data attrs
+                    subclass_ok = False
+
+                if not (subclass_ok or _is_duck_plugin(target)):
+                    logger.warning("[Plugin] %s does not implement Plugin protocol", spec)
+                    continue
+
+                plugin_cls = target
+
+                # Major‑version gate
+                if _major_mismatch(API_VERSION, plugin_cls.api_version):
                     logger.error(
                         "[Plugin] %s api_version %s incompatible with core %s",
-                        target.__name__, target.api_version, API_VERSION,
+                        plugin_cls.__name__, plugin_cls.api_version, API_VERSION,
                     )
                     continue
 
-                plugin: Plugin = target()
+                plugin: Plugin = plugin_cls()  # type: ignore[assignment]
                 plugin.start(cfg.get(plugin.name, {}))
+                LOADED_PLUGINS.add(plugin)
 
-                # Register first advertised capability; plugin can register more itself
                 REGISTRY.register(plugin.provides[0], plugin.name, plugin, override=True)
-                logger.info("[Plugin] %s (%s) loaded", plugin.name, plugin.__class__.__name__)
+                logger.info("[Plugin] %s (%s) loaded", plugin.name, plugin_cls.__name__)
 
                 _LOADED.add(spec)
                 continue
 
-            # ── Unknown artefact ----------------------------------------
+            # ───────────────────────── Unknown artefact ────────────────────────
             logger.warning("[Plugin] %s does not expose a Plugin or register()", spec)
 
-        except Exception as exc:
+        except Exception as exc:   # noqa: BLE001 – we want broad capture for logging
             logger.exception("[Plugin] Failed to load %s – %s", spec, exc)
-            
+
+    # Memoise built‑ins that are Plugin instances (rare but possible)
     for cap in ("queue_backend", "result_backend"):
         for name, obj in REGISTRY._caps.get(cap, {}).items():
-            if isinstance(obj, Plugin) and obj.name not in _LOADED:
-                _LOADED.add(obj.name)
+            if isinstance(obj, Plugin) and name not in _LOADED:
+                _LOADED.add(name)
+
+def shutdown_plugins() -> None:
+    """Call .stop() on all loaded plugins (if defined)."""
+    for plugin in LOADED_PLUGINS:
+        stop_fn = getattr(plugin, "stop", None)
+        if callable(stop_fn):
+            try:
+                logger.info("[Plugin] Stopping %s (%s)...", plugin.name, plugin.__class__.__name__)
+                stop_fn()
+            except Exception as e:
+                logger.warning("[Plugin] %s.stop() failed – %s", plugin.name, e)
