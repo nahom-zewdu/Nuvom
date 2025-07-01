@@ -195,3 +195,14 @@ def load_plugins(settings: dict | None = None) -> None:
         for name, obj in REGISTRY._caps.get(cap, {}).items():
             if isinstance(obj, Plugin) and name not in _LOADED:
                 _LOADED.add(name)
+
+def shutdown_plugins() -> None:
+    """Call .stop() on all loaded plugins (if defined)."""
+    for plugin in LOADED_PLUGINS:
+        stop_fn = getattr(plugin, "stop", None)
+        if callable(stop_fn):
+            try:
+                logger.info("[Plugin] Stopping %s (%s)...", plugin.name, plugin.__class__.__name__)
+                stop_fn()
+            except Exception as e:
+                logger.warning("[Plugin] %s.stop() failed – %s", plugin.name, e)
