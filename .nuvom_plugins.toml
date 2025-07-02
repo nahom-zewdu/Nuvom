@@ -1,2 +1,2 @@
 [plugins]
-queue_backend = ["nuvom_hello_plugin.plugin:HelloPlugin"]
+result_backend = ["nuvom_hello_plugin.plugin:HelloPlugin"]
