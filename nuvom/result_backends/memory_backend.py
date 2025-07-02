@@ -13,7 +13,7 @@ from typing import List, Dict
 
 from nuvom.serialize import serialize, deserialize
 from nuvom.result_backends.base import BaseResultBackend
-
+from nuvom.plugins.contracts import Plugin, API_VERSION
 
 class MemoryResultBackend(BaseResultBackend):
     """
@@ -31,6 +31,16 @@ class MemoryResultBackend(BaseResultBackend):
 
     def __init__(self):
         self._store = {}
+
+     # --- Plugin metadata --------------------------------------------------
+    api_version = API_VERSION
+    name        = "memory"
+    provides    = ["queue_backend"]
+    requires: list[str] = []
+
+    # start/stop are no‑ops for this lightweight backend
+    def start(self, settings: dict): ...
+    def stop(self): ...
 
     def set_result(self, job_id, func_name, result, *, args=None, kwargs=None, retries_left=None, attempts=None, created_at=None, completed_at=None):
         """

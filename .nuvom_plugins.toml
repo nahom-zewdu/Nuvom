@@ -1,0 +1,2 @@
+[plugins]
+result_backend = ["nuvom_hello_plugin.plugin:HelloPlugin"]
