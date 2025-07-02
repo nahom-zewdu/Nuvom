@@ -13,6 +13,7 @@ from typing import Optional, Any
 
 from nuvom.result_backends.base import BaseResultBackend
 from nuvom.serialize import serialize, deserialize
+from nuvom.plugins.contracts import Plugin, API_VERSION
 
 
 class FileResultBackend(BaseResultBackend):
@@ -26,9 +27,19 @@ class FileResultBackend(BaseResultBackend):
         result_dir (str): Directory for all job result files.
     """
 
+    # --- Plugin metadata --------------------------------------------------
+    api_version = API_VERSION
+    name        = "memory"
+    provides    = ["queue_backend"]
+    requires: list[str] = []
+    
     def __init__(self):
         self.result_dir = "job_results"
         os.makedirs(self.result_dir, exist_ok=True)
+
+    # start/stop are no‑ops for this lightweight backend
+    def start(self, settings: dict): ...
+    def stop(self): ...
 
     def _path(self, job_id, ext: str = "meta") -> str:
         """Construct the full file path for a job's metadata file."""

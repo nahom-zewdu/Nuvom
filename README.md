@@ -2,7 +2,7 @@
 
 > 🧠 Lightweight, plugin-first task queue for Python. No Redis, Windows-native, AST-powered task discovery, and extensible by design.
 
-![status](https://img.shields.io/badge/version-v0.8-blue)
+![status](https://img.shields.io/badge/version-v0.9-blue)
 ![python](https://img.shields.io/badge/python-3.8%2B-yellow)
 ![license](https://img.shields.io/badge/license-Apache--2.0-green)
 
@@ -34,6 +34,7 @@ Key philosophies:
 | Registry   | Maps task names to callables and metadata         |
 | Discovery  | Uses AST parsing to auto-discover all tasks       |
 | CLI        | Full-featured developer CLI for control & insight |
+| Plugins    | Dynamically loaded components to extend Nuvom     |
 
 ---
 
@@ -42,8 +43,8 @@ Key philosophies:
 > Nuvom is currently in active development. Until v1.0, install locally:
 
 ```bash
-git clone https://github.com/your-org/nuvom
-cd nuvom
+git clone https://github.com/nahom-zewdu/Nuvom
+cd Nuvom
 pip install -e .
 ```
 
@@ -119,8 +120,9 @@ retry_job("<job_id>")
 * ✅ Retry delay and timeout control (`timeout_secs`, `retries`, `retry_delay_secs`)
 * ✅ CLI to retry jobs, view full metadata, and browse job history
 * ✅ Local dev runner to execute a job synchronously from JSON
-
----
+* ✅ Plugin-first backend system — extend via `.nuvom_plugins.toml`
+* ✅ Graceful shutdown lifecycle support for plugin-backed workers
+* ✅ SQLite result backend with file-path configurability
 
 ---
 
@@ -153,16 +155,19 @@ enqueue(Job("unstable"))
 nuvom --help
 ```
 
-| Command                | Description                           |
-| ---------------------- | ------------------------------------- |
-| `nuvom runworker`      | Start worker threads                  |
-| `nuvom status <id>`    | Get job result or error               |
-| `nuvom list tasks`     | List all discovered `@task` functions |
-| `nuvom discover tasks` | Scan project and generate manifest    |
-| `nuvom config`         | Print current configuration           |
-| `nuvom inspect job <job_id>`| Inspect job result               |
-| `nuvom history recent` | Inspect result of multiple jobs       |
-| `nuvom runtestworker run` | Run job locally from JSON file     |
+| Command                       | Description                                |
+| ----------------------------- | ------------------------------------------ |
+| `nuvom runworker`             | Start worker threads                       |
+| `nuvom status <id>`           | Get job result or error                    |
+| `nuvom list tasks`            | List all discovered `@task` functions      |
+| `nuvom discover tasks`        | Scan project and generate manifest         |
+| `nuvom config`                | Print current configuration                |
+| `nuvom inspect job <id>`      | Inspect job result and metadata            |
+| `nuvom history recent`        | Inspect result of multiple jobs            |
+| `nuvom runtestworker run`     | Run job locally from JSON file             |
+| `nuvom plugin test`           | Load and test plugin registry              |
+| `nuvom plugin list`           | Show loaded plugins and their capabilities |
+| `nuvom plugin inspect <name>` | View plugin source path and metadata       |
 
 ---
 
@@ -201,11 +206,15 @@ NUVOM_TIMEOUT_POLICY=fail|retry|ignore
 * Multi-threaded workers pull jobs in batches
 * Jobs are executed with timeouts and retries
 * Lifecycle hooks are respected: `before_job`, `after_job`, `on_error`
+* On graceful shutdown, all active workers cleanly stop, flush logs, and exit safely
+* Plugin-based workers also receive lifecycle events for teardown
 
 ### Backends
 
 * Memory and file-based backends
 * Fully pluggable via interface (`BaseJobQueue`, `BaseResultBackend`)
+* Plugins can register new queue or result backends via `.nuvom_plugins.toml`
+* SQLite backend uses on-disk persistence with a compact schema and fast queries
 
 ---
 
@@ -241,18 +250,35 @@ NUVOM_TIMEOUT_POLICY=fail|retry|ignore
 
 ## 🛠 Extending Nuvom
 
-Add your own backend:
+Example: Registering a custom result backend plugin
 
 ```python
-from nuvom.queue_backends.base import BaseJobQueue
+from nuvom.plugins.contracts import Plugin
 
-class MyCustomQueue(BaseJobQueue):
-    def enqueue(self, job): ...
-    def dequeue(self, timeout=1): ...
-    ...
+class MyResultBackend:
+    def set_result(...): ...
+    def get_result(...): ...
+    def set_error(...): ...
+    def get_error(...): ...
+
+class MyPlugin(Plugin):
+    api_version = "<version>"
+    name = "my_plugin"
+    provides = ["result_backend"]
+
+    def start(self, settings):
+        from nuvom.plugins.registry import register_result_backend
+        register_result_backend("my_backend", MyResultBackend)
+
+    def stop(self): pass
 ```
 
-Then configure it via `.env` or code.
+Add it to `.nuvom_plugins.toml`:
+
+```toml
+[plugins]
+result_backend = ["my_plugin:MyPlugin"]
+```
 
 ---
 
@@ -267,6 +293,7 @@ nuvom/
 ├── queue_backends/      # File & memory queues
 ├── result_backends/     # Pluggable result stores
 ├── registry/            # Task registry singleton
+├── plugins/             # Nuvom plugins' loader, registr and contracts
 ├── task.py              # Task decorator logic
 ├── worker.py            # Threaded worker pool, Task dispatching and retries
 ├── utils/               # File ops, serializers, etc.
@@ -359,12 +386,24 @@ Nuvom now has first-class observability:
 
 ### ✅ v0.8  Reliability & DX Polish
 
-* [x] ✅ Retry System   Retry-on-failure, retry limits, delay support
-* [x] ✅ Timeouts       Per-job timeout and termination
-* [x] ✅ Observability  Tracebacks in CLI and SDK, job attempt metadata
-* [x] ✅ CLI Polish     `runtestworker`, formatted output modes, job history
-* [x] ✅ SDK Tools      `retry_job()` for re-enqueuing failed jobs
-* [x] ✅ Docs           Full README update for all new features
+* [x] Retry System   Retry-on-failure, retry limits, delay support
+* [x] Timeouts       Per-job timeout and termination
+* [x] Observability  Tracebacks in CLI and SDK, job attempt metadata
+* [x] CLI Polish     `runtestworker`, formatted output modes, job history
+* [x] SDK Tools      `retry_job()` for re-enqueuing failed jobs
+* [x] Docs           Full README update for all new features
+
+---
+
+### ✅ v0.9 — Plugin Architecture & SQLite
+
+* [x] Plugin-first backend architecture with `.nuvom_plugins.toml`
+* [x] Graceful worker shutdown (plugin-aware lifecycle teardown)
+* [x] SQLite result backend (structured schema + full metadata)
+* [x] Test coverage and registry updates for plugin-based backends
+* [x] Clean logging and startup behavior for dynamic backends
+
+---
 
 ## 🧪 Future (Backlog Ideas)
 

@@ -11,9 +11,9 @@ We welcome improvements in stability, performance, plugins (new backends, tools,
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/your-org/nuvom
-   cd nuvom
-    ````
+   git clone https://github.com/nahom-zewdu/Nuvom
+   cd Nuvom
+   ```
 
 2. **Install in editable mode:**
 
@@ -43,20 +43,44 @@ We welcome improvements in stability, performance, plugins (new backends, tools,
 
 ## 🧩 Plugin-Based Development
 
-Most Nuvom components are extensible via base interfaces. To add your own:
+Most Nuvom components are extensible via base interfaces and the `Plugin` protocol (v0.9+).
+
+To add your own:
 
 ### ➕ New Queue Backend
 
 1. Subclass `BaseJobQueue` from `nuvom.queue_backends.base`.
 2. Implement required methods: `enqueue`, `dequeue`, `pop_batch`, `qsize`, `clear`.
-3. Register it in config or inject dynamically.
+3. Either:
+
+   * Register the backend name in `.env`, or
+   * Create a plugin module and register it via `.nuvom_plugins.toml`.
 4. Add tests under `tests/queue_backends/`.
 
 ### ➕ New Result Backend
 
 1. Subclass `BaseResultBackend` from `nuvom.result_backends.base`.
 2. Implement: `set_result`, `get_result`, `set_error`, `get_error`, `get_full`, `list_jobs`.
-3. Add tests and update `nuvom.config.get_backend()` if needed.
+3. Register via plugin (preferred) or in `.env`.
+4. Add tests under `tests/result_backends/`.
+
+### 🧪 Plugin Testing (v0.9+)
+
+Use the CLI to validate plugin loading:
+
+```bash
+nuvom plugin test
+nuvom plugin list
+nuvom plugin inspect <plugin_name>
+```
+
+Example `.nuvom_plugins.toml`:
+
+```toml
+[plugins]
+queue_backend = ["my_module:MyQueuePlugin"]
+result_backend = ["my_module:MyResultPlugin"]
+```
 
 ---
 
@@ -75,6 +99,7 @@ Test philosophy:
 * Use actual queue + result backends in test scenarios.
 * Cover all code paths, including failure cases.
 * Test both CLI and programmatic usage.
+* For plugin-related code, use isolated `.nuvom_plugins.toml` in `tmp_path`.
 
 ---
 
@@ -89,7 +114,7 @@ black .
 ruff check .
 ```
 
-To format and lint your code. Run them before every commit.
+Run these before every commit.
 
 ---
 
@@ -97,32 +122,32 @@ To format and lint your code. Run them before every commit.
 
 * Use the centralized `logger` from `nuvom.log`.
 * Use `logger.debug` for internals, `logger.info` for job events, `logger.error` for failures.
-* Never use `print()` in production code (only allowed in dev CLI experiments or debug flags).
+* Avoid `print()` in production—only for CLI experiments or debug flags.
 
 ---
 
 ## 🧠 Commit Conventions
 
-Use meaningful commit messages. Some examples:
+Use meaningful commit messages. Examples:
 
 ```text
-feat(queue): add Redis queue backend support
-fix(worker): handle corrupt job file more gracefully
-refactor: move logging into centralized logger module
-docs: improve README examples and architecture section
+feat(plugins): add dynamic plugin registry and loader
+feat(result): support SQLite result backend
+feat(worker): implement graceful shutdown logic
+test(plugin): add test for plugin-registered backend
+docs: update CONTRIBUTING for plugin architecture
 ```
 
 ---
 
 ## 📁 Suggested Directory Layout
 
-Keep your modules in these directories:
-
 ```text
 nuvom/
 ├── cli/               # CLI entrypoints (Typer commands)
 ├── queue_backends/    # Your queue logic (File, Memory, etc.)
 ├── result_backends/   # Result stores
+├── plugins/           # Plugin loader, registry, contracts
 ├── execution/         # JobRunner and execution context
 ├── discovery/         # Task discovery and manifest
 ├── registry/          # Task registry and auto-registration
@@ -139,8 +164,9 @@ nuvom/
 * Think in small, testable units.
 * Write docstrings for all public classes and methods.
 * Prefer clarity over cleverness.
-* Avoid global state unless absolutely necessary (use singletons sparingly and safely).
-* Always consider how a new change fits into the architecture.
+* Avoid global state unless absolutely necessary.
+* Use plugin-based registration when possible for new backends.
+* Ensure plugin components follow the `Plugin` protocol contract.
 
 ---
 
@@ -164,3 +190,5 @@ For more details, see the [`README`](/README.md) and [`ARCHITECTURE`](docs/archi
 ---
 
 Happy contributing! 🧠💡
+
+---

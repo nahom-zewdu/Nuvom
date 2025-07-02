@@ -56,7 +56,7 @@ def test_job_is_retried_after_delay():
     worker.start(); dispatcher.start()
 
     time.sleep(0.5);  assert attempt_counter["count"] == 1  # first attempt
-    time.sleep(0.5);  assert attempt_counter["count"] == 1  # not yet retried
+    time.sleep(1);  assert attempt_counter["count"] == 1  # not yet retried
     time.sleep(1);  assert attempt_counter["count"] == 2  # retried & ok
 
     assert get_result(job.id) == "recovered"

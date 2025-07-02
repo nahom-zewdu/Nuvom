@@ -13,9 +13,10 @@ import threading
 from nuvom.serialize import get_serializer
 from nuvom.job import Job
 from nuvom.log import logger
+from nuvom.plugins.contracts import Plugin, API_VERSION
+from nuvom.queue_backends.base import BaseJobQueue
 
-
-class MemoryJobQueue:
+class MemoryJobQueue(BaseJobQueue):
     """
     An in-memory job queue backed by queue.Queue with thread safety.
 
@@ -24,6 +25,15 @@ class MemoryJobQueue:
         lock (threading.Lock): Lock to synchronize batch operations.
         serializer: Serializer instance (currently unused but reserved).
     """
+     # --- Plugin metadata --------------------------------------------------
+    api_version = API_VERSION
+    name        = "memory"
+    provides    = ["queue_backend"]
+    requires: list[str] = []
+
+    # start/stop are no‑ops for this lightweight backend
+    def start(self, settings: dict): ...
+    def stop(self): ...
 
     def __init__(self, maxsize: int = 0):
         """
