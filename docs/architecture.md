@@ -101,7 +101,7 @@ All queues must implement:
 - `qsize()`
 - `clear()`
 
-Custom queues can be added by implementing `BaseJobQueue`.
+Use `Plugin` protocol to add dynamic queue backends that load at worker startup.
 
 ---
 
@@ -113,6 +113,11 @@ Location: `nuvom/worker.py`, `nuvom/execution/job_runner.py`
 - `JobRunner`: handles timeout, retries, and lifecycle hooks (`before_job`, `after_job`, `on_error`).
 - Jobs are executed in isolated `ThreadPoolExecutor`s.
 - Results or errors are stored after execution.
+- **Graceful shutdown lifecycle**: When a shutdown is triggered, workers:
+
+  - Stop accepting new jobs
+  - Finish current job in-flight
+  - Log safe shutdown and exit cleanly
 
 ---
 
@@ -124,6 +129,8 @@ Backends:
 
 - `MemoryResultBackend`: in-memory result store.
 - `FileResultBackend`: persistent, file-based result storage.
+- `SQLiteResultBackend`: fast, file-based relational backend (v0.9+).
+- 🔌 Plugin-aware: load external result backends via `.nuvom_plugins.toml`.
 
 All backends implement:
 
@@ -149,8 +156,14 @@ Location: `nuvom/log.py`
 ## 🧰 Utility Modules
 
 - `nuvom/config.py`: Loads environment variables via `pydantic-settings`.
+- `sqlite_db_path` config for SQLite backend (v0.9+).
 - `nuvom/utils/`: Filesystem helpers like `safe_remove`, `.nuvomignore` parsing.
 - `nuvom/serialize/`: Msgpack-based (or custom) serialization support.
+- `nuvom/plugins/`: 🆕 Plugin system logic (v0.9+)
+
+  - `loader.py`: Parses `.nuvom_plugins.toml`, loads user plugins dynamically
+  - `registry.py`: Central plugin registry for queue/result backend types
+  - `types.py`: `Plugin` protocol every plugin must follow
 
 ---
 
@@ -163,6 +176,25 @@ You can easily extend Nuvom by:
 - Creating your own CLI commands via Typer (see `nuvom/cli/`)
 - Hooking into the manifest or discovery system
 - Using dynamic imports and lazy task loading
+
+**v0.9 Plugin System Details**:
+
+- Plugin entrypoints defined in `.nuvom_plugins.toml`
+- Each plugin must implement the `Plugin` protocol (`name`, `type`, `load()` method)
+- Registered on worker startup, not CLI runtime
+- CLI commands:
+
+  - `nuvom plugin list`
+  - `nuvom plugin inspect <name>`
+  - `nuvom plugin test`
+
+Example plugin definition:
+
+```toml
+[plugins]
+queue_backend = ["my_backend.queue:CustomQueue"]
+result_backend = ["my_backend.result:CustomResult"]
+```
 
 ---
 
@@ -181,8 +213,14 @@ You can easily extend Nuvom by:
    - Stores result or error
    - Retries if needed
 
-7. `nuvom inspect job <job_id>` shows detailed metadata for executed jobs.
-8. `nuvom history recent` with `--limit` and `--status` flag shows list of jobs with their metadata.
+7. If shutdown is triggered:
+
+   - Worker stops polling new jobs
+   - Gracefully completes current execution
+   - Logs shutdown event
+
+8. `nuvom inspect job <job_id>` shows detailed metadata for executed jobs.
+9. `nuvom history recent` with `--limit` and `--status` flag shows list of jobs with their metadata.
 
 ---
 
@@ -198,12 +236,16 @@ You can easily extend Nuvom by:
 
 ## 🛣️ Road Ahead
 
-Coming soon:
+What's next (v1.0 and beyond):
 
-- Redis and SQLite queue/result backends
-- DAG-style task chaining
-- Plugin registry system
-- Multi-host distributed workers
+- [x] Plugin loader and dynamic backend system ✅ *(v0.9)*
+- [x] SQLite result backend ✅ *(v0.9)*
+- [x] Graceful shutdown logic ✅ *(v0.9)*
+- [ ] Redis-based queue and result backends
+- [ ] DAG-style task chaining
+- [ ] Distributed multi-host execution
+- [ ] Rich visual dashboard
+- [ ] VSCode extension
 
 ---
 
