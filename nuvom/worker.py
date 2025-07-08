@@ -22,7 +22,7 @@ from typing import List
 
 from nuvom.config import get_settings
 from nuvom.execution.job_runner import JobRunner
-from nuvom.log import logger
+from nuvom.log import get_logger
 from nuvom.queue import get_queue_backend
 from nuvom.registry.auto_register import auto_register_from_manifest
 from nuvom.plugins.loader import LOADED_PLUGINS
@@ -32,6 +32,7 @@ from nuvom.plugins.loader import shutdown_plugins
 _shutdown_event = threading.Event()          # Global stop-flag for all threads
 # ------------------------------------------------------------------------- #
 
+logger = get_logger()
 
 class WorkerThread(threading.Thread):
     """
