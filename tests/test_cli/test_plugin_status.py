@@ -13,15 +13,15 @@ def reset_plugins():
     Test isolation: clear plugin registry and loader cache before each test.
     """
     from nuvom.plugins.registry import REGISTRY
-    from nuvom.plugins.loader import _LOADED
+    from nuvom.plugins.loader import LOADED_PLUGINS
 
     REGISTRY._caps.clear()       # wipe registry state
-    _LOADED.clear()              # force re‑load on next call
+    LOADED_PLUGINS.clear()              # force re‑load on next call
 
     yield                        # ← test runs here
 
     REGISTRY._caps.clear()
-    _LOADED.clear()
+    LOADED_PLUGINS.clear()
 
 
 def test_plugin_status_prints_table():
