@@ -10,8 +10,9 @@ and conflict handling (force/silent modes).
 import threading
 from typing import Callable, Dict, Optional, Any
 from dataclasses import dataclass
-from nuvom.log import logger
+from nuvom.log import get_logger
 
+logger = get_logger()
 
 @dataclass
 class TaskInfo:
