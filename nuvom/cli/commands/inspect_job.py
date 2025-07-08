@@ -18,7 +18,9 @@ from rich.table import Table
 
 from nuvom.result_store import get_backend
 from nuvom.serialize import deserialize
-from nuvom.log import logger
+from nuvom.log import get_logger
+
+logger = get_logger()
 
 inspect_app = typer.Typer(
     name="inspect",
