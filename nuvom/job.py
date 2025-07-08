@@ -5,9 +5,12 @@ import time
 from enum import Enum
 from typing import Callable, Optional, Any, Literal
 
-from nuvom.log import logger
+from nuvom.log import get_logger
 from nuvom.result_store import get_backend
 from nuvom.config import get_settings
+
+
+logger = get_logger()
 
 class JobStatus(str, Enum):
     """Enumeration of possible job states in Nuvom's lifecycle."""

@@ -11,7 +11,9 @@ from nuvom.config import get_settings
 from nuvom.worker import start_worker_pool
 from nuvom.result_store import get_result, get_error
 from nuvom.cli.commands import discover_tasks, list_tasks, inspect_job, history, runtestworker, plugin
-from nuvom.log import logger
+from nuvom.log import get_logger
+
+logger = get_logger()
 
 console = Console()
 app = typer.Typer(

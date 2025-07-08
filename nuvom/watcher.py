@@ -5,11 +5,15 @@ from watchdog.events import FileSystemEventHandler
 from threading import Thread
 from pathlib import Path
 
-from nuvom.log import logger
+from nuvom.log import get_logger
 from nuvom.discovery.manifest import ManifestManager
 from nuvom.discovery.loader import load_task
 from nuvom.registry.registry import get_task_registry
 from nuvom.registry.auto_register import auto_register_from_manifest
+
+
+logger = get_logger()
+
 
 class ManifestChangeHandler(FileSystemEventHandler):
     """

@@ -13,8 +13,9 @@ from types import ModuleType
 from typing import Callable
 
 from nuvom.discovery.reference import TaskReference
-from nuvom.log import logger
+from nuvom.log import get_logger
 
+logger = get_logger()
 
 def unique_module_name_from_path(path: str) -> str:
     """

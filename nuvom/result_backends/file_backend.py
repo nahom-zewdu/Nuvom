@@ -29,8 +29,8 @@ class FileResultBackend(BaseResultBackend):
 
     # --- Plugin metadata --------------------------------------------------
     api_version = API_VERSION
-    name        = "memory"
-    provides    = ["queue_backend"]
+    name        = "file"
+    provides    = ["result_backend"]
     requires: list[str] = []
     
     def __init__(self):

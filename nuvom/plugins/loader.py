@@ -25,7 +25,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Set
 
-from nuvom.log import logger
+from nuvom.log import get_logger
 from nuvom.plugins.contracts import API_VERSION, Plugin
 from nuvom.plugins.registry import REGISTRY
 
@@ -35,7 +35,7 @@ from nuvom.plugins.registry import REGISTRY
 _TOML_PATH = Path(".nuvom_plugins.toml")
 _LOADED: Set[str] = set()       # memoised "module[:attr]" specs
 LOADED_PLUGINS: Set[Plugin] = set()   # instantiated plugin objects
-
+logger = get_logger()
 
 # --------------------------------------------------------------------------- #
 # Discovery helpers

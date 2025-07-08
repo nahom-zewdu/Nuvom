@@ -9,9 +9,10 @@ from rich.table import Table
 
 from nuvom.discovery.manifest import ManifestManager
 from nuvom.registry.registry import get_task_registry, TaskInfo
-from nuvom.log import logger
+from nuvom.log import get_logger
 
 console = Console()
+logger = get_logger()
 
 list_app = typer.Typer(
     name="list",

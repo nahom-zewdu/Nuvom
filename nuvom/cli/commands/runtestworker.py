@@ -17,7 +17,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from nuvom.job import Job
-from nuvom.log import logger
+from nuvom.log import get_logger
 from nuvom.registry.auto_register import auto_register_from_manifest
 
 runtest_app = typer.Typer(
@@ -29,6 +29,7 @@ runtest_app = typer.Typer(
     )
 
 console = Console()
+logger = get_logger()
 
 
 @runtest_app.command("run")

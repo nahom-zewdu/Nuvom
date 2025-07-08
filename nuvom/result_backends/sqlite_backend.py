@@ -26,11 +26,11 @@ from typing import Any, Optional, Dict, List
 
 from nuvom.serialize import serialize, deserialize
 from nuvom.result_backends.base import BaseResultBackend
-from nuvom.log import logger
+from nuvom.log import get_logger
 from nuvom.plugins.contracts import Plugin, API_VERSION
 
 _SQLITE_THREAD_LOCAL = threading.local()
-
+logger = get_logger()
 
 def _get_connection(db_path: Path) -> sqlite3.Connection:
     """
@@ -86,8 +86,8 @@ class SQLiteResultBackend(BaseResultBackend):
 
      # --- Plugin metadata --------------------------------------------------
     api_version = API_VERSION
-    name        = "memory"
-    provides    = ["queue_backend"]
+    name        = "sqlite"
+    provides    = ["result_backend"]
     requires: list[str] = []
 
     # start/stop are no‑ops for this lightweight backend

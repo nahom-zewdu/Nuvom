@@ -11,11 +11,11 @@ from typing import List, Generator
 import os
 
 from nuvom.discovery.filters import PathspecMatcher
-from nuvom.log import logger
+from nuvom.log import get_logger
 
 DEFAULT_EXCLUDE_DIRS = {"__pycache__", ".venv", ".git", "migrations", ".pytest_cache"}
 NUVOMIGNORE_FILE = ".nuvomignore"
-
+logger = get_logger()
 
 def load_nuvomignore(root: Path) -> List[str]:
     """

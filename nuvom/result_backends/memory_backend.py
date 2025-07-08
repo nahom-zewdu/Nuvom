@@ -35,7 +35,7 @@ class MemoryResultBackend(BaseResultBackend):
      # --- Plugin metadata --------------------------------------------------
     api_version = API_VERSION
     name        = "memory"
-    provides    = ["queue_backend"]
+    provides    = ["result_backend"]
     requires: list[str] = []
 
     # start/stop are no‑ops for this lightweight backend
