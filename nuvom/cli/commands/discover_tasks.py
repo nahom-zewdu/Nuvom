@@ -13,9 +13,10 @@ from pathlib import Path
 from nuvom.discovery.discover_tasks import discover_tasks
 from nuvom.discovery.manifest import ManifestManager
 from nuvom.discovery.reference import TaskReference
-from nuvom.log import logger
+from nuvom.log import get_logger
 
 console = Console()
+logger = get_logger()
 
 discover_app = typer.Typer(
     name="discover",
