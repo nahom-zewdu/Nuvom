@@ -1,54 +1,62 @@
 # nuvom/result_backends/file_backend.py
-
 """
-FileResultBackend provides a persistent file-based implementation of the result backend.
+Persistent, file‑based result backend.
 
-Stores job results and error metadata in serialized files using a dedicated directory.
-Persists all job metadata to `.meta` files for inspection and introspection support.
+Improvements
+------------
+• Atomic write – temp file + os.replace() to avoid corrupt/partial files
+• Accurate traceback capture for passed‑in Exception
+• Re‑use helper _write() to DRY set_result / set_error
 """
+
+from __future__ import annotations
 
 import os
 import traceback
-from typing import Optional, Any
+from tempfile import NamedTemporaryFile
+from typing import Any, Optional
 
 from nuvom.result_backends.base import BaseResultBackend
-from nuvom.serialize import serialize, deserialize
-from nuvom.plugins.contracts import Plugin, API_VERSION
+from nuvom.serialize import deserialize, serialize
+from nuvom.plugins.contracts import API_VERSION, Plugin
 
 
 class FileResultBackend(BaseResultBackend):
-    """
-    A file-based result backend that persists job outcomes to disk.
-
-    Stores structured metadata (status, args, tracebacks, timestamps, etc.)
-    in `.meta` files for each job. Falls back to legacy `.out` and `.err`.
-
-    Attributes:
-        result_dir (str): Directory for all job result files.
-    """
-
-    # --- Plugin metadata --------------------------------------------------
+    # ---- Plugin metadata --------------------------------------------- #
     api_version = API_VERSION
-    name        = "file"
-    provides    = ["result_backend"]
+    name = "file"
+    provides = ["result_backend"]
     requires: list[str] = []
-    
-    def __init__(self):
-        self.result_dir = "job_results"
+
+    # ------------------------------------------------------------------ #
+    def __init__(self, result_dir: str = "job_results") -> None:
+        self.result_dir = result_dir
         os.makedirs(self.result_dir, exist_ok=True)
 
     # start/stop are no‑ops for this lightweight backend
     def start(self, settings: dict): ...
     def stop(self): ...
 
-    def _path(self, job_id, ext: str = "meta") -> str:
-        """Construct the full file path for a job's metadata file."""
+    # ------------------------------------------------------------------ #
+    # Internal helpers
+    # ------------------------------------------------------------------ #
+    def _path(self, job_id: str, ext: str = "meta") -> str:
         return os.path.join(self.result_dir, f"{job_id}.{ext}")
 
+    def _write_atomic(self, path: str, data: bytes) -> None:
+        """Write file atomically to prevent partial writes under concurrency."""
+        tmp_path = f"{path}.tmp"
+        with open(tmp_path, "wb") as tmp:
+            tmp.write(data)
+        os.replace(tmp_path, path)
+
+    # ------------------------------------------------------------------ #
+    # BaseResultBackend implementation
+    # ------------------------------------------------------------------ #
     def set_result(
         self,
         job_id: str,
-        func_name:str,
+        func_name: str,
         result: Any,
         *,
         args: Optional[tuple] = None,
@@ -57,11 +65,10 @@ class FileResultBackend(BaseResultBackend):
         attempts: Optional[int] = None,
         created_at: Optional[float] = None,
         completed_at: Optional[float] = None,
-    ):
-        """Store full result metadata to a `.meta` file."""
-        data = {
+    ) -> None:
+        meta = {
             "job_id": job_id,
-            "func_name":func_name,
+            "func_name": func_name,
             "status": "SUCCESS",
             "result": result,
             "args": args or [],
@@ -71,27 +78,24 @@ class FileResultBackend(BaseResultBackend):
             "created_at": created_at,
             "completed_at": completed_at,
         }
-        with open(self._path(job_id), "wb") as f:
-            f.write(serialize(data))
+        self._write_atomic(self._path(job_id), serialize(meta))
 
     def get_result(self, job_id: str) -> Optional[Any]:
-        """Load only the result value from metadata or fallback `.out`."""
         meta_path = self._path(job_id)
         if os.path.exists(meta_path):
             with open(meta_path, "rb") as f:
                 return deserialize(f.read()).get("result")
 
-        # fallback: legacy file
-        out_path = self._path(job_id, "out")
-        if os.path.exists(out_path):
-            with open(out_path, "rb") as f:
+        legacy = self._path(job_id, "out")
+        if os.path.exists(legacy):
+            with open(legacy, "rb") as f:
                 return deserialize(f.read())
         return None
 
     def set_error(
         self,
         job_id: str,
-        func_name:str,
+        func_name: str,
         error: Exception,
         *,
         args: Optional[tuple] = None,
@@ -100,12 +104,11 @@ class FileResultBackend(BaseResultBackend):
         attempts: Optional[int] = None,
         created_at: Optional[float] = None,
         completed_at: Optional[float] = None,
-    ):
-        """Store full error metadata to a `.meta` file."""
-        tb_str = traceback.format_exc()
-        data = {
+    ) -> None:
+        tb_str = "".join(traceback.format_exception(type(error), error, error.__traceback__))
+        meta = {
             "job_id": job_id,
-            "func_name":func_name,
+            "func_name": func_name,
             "status": "FAILED",
             "error": {
                 "type": type(error).__name__,
@@ -119,26 +122,22 @@ class FileResultBackend(BaseResultBackend):
             "created_at": created_at,
             "completed_at": completed_at,
         }
-
-        with open(self._path(job_id), "wb") as f:
-            f.write(serialize(data))
+        self._write_atomic(self._path(job_id), serialize(meta))
 
     def get_error(self, job_id: str) -> Optional[str]:
-        """Retrieve the error message from metadata or fallback `.err` file."""
         meta_path = self._path(job_id)
         if os.path.exists(meta_path):
             with open(meta_path, "rb") as f:
                 data = deserialize(f.read())
-                return data.get("error", {}).get("message")
+            return data.get("error", {}).get("message")
 
-        err_path = self._path(job_id, "err")
-        if os.path.exists(err_path):
-            with open(err_path, "r") as f:
+        legacy = self._path(job_id, "err")
+        if os.path.exists(legacy):
+            with open(legacy, "r", encoding="utf-8") as f:
                 return f.read()
         return None
 
     def get_full(self, job_id: str) -> Optional[dict]:
-        """Return full job state metadata from `.meta` file if available."""
         meta_path = self._path(job_id)
         if not os.path.exists(meta_path):
             return None
@@ -146,17 +145,10 @@ class FileResultBackend(BaseResultBackend):
             return deserialize(f.read())
 
     def list_jobs(self) -> list[dict]:
-        """
-        Return full metadata for all jobs in the result directory.
-
-        Returns:
-            List of job metadata dicts (as returned by get_full()).
-        """
         jobs = []
         for file in os.listdir(self.result_dir):
             if file.endswith(".meta"):
-                job_id = file.rsplit(".", 1)[0]
-                full = self.get_full(job_id)
-                if full:
+                job_id = file[:-5]  # strip ".meta"
+                if full := self.get_full(job_id):
                     jobs.append(full)
         return jobs
