@@ -10,8 +10,9 @@ import json
 from pathlib import Path
 from typing import List, Optional
 from nuvom.discovery.reference import TaskReference
-from nuvom.log import logger
+from nuvom.log import get_logger
 
+logger = get_logger()
 
 class ManifestManager:
     """
