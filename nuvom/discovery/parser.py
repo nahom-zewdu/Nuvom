@@ -8,8 +8,9 @@ definitions decorated with @task in Python source files.
 import ast
 from pathlib import Path
 from typing import List
-from nuvom.log import logger
+from nuvom.log import get_logger
 
+logger = get_logger()
 
 def find_task_defs(file_path: Path) -> List[str]:
     """
