@@ -68,8 +68,8 @@ class NuvomSettings(BaseSettings):
     @classmethod
     def _warn_if_plugin_backend(cls, v: str) -> str:
         if v not in _BUILTIN_BACKENDS:
-            from nuvom.log import logger
-            logger.debug("[Config] Using plugin-defined result backend: %r", v)
+            import logging
+            logging.getLogger(__name__).debug("Using plugin-defined result backend: %r", v)
         return v
 
     # ---------- Developer Display ----------
