@@ -17,13 +17,13 @@ import nuvom.queue as nuvo_queue
 def nuvom_isolate():
     # ── SET‑UP ──────────────────────────────────────────────────────────
     override_settings(queue_backend="memory", result_backend="memory")
-    reset_result_backend()          # fresh MemoryResultBackend
-    reset_q_backend()               # clear queue singleton
-    plugload._LOADED.clear()
+    reset_result_backend()
+    reset_q_backend()
+    plugload.LOADED_PLUGINS.clear()
+    plugload._LOADED_SPECS.clear()   # <== Add this line
 
-    importlib.reload(nuvo_queue)    # make queue.py re‑resolve backend
+    importlib.reload(nuvo_queue)
 
-    # stop any stray worker / dispatcher threads
     _shutdown_event.set()
     for t in list(threading.enumerate()):
         if t.name.startswith(("Worker-", "Dispatcher")):
@@ -42,5 +42,7 @@ def nuvom_isolate():
     reset_result_backend()
     reset_q_backend()
     
-    plugload._LOADED.clear()
+    plugload.LOADED_PLUGINS.clear()
+    plugload._LOADED_SPECS.clear()   # <== Add this line too
+
     plugreg._reset_for_tests()
