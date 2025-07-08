@@ -19,8 +19,10 @@ from nuvom.job import Job
 from nuvom.queue_backends.base import BaseJobQueue
 from nuvom.serialize import serialize, deserialize
 from nuvom.utils.file_utils.safe_remove import safe_remove
-from nuvom.log import logger
+from nuvom.log import get_logger
 from nuvom.plugins.contracts import Plugin, API_VERSION
+
+logger = get_logger()
 
 class FileJobQueue(BaseJobQueue):
     """
@@ -33,7 +35,7 @@ class FileJobQueue(BaseJobQueue):
     
      # --- Plugin metadata --------------------------------------------------
     api_version = API_VERSION
-    name        = "memory"
+    name        = "file"
     provides    = ["queue_backend"]
     requires: list[str] = []
 
