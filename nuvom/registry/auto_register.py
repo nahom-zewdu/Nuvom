@@ -8,8 +8,9 @@ and injecting them into the global task registry.
 from nuvom.discovery.manifest import ManifestManager
 from nuvom.discovery.loader import load_task
 from nuvom.registry.registry import get_task_registry
-from nuvom.log import logger
+from nuvom.log import get_logger
 
+logger = get_logger()
 
 def auto_register_from_manifest(manifest_path: str = None):
     """
