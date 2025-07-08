@@ -1,4 +1,5 @@
-# nuvom/logging.py
+# nuvom/log.py
+
 from __future__ import annotations
 import logging
 import threading
