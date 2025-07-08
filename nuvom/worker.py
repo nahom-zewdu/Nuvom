@@ -7,8 +7,9 @@ Key points
 ----------
 • SIGINT / SIGTERM set a global `_shutdown_event`
 • Workers drain personal queues before exit
-• Dispatcher balances load & respects retry delays
+• Dispatcher balances load & respects retry delays with backoff
 • Plugin shutdown executed after workers drain
+• Robust exception handling in workers to prevent silent crashes
 """
 
 from __future__ import annotations
@@ -30,7 +31,6 @@ from nuvom.plugins.loader import shutdown_plugins
 _shutdown_event = threading.Event()  # Global stop‑flag for all threads
 logger = get_logger()
 # ------------------------------------------------------------------ #
-
 
 class WorkerThread(threading.Thread):
     """
@@ -65,6 +65,10 @@ class WorkerThread(threading.Thread):
         with self._lock:
             return self._in_flight
 
+    def is_full(self) -> bool:
+        """Return True if the personal queue is full."""
+        return self._job_queue.full()
+
     # ----------------------------- thread body --------------------------- #
     def run(self) -> None:  # noqa: D401
         logger.info("[Worker-%s] Online.", self.worker_id)
@@ -88,13 +92,20 @@ class WorkerThread(threading.Thread):
             )
 
             try:
-                JobRunner(job, self.worker_id, self.job_timeout).run()
+                # Resilient execution: catch all to prevent silent thread death
+                try:
+                    JobRunner(job, self.worker_id, self.job_timeout).run()
+                except Exception as e:
+                    logger.error(
+                        "[Worker-%s] Job %s execution failed: %s",
+                        self.worker_id, job.id, e, exc_info=True
+                    )
             finally:
                 with self._lock:
                     self._in_flight -= 1
 
             logger.debug(
-                "[Worker-%s] Completed %s → %s", self.worker_id, job.func_name, job.result
+                "[Worker-%s] Completed %s → %s", self.worker_id, job.func_name, getattr(job, "result", None)
             )
 
 
@@ -109,12 +120,14 @@ class DispatcherThread(threading.Thread):
         workers: List[WorkerThread],
         batch_size: int,
         job_timeout: int,
+        retry_backoff: float = 0.5,
     ) -> None:
         super().__init__(daemon=True, name="Dispatcher")
         self.workers = workers
         self.batch_size = batch_size
         self.job_timeout = job_timeout
         self.queue = get_queue_backend()
+        self.retry_backoff = retry_backoff
 
     def _should_retry_later(self, job) -> bool:
         """Return True if job has a future retry timestamp."""
@@ -133,9 +146,19 @@ class DispatcherThread(threading.Thread):
                 # Retry‑delay handling
                 if self._should_retry_later(job):
                     self.queue.enqueue(job)
+                    # Sleep briefly to avoid busy spinning on retry jobs
+                    time.sleep(self.retry_backoff)
                     continue
 
-                target = min(self.workers, key=lambda w: w.load())
+                # Select least loaded worker who is NOT full
+                candidates = [w for w in self.workers if not w.is_full()]
+                if not candidates:
+                    logger.warning("[Dispatcher] All worker queues full, re-enqueueing job %s", job.id)
+                    self.queue.enqueue(job)
+                    time.sleep(self.retry_backoff)
+                    continue
+
+                target = min(candidates, key=lambda w: w.load())
                 target.submit(job)
                 logger.debug("[Dispatcher] Job %s → Worker-%s", job.id, target.worker_id)
 
@@ -159,10 +182,13 @@ def _install_signal_handlers() -> None:
     signal.signal(signal.SIGTERM, _handler)
 
 
-def start_worker_pool() -> None:
+def start_worker_pool(shutdown_timeout: float = 10.0) -> None:
     """
     Bootstrap the worker pool, run until Ctrl‑C / SIGTERM,
     then drain gracefully and exit.
+
+    Args:
+        shutdown_timeout (float): Max seconds to wait for workers to drain.
     """
     auto_register_from_manifest()
     _install_signal_handlers()
@@ -193,10 +219,13 @@ def start_worker_pool() -> None:
         _shutdown_event.set()  # Ensure global flag is set for any path
         logger.info("[Pool] Awaiting %d worker threads…", len(workers))
 
+        # Wait with timeout for workers to finish cleanly
+        end_time = time.time() + shutdown_timeout
         for w in workers:
-            w.join()
+            remaining = max(0, end_time - time.time())
+            w.join(timeout=remaining)
 
-        logger.info("[Pool] All workers stopped cleanly.")
+        logger.info("[Pool] All workers stopped cleanly or timeout reached.")
 
         # Shut down all loaded plugins
         shutdown_plugins()
