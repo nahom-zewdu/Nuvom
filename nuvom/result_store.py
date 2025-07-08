@@ -18,11 +18,12 @@ from __future__ import annotations
 from typing import Any
 
 from nuvom.config import get_settings
-from nuvom.log import logger
+from nuvom.log import get_logger
 from nuvom.plugins.loader import load_plugins
 from nuvom.plugins.registry import get_result_backend_cls
 
 _backend = None  # singleton instance
+logger = get_logger()
 
 
 # --------------------------------------------------------------------------- #
