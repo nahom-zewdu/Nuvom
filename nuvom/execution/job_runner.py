@@ -10,9 +10,11 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeout
 
 from nuvom.result_store import set_result, set_error
 from nuvom.queue import get_queue_backend
-from nuvom.log import logger
+from nuvom.log import get_logger
 from nuvom.job import Job
 from nuvom.config import get_settings
+
+logger = get_logger()
 
 class JobRunner:
     """
