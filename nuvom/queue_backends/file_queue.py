@@ -1,12 +1,11 @@
-# nuvom/queue_backends/file_queue.py
-
 """
-FileJobQueue provides a file-based persistent job queue backend. 
-Jobs are serialized and stored as files in a directory. It handles 
-concurrent access with file locking via atomic rename, supports batch
-retrieval, and cleans up corrupted or stale job files.
+FileJobQueue provides a file-based persistent job queue backend.
 
-This backend is suitable for lightweight setups without external queue services.
+This backend stores serialized Job objects as individual files in a specified directory.
+It supports atomic dequeue via file renaming (to simulate locking), batch popping,
+queue size inspection, and cleanup of corrupted or abandoned job files.
+
+This is ideal for lightweight environments or local development without external services.
 """
 
 import uuid
@@ -24,107 +23,113 @@ from nuvom.plugins.contracts import Plugin, API_VERSION
 
 logger = get_logger()
 
+
 class FileJobQueue(BaseJobQueue):
     """
-    A file-based job queue using the filesystem for persistent job storage and locking.
+    File-based job queue implementation using the filesystem for persistent job storage.
 
-    Attributes:
-        dir (str): Directory path where job files are stored.
-        lock (Lock): Thread lock to synchronize queue operations.
+    Jobs are serialized as files and stored in a directory. Thread-safe dequeueing is
+    achieved by atomically renaming files. This implementation ensures recoverability
+    and visibility into job state.
+
+    Args:
+        directory (str): Directory where job files will be stored.
     """
-    
-     # --- Plugin metadata --------------------------------------------------
-    api_version = API_VERSION
-    name        = "file"
-    provides    = ["queue_backend"]
-    requires: list[str] = []
 
-    # start/stop are no‑ops for this lightweight backend
-    def start(self, settings: dict): ...
-    def stop(self): ...
+    api_version = API_VERSION
+    name = "file"
+    provides = ["queue_backend"]
+    requires: list[str] = []
 
     def __init__(self, directory: str = "nuvom_queue"):
         """
-        Initialize the FileJobQueue.
+        Initialize the job queue and ensure the directory exists.
 
         Args:
-            directory (str): Directory to store job files. Created if missing.
+            directory (str): Target directory for storing job files.
         """
         self.dir = directory
         self.lock = Lock()
         os.makedirs(self.dir, exist_ok=True)
 
+    def start(self, settings: dict):
+        """No-op for compatibility with plugin interface."""
+        ...
+
+    def stop(self):
+        """No-op for compatibility with plugin interface."""
+        ...
+
     def _job_path(self, job_id: str) -> str:
         """
-        Generate a unique job file path using timestamp and job ID.
+        Construct a file path for a job using timestamp and ID.
 
         Args:
             job_id (str): Unique job identifier.
 
         Returns:
-            str: Full file path for the job.
+            str: Full job file path.
         """
         ts = time.time()
         return os.path.join(self.dir, f"{ts:.6f}_{job_id}.msgpack")
 
     def _claim_file(self, filepath: str, retries: int = 5, delay: float = 0.05) -> Optional[str]:
         """
-        Atomically rename a job file to mark it as claimed by this thread.
+        Attempt to atomically rename a file to claim it for processing.
 
         Args:
-            filepath (str): Original job file path.
-            retries (int): Number of rename attempts.
-            delay (float): Delay between retries in seconds.
+            filepath (str): Original file path to claim.
+            retries (int): Number of retry attempts.
+            delay (float): Delay between attempts in seconds.
 
         Returns:
-            Optional[str]: Claimed file path or None if claiming failed.
+            Optional[str]: New claimed file path, or None if claim fails.
         """
         claimed_path = filepath + f".claimed.{uuid.uuid4().hex}"
-        for attempt in range(retries):
+        for _ in range(retries):
             if not os.path.exists(filepath):
                 continue
             try:
                 os.rename(filepath, claimed_path)
                 logger.debug(f"Claimed job file '{filepath}' as '{claimed_path}'.")
                 return claimed_path
-            except PermissionError:
+            except (PermissionError, FileNotFoundError):
                 time.sleep(delay)
-            except FileNotFoundError:
-                # Another thread/process claimed or deleted the file
-                continue
-        logger.error(f"Failed to claim job file after {retries} retries: {filepath}")
+        logger.error(f"Failed to claim job file: {filepath}")
         return None
 
-    def enqueue(self, job: Job):
+    def enqueue(self, job: Job) -> None:
         """
-        Serialize and save a job to the queue directory.
+        Serialize and store a job to the queue directory.
 
         Args:
-            job (Job): The job instance to enqueue.
+            job (Job): Job instance to enqueue.
         """
-        job_id = job.id
-        path = self._job_path(job_id)
+        path = self._job_path(job.id)
         with open(path, "wb") as f:
             f.write(serialize(job.to_dict()))
-        logger.info(f"Enqueued job '{job_id}' to file '{path}'.")
+        logger.info(f"Enqueued job '{job.id}' to file '{path}'.")
 
     def dequeue(self, timeout: int = 1) -> Optional[Job]:
         """
-        Remove and return the oldest available job by claiming its file.
+        Atomically retrieve and remove one job from the queue.
 
         Args:
-            timeout (int): Unused in file queue but kept for interface compatibility.
+            timeout (int): Unused, for interface compatibility.
 
         Returns:
-            Optional[Job]: The dequeued job or None if queue is empty.
+            Optional[Job]: Deserialized job or None.
         """
         with self.lock:
-            files = sorted(os.listdir(self.dir))
-            for filename in files:
+            for filename in sorted(os.listdir(self.dir)):
+                if filename.endswith(".corrupt") or ".claimed." in filename:
+                    continue
+
                 original_path = os.path.join(self.dir, filename)
                 claimed_path = self._claim_file(original_path)
                 if not claimed_path:
-                    continue  # File already claimed by another thread/process
+                    continue
+
                 try:
                     with open(claimed_path, "rb") as f:
                         job_data = deserialize(f.read())
@@ -132,87 +137,98 @@ class FileJobQueue(BaseJobQueue):
                     logger.info(f"Dequeued job from '{claimed_path}'.")
                     return Job.from_dict(job_data)
                 except Exception as e:
-                    logger.error(f"Failed to process claimed job file '{claimed_path}': {e}")
+                    logger.error(f"Error reading job file '{claimed_path}': {e}")
                     try:
                         os.rename(claimed_path, claimed_path + ".corrupt")
                     except Exception:
                         safe_remove(claimed_path)
-                    continue
         return None
 
     def pop_batch(self, batch_size: int = 1, timeout: int = 1) -> List[Job]:
         """
-        Remove and return up to `batch_size` jobs from the queue.
+        Atomically retrieve and remove up to `batch_size` jobs from the queue.
 
         Args:
-            batch_size (int): Maximum number of jobs to dequeue.
-            timeout (int): Unused for file queue but present for interface compatibility.
+            batch_size (int): Max number of jobs to return.
+            timeout (int): Unused, for interface compatibility.
 
         Returns:
-            List[Job]: List of dequeued jobs.
+            List[Job]: List of deserialized Job objects.
         """
         jobs = []
         with self.lock:
-            files = sorted(os.listdir(self.dir))[:batch_size]
-            claimed_path = ''
+            files = sorted(os.listdir(self.dir))
             for filename in files:
+                if len(jobs) >= batch_size:
+                    break
                 if filename.endswith(".corrupt") or ".claimed." in filename:
-                    continue  # Skip corrupted or already claimed files
+                    continue
+
                 path = os.path.join(self.dir, filename)
+                claimed_path = self._claim_file(path)
+                if not claimed_path:
+                    continue
+
                 try:
-                    claimed_path = self._claim_file(path)
-                    if not claimed_path:
-                        continue
                     with open(claimed_path, "rb") as f:
                         job_data = deserialize(f.read())
                     safe_remove(claimed_path)
                     jobs.append(Job.from_dict(job_data))
                     logger.info(f"Popped batch job from '{claimed_path}'.")
                 except Exception as e:
-                    logger.error(f"Failed to process job file '{filename}': {e}")
+                    logger.error(f"Failed to process batch job '{claimed_path}': {e}")
                     try:
-                        if not filename.endswith(".corrupt"):
-                            if claimed_path:
-                                corrupt_path = f"{claimed_path}.corrupt"
-                                if os.path.exists(claimed_path):
-                                    os.rename(claimed_path, corrupt_path)
-                                    logger.warning(f"Marked job file as corrupt: {corrupt_path}")
-                            else:
-                                logger.error("No claimed path available to mark as corrupt.")
-                    except PermissionError as pe:
-                        logger.error(f"Failed to mark job file as corrupt due to permission: {claimed_path} - {pe}")
+                        os.rename(claimed_path, claimed_path + ".corrupt")
+                        logger.warning(f"Marked job file as corrupt: {claimed_path}.corrupt")
                     except Exception:
-                        if claimed_path:
-                            safe_remove(claimed_path)
-                    continue
+                        safe_remove(claimed_path)
         return jobs
 
     def qsize(self) -> int:
         """
-        Return the current number of job files in the queue directory.
+        Return number of job files in queue (excluding corrupt).
 
         Returns:
-            int: Number of job files (including possibly corrupt/claimed).
+            int: Number of valid job files.
         """
-        size = len(os.listdir(self.dir))
-        logger.debug(f"Queue size is {size} files.")
-        return size
+        try:
+            return len([f for f in os.listdir(self.dir) if not f.endswith(".corrupt")])
+        except Exception as e:
+            logger.error(f"Error counting queue size: {e}")
+            return 0
 
-    def clear(self):
+    def clear(self) -> int:
         """
-        Delete all job files in the queue directory, clearing the queue.
+        Delete all job-related files from queue directory.
+
+        Returns:
+            int: Number of files removed.
         """
+        removed = 0
         for f in os.listdir(self.dir):
             path = os.path.join(self.dir, f)
-            safe_remove(path)
+            try:
+                safe_remove(path)
+                removed += 1
+            except Exception as e:
+                logger.warning(f"Failed to delete job file '{path}': {e}")
         logger.info("Cleared all job files from queue directory.")
+        return removed
 
-    def cleanup(self):
+    def cleanup(self) -> int:
         """
-        Remove leftover '.corrupt' and '.claimed.*' files from previous crashes or unclean shutdowns.
+        Remove leftover '.corrupt' and '.claimed.*' files from prior crashes.
         """
+        remove_count = 0
+        
         for fname in os.listdir(self.dir):
             if fname.endswith(".corrupt") or ".claimed." in fname:
                 path = os.path.join(self.dir, fname)
-                safe_remove(path)
-                logger.info(f"Removed leftover file: {path}")
+                try:
+                    safe_remove(path)
+                    remove_count += 1
+                    logger.info(f"Cleaned up leftover file: {path}")
+                except Exception as e:
+                    logger.warning(f"Failed to remove leftover file '{path}': {e}")
+
+        return remove_count

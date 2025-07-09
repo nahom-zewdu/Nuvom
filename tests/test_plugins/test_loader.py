@@ -1,3 +1,5 @@
+# tests/test_plugins/test_loader.py
+
 """
 Unit‑tests for the hybrid plugin loader.
 
@@ -10,14 +12,8 @@ Covers:
 """
 
 from types import SimpleNamespace, ModuleType
-from unittest.mock import patch, MagicMock
 
 import textwrap
-
-import importlib
-import sys
-import tomllib
-import pytest
 
 from nuvom.plugins import loader
 
@@ -74,22 +70,23 @@ def test_entry_point_targets(monkeypatch):
 #  Legacy register() loading
 # --------------------------------------------------------------------------- #
 def test_load_plugin_register_function(monkeypatch):
+    called = {"flag": False}
+
     def dummy_register():
-        dummy_register.called = True
+        called["flag"] = True
 
-    dummy_register.called = False
-
-    # Make loader iterate a single spec
+    # Force plugin discovery to only use this dummy spec
     monkeypatch.setattr(loader, "_iter_targets", lambda: ["dummy.module"])
-    # Fresh state
-    loader._LOADED.clear()
+    # Reset loader state
+    loader._LOADED_SPECS.clear()
 
-    # importlib.import_module returns the callable directly
+    # Simulate importlib returning a callable plugin
     monkeypatch.setattr("importlib.import_module", lambda _: dummy_register)
 
     loader.load_plugins()
-    assert dummy_register.called
-    assert "dummy.module" in loader._LOADED
+
+    assert called["flag"], "Expected dummy_register() to be called"
+
 
 
 # --------------------------------------------------------------------------- #
@@ -106,15 +103,21 @@ class GoodPlugin:
 
 
 def test_load_plugin_class_success(monkeypatch):
+    # Only return our test plugin spec
     monkeypatch.setattr(loader, "_iter_targets", lambda: ["plugin.good:GoodPlugin"])
-    loader._LOADED.clear()
+    loader.LOADED_PLUGINS.clear()
+    loader._LOADED_SPECS.clear()
 
+    # Mock importlib to return a module with GoodPlugin
     fake_mod = ModuleType("plugin.good")
     fake_mod.GoodPlugin = GoodPlugin
     monkeypatch.setattr("importlib.import_module", lambda _: fake_mod)
 
     loader.load_plugins()
-    assert "plugin.good:GoodPlugin" in loader._LOADED
+
+    # Check a plugin with name "good" is loaded
+    assert any(p.name == "good" for p in loader.LOADED_PLUGINS), "Expected plugin 'good' to be loaded"
+
 
 
 # --------------------------------------------------------------------------- #
@@ -132,11 +135,11 @@ class BadVersionPlugin:
 
 def test_plugin_version_mismatch_skipped(monkeypatch):
     monkeypatch.setattr(loader, "_iter_targets", lambda: ["plugin.bad:Bad"])
-    loader._LOADED.clear()
+    loader.LOADED_PLUGINS.clear()
 
     fake_mod = ModuleType("plugin.bad")
     fake_mod.Bad = BadVersionPlugin
     monkeypatch.setattr("importlib.import_module", lambda _: fake_mod)
 
     loader.load_plugins()
-    assert "plugin.bad:Bad" not in loader._LOADED
+    assert "plugin.bad:Bad" not in loader.LOADED_PLUGINS

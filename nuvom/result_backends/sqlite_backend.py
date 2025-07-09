@@ -17,35 +17,32 @@ Key design goals
 
 from __future__ import annotations
 
-import os
 import sqlite3
 import threading
 import time
 from pathlib import Path
 from typing import Any, Optional, Dict, List
+import traceback
 
 from nuvom.serialize import serialize, deserialize
 from nuvom.result_backends.base import BaseResultBackend
 from nuvom.log import get_logger
 from nuvom.plugins.contracts import Plugin, API_VERSION
 
-_SQLITE_THREAD_LOCAL = threading.local()
 logger = get_logger()
+_SQLITE_THREAD_LOCAL = threading.local()
 
 def _get_connection(db_path: Path) -> sqlite3.Connection:
     """
-    Return a thread-local SQLite connection in WAL mode.
-
-    The first caller will create the database file and schema if needed.
+    Return a thread-local SQLite connection (WAL mode, autocommit).
+    Initializes schema if needed.
     """
     if not hasattr(_SQLITE_THREAD_LOCAL, "conn"):
-        logger.debug("Opening SQLite connection to %s", db_path)
-        conn = sqlite3.connect(str(db_path), detect_types=sqlite3.PARSE_DECLTYPES)
+        conn = sqlite3.connect(str(db_path), detect_types=sqlite3.PARSE_DECLTYPES, check_same_thread=False)
         conn.execute("PRAGMA journal_mode=WAL;")
         conn.row_factory = sqlite3.Row
         _SQLITE_THREAD_LOCAL.conn = conn
 
-        # Cheap schema-exists check
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS jobs (
@@ -73,24 +70,17 @@ def _get_connection(db_path: Path) -> sqlite3.Connection:
 class SQLiteResultBackend(BaseResultBackend):
     """
     SQLite-based backend storing every job in a single `jobs` table.
-
-    Parameters
-    ----------
-    db_path : str | Path
-        Location of the SQLite database file. Defaults to ``.nuvom/nuvom.db``.
     """
+
+    api_version = API_VERSION
+    name = "sqlite"
+    provides = ["result_backend"]
+    requires: list[str] = []
 
     def __init__(self, db_path: str | Path | None = None) -> None:
         self.db_path = Path(db_path or ".nuvom/nuvom.db")
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
-     # --- Plugin metadata --------------------------------------------------
-    api_version = API_VERSION
-    name        = "sqlite"
-    provides    = ["result_backend"]
-    requires: list[str] = []
-
-    # start/stop are no‑ops for this lightweight backend
     def start(self, settings: dict): ...
     def stop(self): ...
 
@@ -120,8 +110,13 @@ class SQLiteResultBackend(BaseResultBackend):
                 :created_at, :completed_at
             )
             ON CONFLICT(job_id) DO UPDATE SET
+                func_name    = excluded.func_name,
+                args         = excluded.args,
+                kwargs       = excluded.kwargs,
                 status       = 'SUCCESS',
                 result       = excluded.result,
+                attempts     = excluded.attempts,
+                retries_left = excluded.retries_left,
                 completed_at = excluded.completed_at;
             """,
             {
@@ -142,7 +137,7 @@ class SQLiteResultBackend(BaseResultBackend):
         row = _get_connection(self.db_path).execute(
             "SELECT result FROM jobs WHERE job_id=? AND status='SUCCESS';", (job_id,)
         ).fetchone()
-        return deserialize(row["result"]) if row else None  # type: ignore[index]
+        return deserialize(row["result"]) if row and row["result"] is not None else None  # type: ignore
 
     def set_error(
         self,
@@ -158,6 +153,7 @@ class SQLiteResultBackend(BaseResultBackend):
         completed_at: Optional[float] = None,
     ) -> None:
         conn = _get_connection(self.db_path)
+        tb_str = "".join(traceback.format_exception(type(error), error, error.__traceback__))
         conn.execute(
             """
             INSERT INTO jobs (
@@ -170,10 +166,15 @@ class SQLiteResultBackend(BaseResultBackend):
                 :attempts, :retries_left, :created_at, :completed_at
             )
             ON CONFLICT(job_id) DO UPDATE SET
+                func_name    = excluded.func_name,
+                args         = excluded.args,
+                kwargs       = excluded.kwargs,
                 status       = 'FAILED',
                 error_type   = excluded.error_type,
                 error_msg    = excluded.error_msg,
                 traceback    = excluded.traceback,
+                attempts     = excluded.attempts,
+                retries_left = excluded.retries_left,
                 completed_at = excluded.completed_at;
             """,
             {
@@ -183,7 +184,7 @@ class SQLiteResultBackend(BaseResultBackend):
                 "kwargs": serialize(kwargs or {}),
                 "etype": type(error).__name__,
                 "emsg": str(error),
-                "tb": getattr(error, "__traceback__", None) if isinstance(error, Exception) else "",
+                "tb": tb_str,
                 "attempts": attempts,
                 "retries_left": retries_left,
                 "created_at": created_at or time.time(),
@@ -196,7 +197,7 @@ class SQLiteResultBackend(BaseResultBackend):
         row = _get_connection(self.db_path).execute(
             "SELECT error_msg FROM jobs WHERE job_id=? AND status='FAILED';", (job_id,)
         ).fetchone()
-        return row["error_msg"] if row else None  # type: ignore[index]
+        return row["error_msg"] if row and row["error_msg"] else None  # type: ignore
 
     def get_full(self, job_id: str) -> Optional[Dict]:
         row = _get_connection(self.db_path).execute(
@@ -205,7 +206,6 @@ class SQLiteResultBackend(BaseResultBackend):
         if not row:
             return None
         data = dict(row)
-        # Deserialize blobs for readability
         data["args"] = deserialize(data["args"])
         data["kwargs"] = deserialize(data["kwargs"])
         if data["result"] is not None:

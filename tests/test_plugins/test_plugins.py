@@ -62,6 +62,7 @@ def test_loader_imports_and_register(tmp_path: Path, monkeypatch):
     calls: list[str] = []
     _fake_module("myplugin.mod", calls, as_queue=True)
 
+    # Create TOML config that points to the legacy register() target
     cfg = tmp_path / ".nuvom_plugins.toml"
     cfg.write_text(
         textwrap.dedent(
@@ -73,12 +74,18 @@ def test_loader_imports_and_register(tmp_path: Path, monkeypatch):
         encoding="utf-8",
     )
 
+    # Point loader to the temp TOML and reset its state
     monkeypatch.setattr(plugload, "_TOML_PATH", cfg)
-    plugload._LOADED.clear()  # Important: reset for test isolation
+    plugload.LOADED_PLUGINS.clear()
+    plugload._LOADED_SPECS.clear()      # ← important for test isolation
+
     plugload.load_plugins()
 
-    assert "myplugin.mod:register" in plugload._LOADED
+    # Legacy callable should be executed
     assert "register-called" in calls
+
+    # Spec should be marked as loaded (in _LOADED_SPECS, not LOADED_PLUGINS)
+    assert "myplugin.mod:register" in plugload._LOADED_SPECS
 
 
 def test_queue_resolution_with_plugin(monkeypatch):
