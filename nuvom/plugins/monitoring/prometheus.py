@@ -16,14 +16,13 @@ Runs a non-blocking HTTP server exposing metrics on /metrics.
 from __future__ import annotations
 
 import threading
-import time
 import http.server
 import socketserver
 from prometheus_client import Counter, Gauge, Histogram, generate_latest
 from prometheus_client.core import CollectorRegistry
 
 from nuvom.plugins.contracts import Plugin
-
+from nuvom.log import get_logger
 class MetricsHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/metrics":
@@ -86,6 +85,9 @@ class PrometheusPlugin(Plugin):
 
         self._server_thread = threading.Thread(target=self._serve_forever, daemon=True)
         self._server_thread.start()
+        
+        logger = get_logger("plugin")
+        logger.info(f"[Prometheus] Exporter started at http://localhost:{self.port}/metrics")
     
     def update_runtime(self, **runtime: dict) -> None:
         """Update runtime metrics provider after plugin has started."""
