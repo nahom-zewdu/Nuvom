@@ -66,6 +66,9 @@ class NuvomSettings(BaseSettings):
 
     # ---------- SQLite ----------
     sqlite_db_path: Path = ".nuvom/nuvom.db"
+    
+    # ---------- Monitoring ----------
+    prometheus_port: Annotated[int, Field(ge=1, le=65535)] = 9150
 
     # ---------- Validators ----------
     @field_validator("result_backend")
