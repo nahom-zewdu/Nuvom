@@ -18,7 +18,7 @@ class HelloPlugin(Plugin):
     name = "hello_plugin"
     provides = ["result_backend"]
 
-    def start(self, settings: dict) -> None:
+    def start(self, settings: dict, **runtime: dict) -> None:
         from nuvom.plugins.registry import register_result_backend
         register_result_backend("dummy", DummyResultBackend)
 
