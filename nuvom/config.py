@@ -1,11 +1,10 @@
-# nuvom/config.py
-
 """
 Configuration loader (dotenv + Pydantic).
 
 Supports:
 • Static and plugin-defined result/queue backends
 • Windows-friendly SQLite path handling
+• Per-backend configurability (e.g., separate result/queue paths)
 """
 
 from __future__ import annotations
@@ -25,7 +24,6 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 ENV_PATH = ROOT_DIR / ".env"
 
 # Pre-load .env so child processes inherit the variables.
-# (Remove this if you *only* need Pydantic’s env_file behaviour.)
 load_dotenv(dotenv_path=ENV_PATH, override=False)
 
 _BUILTIN_BACKENDS = {"file", "redis", "sqlite", "memory"}
@@ -54,7 +52,11 @@ class NuvomSettings(BaseSettings):
         Field(description="Backend used to store job results (built-in or plugin)"),
     ] = "file"
 
-    queue_backend: Literal["file", "redis", "sqlite", "memory"] = "file"
+    queue_backend: Annotated[
+        str,
+        Field(description="Backend used to enqueue jobs (built-in or plugin)"),
+    ] = "file"
+
     serialization_backend: Literal["json", "msgpack", "pickle"] = "msgpack"
 
     # ---------- Worker / Queue ----------
@@ -66,26 +68,38 @@ class NuvomSettings(BaseSettings):
 
     # ---------- SQLite ----------
     sqlite_db_path: Path = ".nuvom/nuvom.db"
-    
+    sqlite_queue_path: Path = ".nuvom/queue.db"
+
     # ---------- Monitoring ----------
     prometheus_port: Annotated[int, Field(ge=1, le=65535)] = 9150
 
     # ---------- Validators ----------
-    @field_validator("result_backend")
+    @field_validator("result_backend", mode="before")
     @classmethod
-    def _warn_if_plugin_backend(cls, v: str) -> str:  # noqa: D401
+    def _warn_if_plugin_result_backend(cls, v: str) -> str:
         if v not in _BUILTIN_BACKENDS:
             import logging
+            logging.getLogger(__name__).debug("Using plugin-defined result backend: %r", v)
+        return v
 
-            logging.getLogger(__name__).debug(
-                "Using plugin-defined result backend: %r", v
-            )
+    @field_validator("queue_backend", mode="before")
+    @classmethod
+    def _warn_if_plugin_queue_backend(cls, v: str) -> str:
+        if v not in _BUILTIN_BACKENDS:
+            import logging
+            logging.getLogger(__name__).debug("Using plugin-defined queue backend: %r", v)
         return v
 
     @field_validator("sqlite_db_path", mode="before")
     @classmethod
-    def _coerce_sqlite_path(cls, v) -> Path:  # noqa: D401
-        """Ensure the SQLite path is always a Path object."""
+    def _coerce_sqlite_path(cls, v) -> Path:
+        """Ensure the SQLite result path is always a Path object."""
+        return Path(v) if not isinstance(v, Path) else v
+
+    @field_validator("sqlite_queue_path", mode="before")
+    @classmethod
+    def _coerce_sqlite_queue_path(cls, v) -> Path:
+        """Ensure the SQLite queue path is always a Path object."""
         return Path(v) if not isinstance(v, Path) else v
 
     # ---------- Developer helpers ----------
@@ -103,12 +117,12 @@ class NuvomSettings(BaseSettings):
             "serialization_backend": self.serialization_backend,
             "timeout_policy": self.timeout_policy,
             "sqlite_db": str(self.sqlite_db_path),
+            "sqlite_queue": str(self.sqlite_queue_path),
         }
 
     def display(self) -> None:
         """Pretty-print the current configuration via the central logger."""
         from nuvom.log import get_logger
-
         logger = get_logger()
         logger.info("Nuvom Configuration:")
         for k, v in self.summary().items():
