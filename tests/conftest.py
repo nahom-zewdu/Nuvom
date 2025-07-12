@@ -1,4 +1,4 @@
-# tests/conftest.py  (only the parts that changed)
+# tests/conftest.py
 
 import importlib
 import threading
@@ -20,7 +20,7 @@ def nuvom_isolate():
     reset_result_backend()
     reset_q_backend()
     plugload.LOADED_PLUGINS.clear()
-    plugload._LOADED_SPECS.clear()   # <== Add this line
+    plugload._LOADED_SPECS.clear()
 
     importlib.reload(nuvo_queue)
 
@@ -43,6 +43,6 @@ def nuvom_isolate():
     reset_q_backend()
     
     plugload.LOADED_PLUGINS.clear()
-    plugload._LOADED_SPECS.clear()   # <== Add this line too
+    plugload._LOADED_SPECS.clear()
 
     plugreg._reset_for_tests()
