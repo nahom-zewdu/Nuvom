@@ -1,2 +1,3 @@
 [plugins]
 result_backend = ["nuvom_hello_plugin.plugin:HelloPlugin"]
+prometheus = ["nuvom.plugins.monitoring.prometheus:PrometheusPlugin"]
