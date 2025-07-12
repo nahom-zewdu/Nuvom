@@ -1,3 +1,5 @@
+# nuvom/confgi.py
+
 """
 Configuration loader (dotenv + Pydantic).
 
