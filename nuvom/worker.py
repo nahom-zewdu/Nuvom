@@ -25,7 +25,7 @@ from nuvom.execution.job_runner import JobRunner
 from nuvom.log import get_logger
 from nuvom.queue import get_queue_backend
 from nuvom.registry.auto_register import auto_register_from_manifest
-from nuvom.plugins.loader import shutdown_plugins
+from nuvom.plugins.loader import load_plugins, shutdown_plugins
 
 # ------------------------------------------------------------------ #
 _shutdown_event = threading.Event()  # Global stop‑flag for all threads
@@ -212,6 +212,19 @@ def start_worker_pool(shutdown_timeout: float = 10.0) -> None:
     )
     dispatcher.start()
 
+    # Define runtime metrics_provider closure
+    def metrics_provider():
+        """Expose internal queue and worker stats for metrics plugins."""        
+        stats =  {
+            "queue_size": dispatcher.queue.qsize() if dispatcher and dispatcher.queue else 0,
+            "worker_count": len(workers),
+            "inflight_jobs": sum(w.load() for w in workers),
+        }
+        return stats
+    
+    # Pass live metrics to plugins
+    load_plugins(extras={"metrics_provider": metrics_provider})
+    
     try:
         while dispatcher.is_alive():
             dispatcher.join(timeout=0.5)
