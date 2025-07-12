@@ -32,9 +32,27 @@ class Plugin(ABC):
 
     # Minimal lifecycle hooks
     @abstractmethod
-    def start(self, settings: dict) -> None:
+    def start(self, settings: dict, extras: dict | None = None) -> None:
+        """
+        Start plugin with config settings and optional runtime extras.
+
+        Parameters
+        ----------
+        settings : dict
+            Validated Nuvom configuration as dictionary.
+
+        extras : dict, optional
+            Runtime data passed by the core system (e.g. metrics provider).
+        """
         ...
 
     @abstractmethod
     def stop(self) -> None:
         ...
+        
+    def update_runtime(self, extras: dict) -> None:
+        """
+        Optional hook to receive runtime-only data like metrics providers.
+        Default is no-op.
+        """
+        pass
