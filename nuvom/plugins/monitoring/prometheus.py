@@ -95,7 +95,6 @@ class PrometheusPlugin(Plugin):
     def _serve_forever(self):
         while not self._shutdown_flag.is_set():
             try:
-                print("+++++++++++++++++")
                 self.server.handle_request()
                 self._refresh_metrics()
             except Exception:
@@ -109,7 +108,6 @@ class PrometheusPlugin(Plugin):
 
         try:
             stats = self.provider()
-            print("Refreshing metrics:", stats)
             self.worker_count.set(stats.get("worker_count", 0))
             self.inflight_jobs.set(stats.get("inflight_jobs", 0))
             self.queue_size.set(stats.get("queue_size", 0))
