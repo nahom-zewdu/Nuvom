@@ -2,6 +2,11 @@
 
 """
 Queue façade that delegates all persistence to a *pluggable* backend class.
+
+Supports:
+• Plugin-based resolution of queue backends
+• Singleton lifecycle
+• SQLite constructor injection (queue path)
 """
 
 from __future__ import annotations
@@ -11,36 +16,47 @@ from typing import List, Optional
 
 from nuvom.config import get_settings
 from nuvom.job import Job
+from nuvom.log import get_logger
 from nuvom.plugins.loader import load_plugins
 from nuvom.plugins.registry import get_queue_backend_cls
+
+logger = get_logger()
 
 _backend_singleton = None
 _lock = threading.Lock()
 
 
+# --------------------------------------------------------------------------- #
+# Backend factory
+# --------------------------------------------------------------------------- #
 def _resolve_backend():
     """
-    Resolve & instantiate the concrete queue backend class.
+    Resolve and instantiate the concrete queue backend class.
 
-    Resolution order
-    ----------------
-    1. Load *all* plugins (entry-points **and** legacy TOML) exactly once.
-    2. Look up the short name from ``NUVOM_QUEUE_BACKEND`` in the plugin
-       registry.
-    3. Instantiate it (no-arg ctor).  Raises ``ValueError`` if not found.
+    Resolution order:
+    1. Load *all* plugins (entry-points and TOML)
+    2. Lookup backend class from plugin registry
+    3. If SQLite, inject path from config
     """
+    settings = get_settings()
     load_plugins()  # ensure registry is populated
 
-    backend_name = get_settings().queue_backend.lower()
+    backend_name = settings.queue_backend.strip().lower()
     backend_cls = get_queue_backend_cls(backend_name)
 
-    if backend_cls is None:  # defensive - mis-configuration
+    if backend_cls is None:
         raise ValueError(
-            f"Unsupported or unregistered queue backend: {backend_name!r}. "
-            "Ensure the plugin is installed and loaded correctly."
+            f"[Queue] Unsupported queue backend: '{backend_name}'. "
+            "Ensure it’s correctly registered or installed."
         )
 
-    return backend_cls()
+    try:
+        if backend_name == "sqlite":
+            return backend_cls(settings.sqlite_queue_path or ".nuvom/queue.db")
+        return backend_cls()  # default constructor
+    except Exception as e:
+        logger.exception("[Queue] Failed to instantiate backend: %s", backend_name)
+        raise RuntimeError(f"Queue backend instantiation failed: {e}") from e
 
 
 def get_queue_backend():
@@ -48,36 +64,39 @@ def get_queue_backend():
     global _backend_singleton
     if _backend_singleton is None:
         with _lock:
-            if _backend_singleton is None:  # double-checked locking
+            if _backend_singleton is None:
                 _backend_singleton = _resolve_backend()
     return _backend_singleton
 
 
 def reset_backend() -> None:
     """
-    **Testing-only helper** - clear the cached instance so the next call to
-    :pyfunc:`get_queue_backend()` re-creates it. Useful when a test changes
-    ``override_settings(queue_backend="…")`` on the fly.
+    **Testing-only helper** — reset cached backend instance.
+
+    Next call to `get_queue_backend()` will resolve and create a fresh instance.
     """
     global _backend_singleton
     with _lock:
         _backend_singleton = None
 
 
+# --------------------------------------------------------------------------- #
+# Queue API (Forward to backend)
+# --------------------------------------------------------------------------- #
 def enqueue(job: Job) -> None:
     """Add *job* to the configured backend."""
     get_queue_backend().enqueue(job)
 
 
 def dequeue(timeout: int = 1) -> Optional[Job]:
-    """Blocking pop of a single job (``None`` if timed-out)."""
+    """Blocking pop of a single job (`None` if timed-out)."""
     if timeout < 0:
         raise ValueError("timeout must be non-negative")
     return get_queue_backend().dequeue(timeout)
 
 
 def pop_batch(batch_size: int = 1, timeout: int = 1) -> List[Job]:
-    """Return up to *batch_size* jobs (may be fewer if queue shorter)."""
+    """Return up to *batch_size* jobs (may be fewer if queue is shorter)."""
     if batch_size <= 0:
         raise ValueError("batch_size must be positive")
     if timeout < 0:
