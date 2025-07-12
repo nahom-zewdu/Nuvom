@@ -26,7 +26,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 ENV_PATH = ROOT_DIR / ".env"
 
 # Pre-load .env so child processes inherit the variables.
-load_dotenv(dotenv_path=ENV_PATH, override=False)
+load_dotenv(dotenv_path=ENV_PATH, override=True)
 
 _BUILTIN_BACKENDS = {"file", "redis", "sqlite", "memory"}
 
@@ -52,12 +52,12 @@ class NuvomSettings(BaseSettings):
     result_backend: Annotated[
         str,
         Field(description="Backend used to store job results (built-in or plugin)"),
-    ] = "file"
+    ] = "sqlite"
 
     queue_backend: Annotated[
         str,
         Field(description="Backend used to enqueue jobs (built-in or plugin)"),
-    ] = "file"
+    ] = "sqlite"
 
     serialization_backend: Literal["json", "msgpack", "pickle"] = "msgpack"
 
