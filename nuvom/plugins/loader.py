@@ -3,15 +3,15 @@
 """
 Hybrid plugin loader (back-compatible with v0.8).
 
-Discovery order
+Discovery order:
 ---------------
 1. Python entry-points in the ``nuvom`` group
-2. ``.nuvom_plugins.toml`` (legacy)
+2. ``.nuvom_plugins.toml`` (legacy format)
 
-Accepted plugin shapes
-----------------------
+Accepted plugin shapes:
+-----------------------
 • Class that implements / duck-types the Plugin protocol
-• Legacy callable ``register()`` (DEPRECATED - emits warning)
+• Legacy callable ``register()`` (DEPRECATED – emits warning)
 """
 
 from __future__ import annotations
@@ -32,18 +32,24 @@ from nuvom.plugins.registry import REGISTRY
 # --------------------------------------------------------------------------- #
 # Globals
 # --------------------------------------------------------------------------- #
+
 _TOML_PATH = Path(".nuvom_plugins.toml")
 
-_LOADED_SPECS: Set[str] = set()        # memoised "module[:attr]"
-LOADED_PLUGINS: Set[Plugin] = set()    # instantiated plugin objects
+# Set of "module[:attr]" spec strings that have been successfully loaded
+_LOADED_SPECS: Set[str] = set()
+
+# Set of instantiated Plugin objects that are active in the current process
+LOADED_PLUGINS: Set[Plugin] = set()
 
 logger = get_logger()
-_load_lock = threading.Lock()          # thread-safe guard around first load
+_load_lock = threading.Lock()  # Protects against concurrent plugin load attempts
 
 # --------------------------------------------------------------------------- #
 # Discovery helpers
 # --------------------------------------------------------------------------- #
+
 def _toml_targets() -> list[str]:
+    """Extract plugin specs from the legacy TOML file."""
     if not _TOML_PATH.exists():
         return []
 
@@ -58,64 +64,76 @@ def _toml_targets() -> list[str]:
     targets.extend(plugin_block.get("modules", []))  # legacy key
 
     for key, value in plugin_block.items():
-        if key != "modules" and isinstance(value, list):
-            targets.extend(value)
+        if key != "modules":
+            if isinstance(value, list):
+                targets.extend(value)
+            elif isinstance(value, str):
+                targets.append(value)
 
     return targets
 
 
 def _entry_point_targets() -> list[str]:
-    """Return ``pkg.mod:Class`` specs from the *nuvom* entry‑point group."""
+    """Return ``pkg.mod:Class`` specs from the *nuvom* entry-point group."""
     try:
         return [ep.value for ep in md.entry_points(group="nuvom")]
-    except TypeError:  # older importlib.metadata (<3.10)
+    except TypeError:  # fallback for Python <3.10
         return [ep.value for ep in md.entry_points().get("nuvom", [])]
 
 
 def _iter_targets():
-    """Yield every unique discovery spec (entry‑points first, then TOML)."""
+    """Yield every unique discovery spec in correct order (entry-points then TOML)."""
     seen: set[str] = set()
     for spec in _entry_point_targets() + _toml_targets():
         if spec not in seen:
             seen.add(spec)
             yield spec
 
-
 # --------------------------------------------------------------------------- #
 # Import helpers
 # --------------------------------------------------------------------------- #
+
 def _import_target(spec: str) -> Any:
+    """Dynamically import a plugin from a 'module[:attr]' spec string."""
     mod_path, _, attr = spec.partition(":")
     module: ModuleType = importlib.import_module(mod_path)
     return getattr(module, attr) if attr else module
 
 
 def _is_duck_plugin(cls: type) -> bool:
+    """Check whether a class conforms to the expected Plugin protocol shape."""
     required = ("api_version", "name", "provides", "start", "stop")
     return all(hasattr(cls, attr) for attr in required)
 
 
 def _major_mismatch(core: str, plugin: str) -> bool:
+    """True if core and plugin API versions differ in major version."""
     return core.split(".", 1)[0] != plugin.split(".", 1)[0]
-
 
 # --------------------------------------------------------------------------- #
 # Public API
 # --------------------------------------------------------------------------- #
-def load_plugins(settings: dict | None = None) -> None:
+
+def load_plugins(settings: dict | None = None, extras: dict | None = None) -> None:
     """
-    Import, instantiate, and start all plugins exactly once per process.
+    Discover, import, and start all plugins exactly once per process.
 
     Args:
-        settings: Optional dict mapping plugin.name → config passed to Plugin.start()
+        settings: Optional dict mapping plugin.name → config dict passed to Plugin.start()
+        extras: Optional runtime-only values injected into plugin start() or update_runtime()
     """
-    if _LOADED_SPECS:
-        return
-
     cfg = settings or {}
+    rt = extras or {}
 
     with _load_lock:
-        if _LOADED_SPECS:  # double‑checked after acquiring lock
+        if _LOADED_SPECS:
+            # Already initialized – patch plugins that support update_runtime()
+            for plugin in LOADED_PLUGINS:
+                if hasattr(plugin, "update_runtime"):
+                    try:
+                        plugin.update_runtime(**rt)
+                    except Exception as e:
+                        logger.warning("[Plugin] %s.update_runtime() failed – %s", plugin.name, e)
             return
 
         for spec in _iter_targets():
@@ -125,7 +143,7 @@ def load_plugins(settings: dict | None = None) -> None:
             try:
                 target = _import_target(spec)
 
-                # ─── Legacy callable path ────────────────────────────────────
+                # ─── Legacy callable plugins ─────────────────────────────────
                 if callable(target) and not isinstance(target, type):
                     warnings.warn(
                         "Legacy plugin register() style is deprecated and will be "
@@ -138,7 +156,7 @@ def load_plugins(settings: dict | None = None) -> None:
                     _LOADED_SPECS.add(spec)
                     continue
 
-                # ─── Class path ─────────────────────────────────────────────
+                # ─── Plugin class style ─────────────────────────────────────
                 if isinstance(target, type):
                     try:
                         subclass_ok = issubclass(target, Plugin)
@@ -151,7 +169,7 @@ def load_plugins(settings: dict | None = None) -> None:
 
                     plugin_cls = target
 
-                    # API version gate
+                    # Version compatibility check
                     if _major_mismatch(API_VERSION, plugin_cls.api_version):
                         logger.error(
                             "[Plugin] %s api_version %s incompatible with core %s",
@@ -163,10 +181,12 @@ def load_plugins(settings: dict | None = None) -> None:
 
                     plugin: Plugin = plugin_cls()  # type: ignore[assignment]
                     plugin_cfg = cfg.get(plugin.name, {})
-                    plugin.start(plugin_cfg)
+
+                    # Start plugin with config + runtime extras
+                    plugin.start(plugin_cfg, **rt)
                     LOADED_PLUGINS.add(plugin)
 
-                    # Register each capability this plugin claims to provide
+                    # Register each capability this plugin provides
                     for cap in plugin.provides:
                         try:
                             REGISTRY.register(cap, plugin.name, plugin, override=True)
@@ -179,10 +199,10 @@ def load_plugins(settings: dict | None = None) -> None:
 
                 logger.warning("[Plugin] %s does not expose a Plugin subclass or legacy register()", spec)
 
-            except Exception as exc:  # broad capture for logging
+            except Exception as exc:
                 logger.exception("[Plugin] Failed to load %s – %s", spec, exc)
 
-        # Memoise any built‑in Plugin instances (rare but allowed)
+        # ─── Memoize built-in Plugin instances (if preloaded manually) ─────
         for cap in ("queue_backend", "result_backend"):
             for name, obj in REGISTRY._caps.get(cap, {}).items():
                 if isinstance(obj, Plugin):
@@ -190,7 +210,9 @@ def load_plugins(settings: dict | None = None) -> None:
 
 
 def shutdown_plugins() -> None:
-    """Invoke .stop() on all loaded plugins."""
+    """
+    Gracefully shut down all loaded plugins by calling their .stop() method.
+    """
     for plugin in list(LOADED_PLUGINS):
         stop_fn = getattr(plugin, "stop", None)
         if callable(stop_fn):

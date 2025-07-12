@@ -123,6 +123,7 @@ retry_job("<job_id>")
 * ✅ Plugin-first backend system — extend via `.nuvom_plugins.toml`
 * ✅ Graceful shutdown lifecycle support for plugin-backed workers
 * ✅ SQLite result backend with file-path configurability
+* ✅ Built-in Prometheus plugin for runtime metrics (queue size, worker count, in-flight jobs)
 
 ---
 
@@ -155,19 +156,19 @@ enqueue(Job("unstable"))
 nuvom --help
 ```
 
-| Command                       | Description                                |
-| ----------------------------- | ------------------------------------------ |
-| `nuvom runworker`             | Start worker threads                       |
-| `nuvom status <id>`           | Get job result or error                    |
-| `nuvom list tasks`            | List all discovered `@task` functions      |
-| `nuvom discover tasks`        | Scan project and generate manifest         |
-| `nuvom config`                | Print current configuration                |
-| `nuvom inspect job <id>`      | Inspect job result and metadata            |
-| `nuvom history recent`        | Inspect result of multiple jobs            |
-| `nuvom runtestworker run`     | Run job locally from JSON file             |
-| `nuvom plugin test`           | Load and test plugin registry              |
-| `nuvom plugin list`           | Show loaded plugins and their capabilities |
-| `nuvom plugin inspect <name>` | View plugin source path and metadata       |
+| Command                       | Description                                                    |
+| ----------------------------- | ------------------------------------------                     |
+| `nuvom runworker`             | Start worker threads                                           |
+| `nuvom status <id>`           | Get job result or error                                        |
+| `nuvom list tasks`            | List all discovered `@task` functions                          |
+| `nuvom discover tasks`        | Scan project and generate manifest                             |
+| `nuvom config`                | Print current configuration                                    |
+| `nuvom inspect job <id>`      | Inspect job result and metadata                                |
+| `nuvom history recent`        | Inspect result of multiple jobs                                |
+| `nuvom runtestworker run`     | Run job locally from JSON file                                 |
+| `nuvom plugin test`           | Validate a plugin and run its `start/stop` hooks.              |
+| `nuvom plugin status`         | Display all plugins that are registered                        |
+| `nuvom plugin scaffold`       | Scaffold a new plugin stub that implements the Plugin protocol.|
 
 ---
 
@@ -188,7 +189,21 @@ NUVOM_BATCH_SIZE=10
 NUVOM_JOB_TIMEOUT_SECS=30
 NUVOM_MANIFEST_PATH=.nuvom/manifest.json
 NUVOM_TIMEOUT_POLICY=fail|retry|ignore
+NUVOM_PROMETHEUS_PORT=9160
 ```
+
+---
+
+### Plugin Configuration via `.nuvom_plugins.toml`
+
+To enable Prometheus metrics, add the plugin to `.nuvom_plugins.toml`:
+
+```toml
+[plugins]
+prometheus = ["nuvom.plugins.monitoring.prometheus:PrometheusPlugin"]
+```
+
+ You can override the default exporter port (defaults to 9150) in your .env
 
 ---
 
@@ -215,6 +230,33 @@ NUVOM_TIMEOUT_POLICY=fail|retry|ignore
 * Fully pluggable via interface (`BaseJobQueue`, `BaseResultBackend`)
 * Plugins can register new queue or result backends via `.nuvom_plugins.toml`
 * SQLite backend uses on-disk persistence with a compact schema and fast queries
+
+## 📈 Prometheus Monitoring Plugin
+
+Nuvom comes with a built-in Prometheus plugin to expose live worker and queue metrics for observability and alerting.
+
+### Metrics Exposed
+
+| Metric Name           | Description                          |
+|-----------------------|--------------------------------------|
+| `nuvom_worker_count`  | Number of active worker threads      |
+| `nuvom_inflight_jobs` | Number of jobs currently executing   |
+| `nuvom_queue_size`    | Current number of jobs in the queue  |
+
+### How it Works
+
+Once enabled, the Prometheus plugin runs a lightweight HTTP server exposing metrics at:
+
+`http://localhost:<port>/metrics`
+
+It scrapes runtime data from the dispatcher via a live `metrics_provider` hook.
+
+### Debug Page
+
+You can also visit:
+`http://localhost:<port>/`
+
+to see a human-friendly info page confirming the exporter is running.
 
 ---
 
