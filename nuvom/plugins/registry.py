@@ -82,12 +82,14 @@ _REGISTERING_LOCK = threading.Lock()
 def _register_builtins() -> None:
     from nuvom.queue_backends.memory_queue import MemoryJobQueue
     from nuvom.queue_backends.file_queue import FileJobQueue
+    from nuvom.queue_backends.sqlite_queue import SQLiteJobQueue
     from nuvom.result_backends.memory_backend import MemoryResultBackend
     from nuvom.result_backends.file_backend import FileResultBackend
     from nuvom.result_backends.sqlite_backend import SQLiteResultBackend
 
     REGISTRY.register("queue_backend", "memory", MemoryJobQueue, override=True)
     REGISTRY.register("queue_backend", "file", FileJobQueue, override=True)
+    REGISTRY.register("queue_backend", "sqlite", SQLiteJobQueue, override=True)
 
     REGISTRY.register("result_backend", "memory", MemoryResultBackend, override=True)
     REGISTRY.register("result_backend", "file", FileResultBackend, override=True)

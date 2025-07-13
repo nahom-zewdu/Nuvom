@@ -66,6 +66,10 @@ class JobRunner:
                     logger.debug(f"[Runner-{self.worker_id}] Stored result for '{job.func_name}'")
 
                 job.mark_success(result)
+                
+                if self.q.name == 'sqlite':
+                    self.q.mark_done(job.id)
+
                 logger.info(f"[Runner-{self.worker_id}] Job '{job.func_name}' → SUCCESS")
                 return job
 
