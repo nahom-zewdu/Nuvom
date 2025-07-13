@@ -212,3 +212,19 @@ class SQLiteJobQueue(BaseJobQueue):
         deleted = conn.execute("DELETE FROM queue_jobs;").rowcount
         conn.commit()
         return deleted
+    
+    def mark_done(self, job_id: str) -> None:
+        """
+        Mark a job as DONE.
+
+        Args:
+            job_id (str): ID of the job to mark as DONE.
+        """
+        
+        conn = self._get_conn()
+        conn.execute(
+            "UPDATE queue_jobs SET status = 'DONE' WHERE id = ?;",
+            (job_id,)
+        )
+        conn.commit()
+
