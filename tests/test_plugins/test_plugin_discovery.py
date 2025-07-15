@@ -1,7 +1,5 @@
 # tests/test_plugins/test_plugin_discovery.py
 
-import importlib
-import types
 import textwrap
 import pytest
 
@@ -152,9 +150,8 @@ def test_legacy_register_callable(monkeypatch, tmp_path):
     import sys
     sys.modules.pop(plugin_name, None)
 
-    plugin_loader.load_plugins()  # <- This must find and call register()
+    plugin_loader.load_plugins()
 
-    # ✅ Assertion
     assert REGISTRY.get("queue_backend", "legacy") is not None
 
 
