@@ -2,71 +2,79 @@
 
 Thank you for considering contributing to **Nuvom** — a lightweight, plugin-first task execution engine.
 
-We welcome improvements in stability, performance, plugins (new backends, tools, integrations), bug fixes, documentation, and anything else that helps make Nuvom a more reliable, developer-friendly tool.
+We welcome improvements in stability, performance, plugin support, documentation, bug fixes, and any enhancement that makes Nuvom a more reliable and developer-friendly tool.
 
 ---
 
-## 📦 Project Setup
+## 📦 Project Setup (with Hatch)
 
-1. **Clone the repository:**
+We use [Hatch](https://hatch.pypa.io) for managing environments, dependencies, testing, and packaging.
 
-   ```bash
-   git clone https://github.com/nahom-zewdu/Nuvom
-   cd Nuvom
-   ```
+### 1. Clone the repository
 
-2. **Install in editable mode:**
+```bash
+git clone https://github.com/nahom-zewdu/Nuvom
+cd Nuvom
+````
 
-   ```bash
-   pip install -e .
-   ```
+### 2. Install Hatch (once)
 
-3. **Install dev dependencies:**
+```bash
+pip install hatch
+```
 
-   ```bash
-   pip install -r requirements-dev.txt
-   ```
+### 3. Enter the development shell
 
-4. **Run tests:**
+```bash
+hatch shell
+```
 
-   ```bash
-   pytest
-   ```
+This activates a fully isolated dev environment with all dependencies.
 
-5. **Try the CLI:**
+### 4. Run tests
 
-   ```bash
-   nuvom --help
-   ```
+```bash
+pytest
+```
+
+### 5. Try the CLI
+
+```bash
+nuvom --help
+```
 
 ---
 
 ## 🧩 Plugin-Based Development
 
-Most Nuvom components are extensible via base interfaces and the `Plugin` protocol (v0.9+).
+Most Nuvom components are extensible via base interfaces and the `Plugin` protocol.
 
-To add your own:
-
-### ➕ New Queue Backend
+### ➕ Add a New Queue Backend
 
 1. Subclass `BaseJobQueue` from `nuvom.queue_backends.base`.
-2. Implement required methods: `enqueue`, `dequeue`, `pop_batch`, `qsize`, `clear`.
-3. Either:
+2. Implement:
 
-   * Register the backend name in `.env`, or
-   * Create a plugin module and register it via `.nuvom_plugins.toml`.
-4. Add tests under `tests/queue_backends/`.
+   * `enqueue`, `dequeue`, `pop_batch`, `qsize`, `clear`
+3. Register:
 
-### ➕ New Result Backend
+   * via `.env`, or
+   * via `.nuvom_plugins.toml` (preferred)
+4. Add tests under `tests/queue_backends/`
+
+### ➕ Add a New Result Backend
 
 1. Subclass `BaseResultBackend` from `nuvom.result_backends.base`.
-2. Implement: `set_result`, `get_result`, `set_error`, `get_error`, `get_full`, `list_jobs`.
-3. Register via plugin (preferred) or in `.env`.
-4. Add tests under `tests/result_backends/`.
+2. Implement:
 
-### 🧪 Plugin Testing (v0.9+)
+   * `set_result`, `get_result`, `set_error`, `get_error`, `get_full`, `list_jobs`
+3. Register the plugin
+4. Add tests under `tests/result_backends/`
 
-Use the CLI to validate plugin loading:
+---
+
+## 🧪 Plugin Testing
+
+Use the CLI to test plugin loading:
 
 ```bash
 nuvom plugin test
@@ -86,49 +94,52 @@ result_backend = ["my_module:MyResultPlugin"]
 
 ## 🧪 Testing & Coverage
 
-We use `pytest` for testing. All new features **must include tests**.
-
-Run the full test suite:
+We use `pytest`. All new features **must include tests**.
 
 ```bash
 pytest
 ```
 
-Test philosophy:
+**Test philosophy:**
 
-* Use actual queue + result backends in test scenarios.
-* Cover all code paths, including failure cases.
-* Test both CLI and programmatic usage.
-* For plugin-related code, use isolated `.nuvom_plugins.toml` in `tmp_path`.
+* Use actual backends in test cases
+* Cover all logic branches, including edge/failure cases
+* Include both CLI and programmatic tests
+* For plugin tests, use isolated `.nuvom_plugins.toml` in a temp dir
 
 ---
 
 ## 🧼 Code Style & Linting
 
-Follow [PEP8](https://peps.python.org/pep-0008/) and our custom rules.
+Follow [PEP8](https://peps.python.org/pep-0008/) and our project standards.
 
-We use:
+### Format & lint code
 
 ```bash
-black .
-ruff check .
+hatch run fmt
 ```
 
-Run these before every commit.
+Which runs:
+
+* `black .`
+* `ruff check .`
+
+See `pyproject.toml` for configuration.
 
 ---
 
 ## 🧠 Logging Guidelines
 
-* Use the centralized `logger` from `nuvom.log`.
-* Use `logger.debug` for internals, `logger.info` for job events, `logger.error` for failures.
-* Avoid `print()` in production—only for CLI experiments or debug flags.
+* Use `nuvom.log.logger`, not `print()`
+* `logger.debug` → internals
+* `logger.info` → lifecycle events (e.g., job started)
+* `logger.error` → job or system failures
 
 ---
 
-## 🧠 Commit Conventions
+## 📜 Commit Conventions
 
-Use meaningful commit messages. Examples:
+Use semantic, scoped commit messages. Examples:
 
 ```text
 feat(plugins): add dynamic plugin registry and loader
@@ -144,51 +155,52 @@ docs: update CONTRIBUTING for plugin architecture
 
 ```text
 nuvom/
-├── cli/               # CLI entrypoints (Typer commands)
-├── queue_backends/    # Your queue logic (File, Memory, etc.)
-├── result_backends/   # Result stores
-├── plugins/           # Plugin loader, registry, contracts
-├── execution/         # JobRunner and execution context
-├── discovery/         # Task discovery and manifest
-├── registry/          # Task registry and auto-registration
-├── task.py            # Decorator logic
-├── config.py          # Pydantic settings loader
+├── cli/               # Typer CLI commands
+├── queue_backends/    # Job queues (memory, SQLite, etc.)
+├── result_backends/   # Task result stores
+├── plugins/           # Loader, registry, capabilities
+├── execution/         # JobRunner and context
+├── discovery/         # Static task discovery logic
+├── registry/          # Task registry and hook system
+├── task.py            # @task decorator
+├── config.py          # App config loader (pydantic)
 ├── log.py             # Rich-based logger
-├── worker.py          # Worker thread model, Dispatching, retries
+├── worker.py          # Worker pool, threading, retry
 ```
 
 ---
 
-## 🧠 Tips for Contributors
+## ✅ Best Practices
 
-* Think in small, testable units.
-* Write docstrings for all public classes and methods.
-* Prefer clarity over cleverness.
-* Avoid global state unless absolutely necessary.
-* Use plugin-based registration when possible for new backends.
-* Ensure plugin components follow the `Plugin` protocol contract.
+* Think in small, testable units
+* Prefer clarity over cleverness
+* Avoid global state unless essential
+* Use plugin-based injection when adding new backends
+* Document public APIs with docstrings
+* Follow the `Plugin` contract for lifecycle integration
 
 ---
 
 ## 🤝 Code Review Process
 
-1. Create a PR with a descriptive title and summary.
-2. Add relevant tests and update docs if needed.
-3. A maintainer will review your PR and request changes if needed.
-4. Once approved, it will be merged and included in the next release.
+1. Fork the repo, create a feature branch
+2. Add code and tests
+3. Submit a PR with a clear title and description
+4. A maintainer will review and provide feedback
+5. Once approved, the PR is merged into the main branch
 
 ---
 
 ## 📬 Need Help?
 
-Feel free to open an issue with questions, bugs, or ideas. PRs are great, but even bug reports and discussions are highly valued.
+Feel free to [open an issue](https://github.com/nahom-zewdu/Nuvom/issues) — questions, bugs, and ideas are all welcome.
 
 ---
 
-For more details, see the [`README`](/README.md) and [`ARCHITECTURE`](docs/architecture.md).
+For more context, see [`README.md`](../README.md) and [`docs/architecture.md`](../docs/architecture.md).
 
 ---
 
-Happy contributing! 🧠💡
+Happy contributing! 🚀🧠
 
 ---
