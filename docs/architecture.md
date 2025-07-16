@@ -1,12 +1,12 @@
 # 🧠 Nuvom Architecture
 
-This document describes the internal architecture of the **Nuvom** task execution engine — covering the major modules, design decisions, and how they fit together.
+This document explains the internal architecture of **Nuvom**, a lightweight, plugin-first task execution engine for Python.
 
 ---
 
 ## 🧩 High-Level Overview
 
-Nuvom is built around the idea of decoupling **task definition**, **discovery**, **execution**, **queuing**, and **result storage**. Each component is pluggable and adheres to a clear contract via abstract base classes.
+Nuvom is designed to **decouple** task definition, discovery, execution, queuing, and result storage. Each layer is pluggable and follows a clearly defined contract via abstract base classes.
 
 ```text
      +-------------------------+
@@ -22,18 +22,18 @@ Nuvom is built around the idea of decoupling **task definition**, **discovery**,
 +-------------+     +-------------------+
 | Dispatcher  | --> |  Job Queue        |
 +-------------+     +-------------------+
-                  |
-                  v
-        +----------------------+
-        |   Worker Pool        |
-        | (Threads + Runner)   |
-        +----------------------+
-                  |
-                  v
-        +----------------------+
-        |  Result Backend      |
-        +----------------------+
-```
+                         |
+                         v
+            +----------------------+ 
+            |   Worker Pool        |
+            | (Threads + Runner)   |
+            +----------------------+ 
+                         |
+                         v
+            +----------------------+ 
+            |  Result Backend      |
+            +----------------------+ 
+````
 
 ---
 
@@ -41,212 +41,177 @@ Nuvom is built around the idea of decoupling **task definition**, **discovery**,
 
 ### ✅ `@task` Decorator
 
-Location: `nuvom/task.py`
+**Location:** `nuvom/task.py`
 
-- Wraps a function to mark it as a Nuvom task.
-- Adds metadata (retries, timeouts, lifecycle hooks).
-- Registers the task into the in-memory registry.
-- Supports `.delay()` and `.map()` for dispatching jobs.
+* Wraps a function to register it as a Nuvom task.
+* Adds metadata (`retries`, `timeout_secs`, etc.).
+* Supports `.delay()` and `.map()` for job dispatch.
+* All tasks are auto-registered via AST and manifest system.
 
 ---
 
 ### ✅ Task Discovery
 
-Location: `nuvom/discovery/`
+**Location:** `nuvom/discovery/`
 
-- Uses AST parsing to find functions decorated with `@task`.
-- Works without importing modules (safe for large codebases).
-- `walker.py`: recursively traverses the file tree.
-- `parser.py`: parses Python files and identifies task definitions.
-- `.nuvomignore`: used to skip files/directories.
-- `manifest.py`: stores a cache of discovered tasks with hash metadata.
-- `auto_register.py`: loads discovered tasks into the registry.
+* Uses AST parsing (not imports) to detect decorated `@task` functions.
+* Avoids side-effects, safe for large codebases.
+* Uses `.nuvomignore` to skip paths.
+* Output is cached in `.nuvom/manifest.json` for fast reloading.
+
+Key files:
+
+* `walker.py` – file traversal
+* `parser.py` – AST parsing
+* `manifest.py` – manifest file I/O
+* `auto_register.py` – registry loader
 
 ---
 
 ### ✅ Task Registry
 
-Location: `nuvom/registry/registry.py`
+**Location:** `nuvom/registry/registry.py`
 
-- Thread-safe singleton (`TaskRegistry`) that holds all registered tasks.
-- Prevents duplicate task names unless `force=True`.
-- Used at runtime to resolve task names to function references.
+* Thread-safe global registry for tasks.
+* Validates task names (prevents duplicates unless `force=True`).
+* Used by the dispatcher and job runner to resolve function names.
 
 ---
 
 ### ✅ Dispatcher
 
-Location: `nuvom/dispatcher.py` *(coming in v0.7, currently part of CLI and task methods)*
+**Location:** `nuvom/dispatcher.py`
 
-- Enqueues jobs into the selected job queue.
-- Serializes jobs into a portable format (`msgpack`).
-- Provides methods like `.delay()` or bulk `.map()`.
+* Orchestrates job submission: serializes, enqueues, retries.
+* Provides `.delay()`, `.map()`, and job creation utilities.
+* Uses `msgpack` for efficient, cross-platform job serialization.
 
 ---
 
 ### ✅ Job Queues
 
-Location: `nuvom/queue_backends/`
+**Location:** `nuvom/queue_backends/`
 
-Backends:
+Built-in backends:
 
-- `MemoryJobQueue`: simple thread-safe in-memory queue.
-- `FileJobQueue`: atomic file-based queue with `.msgpack` serialization.
+* `MemoryJobQueue`
+* `FileJobQueue`
+* `SQLiteJobQueue` (v0.10)
 
-All queues must implement:
+Required interface methods:
 
-- `enqueue(job)`
-- `dequeue(timeout)`
-- `pop_batch(batch_size)`
-- `qsize()`
-- `clear()`
+```python
+enqueue(job)
+dequeue(timeout=None)
+pop_batch(batch_size)
+qsize()
+clear()
+```
 
-Use `Plugin` protocol to add dynamic queue backends that load at worker startup.
+Custom backends can be added via the plugin system.
 
 ---
 
-### ✅ Workers & Execution
+### ✅ Workers & Job Execution
 
-Location: `nuvom/worker.py`, `nuvom/execution/job_runner.py`
+**Location:** `nuvom/worker.py`, `nuvom/execution/job_runner.py`
 
-- `Worker`: runs in its own thread, polls the queue for jobs.
-- `JobRunner`: handles timeout, retries, and lifecycle hooks (`before_job`, `after_job`, `on_error`).
-- Jobs are executed in isolated `ThreadPoolExecutor`s.
-- Results or errors are stored after execution.
-- **Graceful shutdown lifecycle**: When a shutdown is triggered, workers:
+* Each worker runs in its own thread.
+* Jobs are executed with timeouts, retries, and lifecycle hooks:
 
-  - Stop accepting new jobs
-  - Finish current job in-flight
-  - Log safe shutdown and exit cleanly
+  * `before_job()`
+  * `after_job()`
+  * `on_error()`
+* ThreadPoolExecutor is used internally for concurrency.
+* Supports graceful shutdown with log flushing and safe teardown.
 
 ---
 
 ### ✅ Result Backends
 
-Location: `nuvom/result_backends/`
+**Location:** `nuvom/result_backends/`
 
-Backends:
+Built-in backends:
 
-- `MemoryResultBackend`: in-memory result store.
-- `FileResultBackend`: persistent, file-based result storage.
-- `SQLiteResultBackend`: fast, file-based relational backend (v0.9+).
-- 🔌 Plugin-aware: load external result backends via `.nuvom_plugins.toml`.
+* `MemoryResultBackend`
+* `FileResultBackend`
+* `SQLiteResultBackend`
 
-All backends implement:
+All result backends implement:
 
-- `set_result(job_id, func_name result)`
-- `get_result(job_id)`
-- `set_error(job_id, func_name, error)`
-- `get_error(job_id)`
-- `get_full(job_id)`
-- `list_jobs()`
+```python
+set_result(job_id, ...)
+get_result(job_id)
+set_error(job_id, ...)
+get_error(job_id)
+get_full(job_id)
+list_jobs()
+```
+
+Use `.nuvom_plugins.toml` to register custom plugins.
 
 ---
 
 ### ✅ Logging
 
-Location: `nuvom/log.py`
+**Location:** `nuvom/log.py`
 
-- Centralized logging via `RichHandler`.
-- Uses markup, colorized tracebacks, and disabled noisy paths.
-- All modules use `logger = get_logger()` for consistent output.
-
----
-
-## 🧰 Utility Modules
-
-- `nuvom/config.py`: Loads environment variables via `pydantic-settings`.
-- `sqlite_db_path` config for SQLite backend (v0.9+).
-- `nuvom/utils/`: Filesystem helpers like `safe_remove`, `.nuvomignore` parsing.
-- `nuvom/serialize/`: Msgpack-based (or custom) serialization support.
-- `nuvom/plugins/`: 🆕 Plugin system logic (v0.9+)
-
-  - `loader.py`: Parses `.nuvom_plugins.toml`, loads user plugins dynamically
-  - `registry.py`: Central plugin registry for queue/result backend types
-  - `types.py`: `Plugin` protocol every plugin must follow
+* Unified logging across all modules using Rich.
+* Logs are styled, color-coded, and exception-aware.
+* Categories: `debug`, `info`, `warning`, `error`.
 
 ---
 
 ## 🔌 Plugin Architecture
 
-You can easily extend Nuvom by:
+**Location:** `nuvom/plugins/`
 
-- Adding a new queue backend: subclass `BaseJobQueue`
-- Adding a result backend: subclass `BaseResultBackend`
-- Creating your own CLI commands via Typer (see `nuvom/cli/`)
-- Hooking into the manifest or discovery system
-- Using dynamic imports and lazy task loading
+Nuvom supports plugins for:
 
-**v0.9 Plugin System Details**:
+* Queues
+* Result backends
+* Monitoring/exporters
 
-- Plugin entrypoints defined in `.nuvom_plugins.toml`
-- Each plugin must implement the `Plugin` protocol (`name`, `type`, `load()` method)
-- Registered on worker startup, not CLI runtime
-- CLI commands:
-
-  - `nuvom plugin list`
-  - `nuvom plugin inspect <name>`
-  - `nuvom plugin test`
-
-Example plugin definition:
+Plugins follow a strict `Plugin` protocol with `start()` and `stop()` lifecycle methods.
 
 ```toml
 [plugins]
-queue_backend = ["my_backend.queue:CustomQueue"]
-result_backend = ["my_backend.result:CustomResult"]
+queue_backend = ["custom.module:MyQueue"]
+result_backend = ["custom.module:MyResult"]
 ```
 
+Each plugin must register itself via a `Plugin` subclass, and may use `register_queue_backend()` or `register_result_backend()`.
+
 ---
 
-## ♻️ Lifecycle of a Job
+## 🔁 Job Lifecycle
 
 1. Developer defines a task with `@task`.
-2. `nuvom discover tasks` finds and caches the task metadata.
-3. `nuvom runworker` starts worker pool and loads registry.
-4. A job is submitted via `.delay()` and stored in the queue.
-5. Worker dequeues job and passes it to `JobRunner`.
-6. `JobRunner`:
-   - Marks job running
-   - Calls `before_job()`
-   - Runs the task
-   - Calls `after_job()` or `on_error()`
-   - Stores result or error
-   - Retries if needed
+2. `nuvom discover tasks` parses and caches it.
+3. Job is queued with `.delay()` or `.map()`.
+4. Worker dequeues the job.
+5. `JobRunner`:
 
-7. If shutdown is triggered:
-
-   - Worker stops polling new jobs
-   - Gracefully completes current execution
-   - Logs shutdown event
-
-8. `nuvom inspect job <job_id>` shows detailed metadata for executed jobs.
-9. `nuvom history recent` with `--limit` and `--status` flag shows list of jobs with their metadata.
+   * Triggers lifecycle hooks
+   * Executes task with timeout/retry logic
+   * Stores result or error
+6. Job metadata is saved in the selected result backend.
+7. Results are queried via SDK or CLI.
 
 ---
 
-## 🧠 Design Philosophy
+## 🎯 Design Principles
 
-- ✅ Prefer clarity and simplicity over premature optimization.
-- ✅ No Redis, Celery, or RabbitMQ required.
-- ✅ Treat all components as replaceable and pluggable.
-- ✅ Developer-first: CLI-first, Windows support, minimal deps.
-- ✅ Codebase designed for learning, contribution, and extension.
-
----
-
-## 🛣️ Road Ahead
-
-What's next (v1.0 and beyond):
-
-- [x] Plugin loader and dynamic backend system ✅ *(v0.9)*
-- [x] SQLite result backend ✅ *(v0.9)*
-- [x] Graceful shutdown logic ✅ *(v0.9)*
-- [ ] Redis-based queue and result backends
-- [ ] DAG-style task chaining
-- [ ] Distributed multi-host execution
-- [ ] Rich visual dashboard
-- [ ] VSCode extension
+* ✅ Plugin-first, interface-driven
+* ✅ No global daemons or dependencies like Redis
+* ✅ Developer-first: minimal config, rich logging, CLI tooling
+* ✅ Native on Windows, Linux, macOS
+* ✅ Built to teach: readable source, clean separation
 
 ---
 
-For more details, see the [`README`](../README.md) and [`CONTRIBUTING`](../CONTRIBUTING.md).
+For more, see:
+
+* [CONTRIBUTING](./contributing.md)
+* [README](../README.md)
+* [Roadmap](./roadmap.md)
