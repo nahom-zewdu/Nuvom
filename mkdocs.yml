@@ -1,0 +1,70 @@
+site_name: Nuvom
+site_description: Lightweight, plugin-first Python task queue — no Redis required.
+site_author: Nahom Zewdu
+repo_url: https://github.com/nahom-zewdu/Nuvom
+repo_name: GitHub
+edit_uri: ""
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: blue
+      accent: indigo
+  features:
+    - navigation.tabs
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.action.edit
+    - toc.integrate
+    - navigation.footer
+  language: en
+
+nav:
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - CLI Reference: cli.md
+  - Concepts: concepts.md
+  - Plugins:
+      - Overview: plugins.md
+  - Configuration: configuration.md
+  - Architecture: architecture.md
+  - Roadmap: roadmap.md
+  - FAQ: faq.md
+  - Contributing: contributing.md
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - footnotes
+  - admonition
+  - codehilite
+  - pymdownx.superfences
+  - pymdownx.details
+  - pymdownx.tabbed
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.emoji:
+      emoji_generator: !!python/name:pymdownx.emoji.to_svg
+
+plugins:
+  - search
+  - mkdocs-git-revision-date-localized-plugin:
+      fallback_to_build_date: true
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/extra.js 
+
+copyright: |
+  &copy; {{ now.year }} Nahom Zewdu. All rights reserved.
