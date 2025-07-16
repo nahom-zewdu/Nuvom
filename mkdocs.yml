@@ -52,7 +52,7 @@ markdown_extensions:
 
 plugins:
   - search
-  - mkdocs-git-revision-date-localized-plugin:
+  - git-revision-date-localized:
       fallback_to_build_date: true
   - mkdocstrings:
       handlers:
