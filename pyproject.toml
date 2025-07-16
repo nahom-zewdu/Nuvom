@@ -24,8 +24,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.urls]
-"Homepage" = "https://github.com/nahom-zewdu/nuvom"
-"Repository" = "https://github.com/nahom-zewdu/nuvom"
+"Homepage" = "https://github.com/nahom-zewdu/Nuvom"
+"Repository" = "https://github.com/nahom-zewdu/Nuvom"
 
 [project.scripts]
 nuvom = "nuvom.cli.cli:main"
@@ -55,3 +55,8 @@ dependencies = [
   "mkdocs-git-revision-date-localized-plugin",
   "prometheus_client"
 ]
+
+[tool.hatch.envs.docs.scripts]
+serve = "mkdocs serve"
+build = "mkdocs build"
+deploy = "mkdocs gh-deploy --clean"
