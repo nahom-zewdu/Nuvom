@@ -153,3 +153,34 @@ See:
 Apache 2.0 — use it freely, build responsibly.
 
 ---
+
+## 📚 Documentation
+
+Nuvom uses [MkDocs](https://www.mkdocs.org/) with the [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/) theme for documentation.
+
+### 🧪 Local Preview
+
+To build and preview the documentation locally:
+
+```bash
+hatch shell
+mkdocs serve
+````
+
+### 📦 Static Site Build
+
+To build the static documentation site:
+
+```bash
+mkdocs build
+```
+
+### 🧰 Tech Stack
+
+- `mkdocs-material` — for styling and navigation
+- `mkdocstrings[python]` — for automated API docs
+- `mkdocs-git-revision-date-localized-plugin` — for revision metadata
+
+All documentation dependencies are managed via [Hatch](https://hatch.pypa.io). No need to install anything manually.
+
+---
