@@ -34,17 +34,17 @@ Nuvom throws those assumptions out the window. It's designed for:
 
 ## Key Features
 
-✅ `@task` decorator with `.delay()` / `.map()`  
-✅ AST-based static discovery — no imports  
-✅ Graceful retry + timeout logic  
-✅ Pluggable result and queue backends  
-✅ SQLite, file, and in-memory backends built-in  
-✅ Plugin loader with `.toml` registry  
-✅ Prometheus metrics plugin  
-✅ Job metadata, tracebacks, and historical CLI inspection  
-✅ Typed config via `.env` + Pydantic  
-✅ CLI commands to run, retry, inspect, and monitor jobs  
-✅ Compatible with Python 3.8+
+- `@task` decorator with `.delay()` / `.map()`  
+- AST-based static discovery — no imports  
+- Graceful retry + timeout logic  
+- Pluggable result and queue backends  
+- SQLite, file, and in-memory backends built-in  
+- Plugin loader with `.toml` registry  
+- Prometheus metrics plugin  
+- Job metadata, tracebacks, and historical CLI inspection  
+- Typed config via `.env` + Pydantic  
+- CLI commands to run, retry, inspect, and monitor jobs  
+- Compatible with Python 3.8+
 
 ---
 
