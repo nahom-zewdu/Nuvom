@@ -174,7 +174,7 @@ class PrometheusPlugin(Plugin):
         """
         
         if not self.provider:
-            logger.warning("[Prometheus] No metrics provider set.")
+            # logger.warning("[Prometheus] No metrics provider set.")
             return
 
         try:
