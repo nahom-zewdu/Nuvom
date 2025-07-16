@@ -1,6 +1,6 @@
 [project]
 name = "nuvom"
-version = "0.9.0"
+version = "0.10"
 description = "A Fast, Windows-First Task Queue for Python. Simple, Reliable, and Cross-Platform."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -20,12 +20,12 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project.urls]
-"Homepage" = "https://github.com/nahom-zewdu/nuvom"
-"Repository" = "https://github.com/nahom-zewdu/nuvom"
+"Homepage" = "https://github.com/nahom-zewdu/Nuvom"
+"Repository" = "https://github.com/nahom-zewdu/Nuvom"
 
 [project.scripts]
 nuvom = "nuvom.cli.cli:main"
@@ -41,5 +41,22 @@ profile = "black"
 minversion = "6.0"
 addopts = "-ra -q"
 
-[tool.setuptools]
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
 packages = ["nuvom"]
+
+[tool.hatch.envs.default]
+dependencies = [
+  "pytest",
+  "mkdocs-material",
+  "mkdocstrings[python]",
+  "mkdocs-git-revision-date-localized-plugin",
+  "prometheus_client"
+]
+
+[tool.hatch.envs.docs.scripts]
+serve = "mkdocs serve"
+build = "mkdocs build"
+deploy = "mkdocs gh-deploy --clean"

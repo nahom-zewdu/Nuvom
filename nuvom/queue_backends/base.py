@@ -23,18 +23,18 @@ class BaseJobQueue(ABC):
     Interface for job queue backends.
 
     All methods are abstract and must be implemented by subclasses to
-    provide a consistent job queue API.
+    provide a consistent and pluggable job queue API.
     """
 
     @abstractmethod
-    def enqueue(self, job: Job):
+    def enqueue(self, job: Job) -> None:
         """
         Add a job to the queue.
 
         Args:
             job (Job): The job instance to enqueue.
         """
-        pass
+        ...
 
     @abstractmethod
     def dequeue(self, timeout: int = 1) -> Optional[Job]:
@@ -42,42 +42,47 @@ class BaseJobQueue(ABC):
         Remove and return a job from the queue.
 
         Args:
-            timeout (int): Time in seconds to wait for a job if queue is empty.
+            timeout (int): Time in seconds to block while waiting for a job,
+                           if the queue is empty.
 
         Returns:
-            Optional[Job]: The dequeued job, or None if no job is available
-                           within the timeout.
+            Optional[Job]: The dequeued job, or None if the timeout expires.
         """
-        pass
+        ...
 
     @abstractmethod
     def pop_batch(self, batch_size: int = 1, timeout: int = 1) -> List[Job]:
         """
-        Remove and return up to batch_size jobs from the queue.
+        Remove and return up to `batch_size` jobs from the queue.
+
+        This method may return fewer jobs if not enough are available
+        before the timeout expires.
 
         Args:
             batch_size (int): Maximum number of jobs to dequeue.
             timeout (int): Time in seconds to wait for each job.
 
         Returns:
-            List[Job]: List of dequeued jobs, which may be fewer than batch_size
-                       if not enough jobs are available.
+            List[Job]: Dequeued jobs, possibly fewer than batch_size.
         """
-        pass
+        ...
 
     @abstractmethod
     def qsize(self) -> int:
         """
-        Return the approximate number of jobs currently in the queue.
+        Return the current number of jobs in the queue.
 
         Returns:
-            int: Number of jobs in the queue.
+            int: Job count.
         """
-        pass
+        ...
 
     @abstractmethod
-    def clear(self):
+    def clear(self) -> int:
         """
         Remove all jobs from the queue.
+
+        Returns:
+            int: Number of jobs removed (implementation-specific).
         """
-        pass
+        ...
