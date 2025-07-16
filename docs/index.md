@@ -82,6 +82,7 @@ pip install -e .
 
 - [Quickstart →](quickstart.md)
 - [Configuration →](configuration.md)
+- [CLI →](cli.md)
 - [Core Concepts →](concepts.md)
 - [Plugin System →](plugins.md)
 - [Architecture →](architecture.md)
