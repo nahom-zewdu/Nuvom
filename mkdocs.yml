@@ -1,6 +1,7 @@
 site_name: Nuvom
 site_description: Lightweight, plugin-first Python task queue — no Redis required.
 site_author: Nahom Zewdu
+site_url: https://nahom-zewdu.github.io/Nuvom/
 repo_url: https://github.com/nahom-zewdu/Nuvom
 repo_name: GitHub
 edit_uri: ""
