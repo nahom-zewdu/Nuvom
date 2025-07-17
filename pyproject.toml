@@ -54,7 +54,7 @@ dependencies = [
   "mkdocstrings[python]",
   "mkdocs-git-revision-date-localized-plugin",
   "prometheus_client"
-]
+] 
 
 [tool.hatch.envs.docs.scripts]
 serve = "mkdocs serve"
