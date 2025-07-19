@@ -57,3 +57,6 @@ dependencies = [
 serve = "mkdocs serve"
 build = "mkdocs build"
 deploy = "mkdocs gh-deploy --clean"
+
+[tool.hatch.publish]
+repository = "https://upload.pypi.org/legacy/"
