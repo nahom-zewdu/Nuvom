@@ -2,7 +2,7 @@
 name = "nuvom"
 version = "0.10"
 description = "A Fast, Windows-First Task Queue for Python. Simple, Reliable, and Cross-Platform."
-readme = "README.md"
+readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.8"
 license = "Apache-2.0"
 
@@ -14,7 +14,7 @@ dependencies = [
   "rich>=13.0.0",
   "pydantic-settings>=2.9.1",
   "pydantic>=2.0.0",
-  "typer>=0.7.0",
+  "typer>=0.7.0,<0.12.0",
   "python-dotenv>=1.1.0",
   "msgpack>=1.1.0"
 ]
@@ -40,9 +40,6 @@ profile = "black"
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra -q"
-
-[tool.hatch.metadata]
-allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["nuvom"]
