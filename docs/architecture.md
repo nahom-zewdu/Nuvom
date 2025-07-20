@@ -1,10 +1,10 @@
-# 🧠 Nuvom Architecture
+# Nuvom Architecture
 
 This document explains the internal architecture of **Nuvom**, a lightweight, plugin-first task execution engine for Python.
 
 ---
 
-## 🧩 High-Level Overview
+## High-Level Overview
 
 Nuvom is designed to **decouple** task definition, discovery, execution, queuing, and result storage. Each layer is pluggable and follows a clearly defined contract via abstract base classes.
 
@@ -33,13 +33,13 @@ Nuvom is designed to **decouple** task definition, discovery, execution, queuing
             +----------------------+ 
             |  Result Backend      |
             +----------------------+ 
-````
+```
 
 ---
 
-## 🧱 Core Components
+## Core Components
 
-### ✅ `@task` Decorator
+### `@task` Decorator
 
 **Location:** `nuvom/task.py`
 
@@ -50,7 +50,7 @@ Nuvom is designed to **decouple** task definition, discovery, execution, queuing
 
 ---
 
-### ✅ Task Discovery
+### Task Discovery
 
 **Location:** `nuvom/discovery/`
 
@@ -68,7 +68,7 @@ Key files:
 
 ---
 
-### ✅ Task Registry
+### Task Registry
 
 **Location:** `nuvom/registry/registry.py`
 
@@ -78,7 +78,7 @@ Key files:
 
 ---
 
-### ✅ Dispatcher
+### Dispatcher
 
 **Location:** `nuvom/dispatcher.py`
 
@@ -88,7 +88,7 @@ Key files:
 
 ---
 
-### ✅ Job Queues
+### Job Queues
 
 **Location:** `nuvom/queue_backends/`
 
@@ -112,7 +112,7 @@ Custom backends can be added via the plugin system.
 
 ---
 
-### ✅ Workers & Job Execution
+### Workers & Job Execution
 
 **Location:** `nuvom/worker.py`, `nuvom/execution/job_runner.py`
 
@@ -127,7 +127,7 @@ Custom backends can be added via the plugin system.
 
 ---
 
-### ✅ Result Backends
+### Result Backends
 
 **Location:** `nuvom/result_backends/`
 
@@ -152,7 +152,7 @@ Use `.nuvom_plugins.toml` to register custom plugins.
 
 ---
 
-### ✅ Logging
+### Logging
 
 **Location:** `nuvom/log.py`
 
@@ -162,7 +162,7 @@ Use `.nuvom_plugins.toml` to register custom plugins.
 
 ---
 
-## 🔌 Plugin Architecture
+## Plugin Architecture
 
 **Location:** `nuvom/plugins/`
 
@@ -184,7 +184,7 @@ Each plugin must register itself via a `Plugin` subclass, and may use `register_
 
 ---
 
-## 🔁 Job Lifecycle
+## Job Lifecycle
 
 1. Developer defines a task with `@task`.
 2. `nuvom discover tasks` parses and caches it.
@@ -200,13 +200,13 @@ Each plugin must register itself via a `Plugin` subclass, and may use `register_
 
 ---
 
-## 🎯 Design Principles
+## Design Principles
 
-* ✅ Plugin-first, interface-driven
-* ✅ No global daemons or dependencies like Redis
-* ✅ Developer-first: minimal config, rich logging, CLI tooling
-* ✅ Native on Windows, Linux, macOS
-* ✅ Built to teach: readable source, clean separation
+* Plugin-first, interface-driven
+* No global daemons or dependencies like Redis
+* Developer-first: minimal config, rich logging, CLI tooling
+* Native on Windows, Linux, macOS
+* Built to teach: readable source, clean separation
 
 ---
 
