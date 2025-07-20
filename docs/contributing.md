@@ -6,7 +6,7 @@ We welcome improvements in stability, performance, plugin support, documentation
 
 ---
 
-## 📦 Project Setup (with Hatch)
+## Project Setup (with Hatch)
 
 We use [Hatch](https://hatch.pypa.io) for managing environments, dependencies, testing, and packaging.
 
@@ -15,7 +15,7 @@ We use [Hatch](https://hatch.pypa.io) for managing environments, dependencies, t
 ```bash
 git clone https://github.com/nahom-zewdu/Nuvom
 cd Nuvom
-````
+```
 
 ### 2. Install Hatch (once)
 
@@ -45,7 +45,7 @@ nuvom --help
 
 ---
 
-## 🧩 Plugin-Based Development
+## Plugin-Based Development
 
 Most Nuvom components are extensible via base interfaces and the `Plugin` protocol.
 
@@ -72,14 +72,15 @@ Most Nuvom components are extensible via base interfaces and the `Plugin` protoc
 
 ---
 
-## 🧪 Plugin Testing
+## Plugin Testing
 
 Use the CLI to test plugin loading:
 
 ```bash
-nuvom plugin test
-nuvom plugin list
-nuvom plugin inspect <plugin_name>
+nuvom plugin status                      # Show all loaded plugins   
+nuvom plugin scaffold my_redis_backend   # Create plugin stub   
+nuvom plugin test nuvom_hello.plugin     # Test installed plugin   
+nuvom plugin test ./my_plugin.py         # Test from file
 ```
 
 Example `.nuvom_plugins.toml`:
@@ -92,7 +93,7 @@ result_backend = ["my_module:MyResultPlugin"]
 
 ---
 
-## 🧪 Testing & Coverage
+## Testing & Coverage
 
 We use `pytest`. All new features **must include tests**.
 
@@ -109,7 +110,7 @@ pytest
 
 ---
 
-## 🧼 Code Style & Linting
+## Code Style & Linting
 
 Follow [PEP8](https://peps.python.org/pep-0008/) and our project standards.
 
@@ -128,7 +129,7 @@ See `pyproject.toml` for configuration.
 
 ---
 
-## 🧠 Logging Guidelines
+## Logging Guidelines
 
 * Use `nuvom.log.logger`, not `print()`
 * `logger.debug` → internals
@@ -137,7 +138,7 @@ See `pyproject.toml` for configuration.
 
 ---
 
-## 📜 Commit Conventions
+## Commit Conventions
 
 Use semantic, scoped commit messages. Examples:
 
@@ -151,7 +152,7 @@ docs: update CONTRIBUTING for plugin architecture
 
 ---
 
-## 📁 Suggested Directory Layout
+## Suggested Directory Layout
 
 ```text
 nuvom/
@@ -170,7 +171,7 @@ nuvom/
 
 ---
 
-## ✅ Best Practices
+## Best Practices
 
 * Think in small, testable units
 * Prefer clarity over cleverness
@@ -181,7 +182,7 @@ nuvom/
 
 ---
 
-## 🤝 Code Review Process
+## Code Review Process
 
 1. Fork the repo, create a feature branch
 2. Add code and tests
@@ -191,13 +192,9 @@ nuvom/
 
 ---
 
-## 📬 Need Help?
+## Need Help?
 
 Feel free to [open an issue](https://github.com/nahom-zewdu/Nuvom/issues) — questions, bugs, and ideas are all welcome.
-
----
-
-For more context, see [`README.md`](../README.md) and [`docs/architecture.md`](../docs/architecture.md).
 
 ---
 
