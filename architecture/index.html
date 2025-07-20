@@ -689,17 +689,71 @@
         <li class="md-nav__item">
   <a href="#high-level-overview" class="md-nav__link">
     <span class="md-ellipsis">
-      🧩 High-Level Overview
+      High-Level Overview
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="🧩 High-Level Overview">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Components
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Components">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#task-decorator" class="md-nav__link">
+    <span class="md-ellipsis">
+      @task Decorator
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-discovery" class="md-nav__link">
+    <span class="md-ellipsis">
+      Task Discovery
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#task-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      Task Registry
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dispatcher" class="md-nav__link">
+    <span class="md-ellipsis">
+      Dispatcher
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#job-queues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Job Queues
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#workers-job-execution" class="md-nav__link">
     <span class="md-ellipsis">
-      ✅ Workers &amp; Job Execution
+      Workers &amp; Job Execution
     </span>
   </a>
   
@@ -708,7 +762,7 @@
           <li class="md-nav__item">
   <a href="#result-backends" class="md-nav__link">
     <span class="md-ellipsis">
-      ✅ Result Backends
+      Result Backends
     </span>
   </a>
   
@@ -717,7 +771,7 @@
           <li class="md-nav__item">
   <a href="#logging" class="md-nav__link">
     <span class="md-ellipsis">
-      ✅ Logging
+      Logging
     </span>
   </a>
   
@@ -731,7 +785,7 @@
         <li class="md-nav__item">
   <a href="#plugin-architecture" class="md-nav__link">
     <span class="md-ellipsis">
-      🔌 Plugin Architecture
+      Plugin Architecture
     </span>
   </a>
   
@@ -740,7 +794,7 @@
         <li class="md-nav__item">
   <a href="#job-lifecycle" class="md-nav__link">
     <span class="md-ellipsis">
-      🔁 Job Lifecycle
+      Job Lifecycle
     </span>
   </a>
   
@@ -749,7 +803,7 @@
         <li class="md-nav__item">
   <a href="#design-principles" class="md-nav__link">
     <span class="md-ellipsis">
-      🎯 Design Principles
+      Design Principles
     </span>
   </a>
   
@@ -845,10 +899,10 @@
 
 
 
-<h1 id="nuvom-architecture">🧠 Nuvom Architecture<a class="headerlink" href="#nuvom-architecture" title="Permanent link">&para;</a></h1>
+<h1 id="nuvom-architecture">Nuvom Architecture<a class="headerlink" href="#nuvom-architecture" title="Permanent link">&para;</a></h1>
 <p>This document explains the internal architecture of <strong>Nuvom</strong>, a lightweight, plugin-first task execution engine for Python.</p>
 <hr />
-<h2 id="high-level-overview">🧩 High-Level Overview<a class="headerlink" href="#high-level-overview" title="Permanent link">&para;</a></h2>
+<h2 id="high-level-overview">High-Level Overview<a class="headerlink" href="#high-level-overview" title="Permanent link">&para;</a></h2>
 <p>Nuvom is designed to <strong>decouple</strong> task definition, discovery, execution, queuing, and result storage. Each layer is pluggable and follows a clearly defined contract via abstract base classes.</p>
 <div class="highlight"><pre><span></span><code>     +-------------------------+
      |      @task decorator    |
@@ -874,83 +928,68 @@
             +----------------------+ 
             |  Result Backend      |
             +----------------------+ 
-````
-
----
-
-## 🧱 Core Components
-
-### ✅ `@task` Decorator
-
-**Location:** `nuvom/task.py`
-
-* Wraps a function to register it as a Nuvom task.
-* Adds metadata (`retries`, `timeout_secs`, etc.).
-* Supports `.delay()` and `.map()` for job dispatch.
-* All tasks are auto-registered via AST and manifest system.
-
----
-
-### ✅ Task Discovery
-
-**Location:** `nuvom/discovery/`
-
-* Uses AST parsing (not imports) to detect decorated `@task` functions.
-* Avoids side-effects, safe for large codebases.
-* Uses `.nuvomignore` to skip paths.
-* Output is cached in `.nuvom/manifest.json` for fast reloading.
-
-Key files:
-
-* `walker.py` – file traversal
-* `parser.py` – AST parsing
-* `manifest.py` – manifest file I/O
-* `auto_register.py` – registry loader
-
----
-
-### ✅ Task Registry
-
-**Location:** `nuvom/registry/registry.py`
-
-* Thread-safe global registry for tasks.
-* Validates task names (prevents duplicates unless `force=True`).
-* Used by the dispatcher and job runner to resolve function names.
-
----
-
-### ✅ Dispatcher
-
-**Location:** `nuvom/dispatcher.py`
-
-* Orchestrates job submission: serializes, enqueues, retries.
-* Provides `.delay()`, `.map()`, and job creation utilities.
-* Uses `msgpack` for efficient, cross-platform job serialization.
-
----
-
-### ✅ Job Queues
-
-**Location:** `nuvom/queue_backends/`
-
-Built-in backends:
-
-* `MemoryJobQueue`
-* `FileJobQueue`
-* `SQLiteJobQueue` (v0.10)
-
-Required interface methods:
-
-```python
-enqueue(job)
-dequeue(timeout=None)
-pop_batch(batch_size)
-qsize()
-clear()
+</code></pre></div>
+<hr />
+<h2 id="core-components">Core Components<a class="headerlink" href="#core-components" title="Permanent link">&para;</a></h2>
+<h3 id="task-decorator"><code>@task</code> Decorator<a class="headerlink" href="#task-decorator" title="Permanent link">&para;</a></h3>
+<p><strong>Location:</strong> <code>nuvom/task.py</code></p>
+<ul>
+<li>Wraps a function to register it as a Nuvom task.</li>
+<li>Adds metadata (<code>retries</code>, <code>timeout_secs</code>, etc.).</li>
+<li>Supports <code>.delay()</code> and <code>.map()</code> for job dispatch.</li>
+<li>All tasks are auto-registered via AST and manifest system.</li>
+</ul>
+<hr />
+<h3 id="task-discovery">Task Discovery<a class="headerlink" href="#task-discovery" title="Permanent link">&para;</a></h3>
+<p><strong>Location:</strong> <code>nuvom/discovery/</code></p>
+<ul>
+<li>Uses AST parsing (not imports) to detect decorated <code>@task</code> functions.</li>
+<li>Avoids side-effects, safe for large codebases.</li>
+<li>Uses <code>.nuvomignore</code> to skip paths.</li>
+<li>Output is cached in <code>.nuvom/manifest.json</code> for fast reloading.</li>
+</ul>
+<p>Key files:</p>
+<ul>
+<li><code>walker.py</code> – file traversal</li>
+<li><code>parser.py</code> – AST parsing</li>
+<li><code>manifest.py</code> – manifest file I/O</li>
+<li><code>auto_register.py</code> – registry loader</li>
+</ul>
+<hr />
+<h3 id="task-registry">Task Registry<a class="headerlink" href="#task-registry" title="Permanent link">&para;</a></h3>
+<p><strong>Location:</strong> <code>nuvom/registry/registry.py</code></p>
+<ul>
+<li>Thread-safe global registry for tasks.</li>
+<li>Validates task names (prevents duplicates unless <code>force=True</code>).</li>
+<li>Used by the dispatcher and job runner to resolve function names.</li>
+</ul>
+<hr />
+<h3 id="dispatcher">Dispatcher<a class="headerlink" href="#dispatcher" title="Permanent link">&para;</a></h3>
+<p><strong>Location:</strong> <code>nuvom/dispatcher.py</code></p>
+<ul>
+<li>Orchestrates job submission: serializes, enqueues, retries.</li>
+<li>Provides <code>.delay()</code>, <code>.map()</code>, and job creation utilities.</li>
+<li>Uses <code>msgpack</code> for efficient, cross-platform job serialization.</li>
+</ul>
+<hr />
+<h3 id="job-queues">Job Queues<a class="headerlink" href="#job-queues" title="Permanent link">&para;</a></h3>
+<p><strong>Location:</strong> <code>nuvom/queue_backends/</code></p>
+<p>Built-in backends:</p>
+<ul>
+<li><code>MemoryJobQueue</code></li>
+<li><code>FileJobQueue</code></li>
+<li><code>SQLiteJobQueue</code> (v0.10)</li>
+</ul>
+<p>Required interface methods:</p>
+<div class="highlight"><pre><span></span><code><span class="n">enqueue</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+<span class="n">dequeue</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">pop_batch</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
+<span class="n">qsize</span><span class="p">()</span>
+<span class="n">clear</span><span class="p">()</span>
 </code></pre></div>
 <p>Custom backends can be added via the plugin system.</p>
 <hr />
-<h3 id="workers-job-execution">✅ Workers &amp; Job Execution<a class="headerlink" href="#workers-job-execution" title="Permanent link">&para;</a></h3>
+<h3 id="workers-job-execution">Workers &amp; Job Execution<a class="headerlink" href="#workers-job-execution" title="Permanent link">&para;</a></h3>
 <p><strong>Location:</strong> <code>nuvom/worker.py</code>, <code>nuvom/execution/job_runner.py</code></p>
 <ul>
 <li>Each worker runs in its own thread.</li>
@@ -966,7 +1005,7 @@ clear()
 <li>Supports graceful shutdown with log flushing and safe teardown.</li>
 </ul>
 <hr />
-<h3 id="result-backends">✅ Result Backends<a class="headerlink" href="#result-backends" title="Permanent link">&para;</a></h3>
+<h3 id="result-backends">Result Backends<a class="headerlink" href="#result-backends" title="Permanent link">&para;</a></h3>
 <p><strong>Location:</strong> <code>nuvom/result_backends/</code></p>
 <p>Built-in backends:</p>
 <ul>
@@ -984,7 +1023,7 @@ clear()
 </code></pre></div>
 <p>Use <code>.nuvom_plugins.toml</code> to register custom plugins.</p>
 <hr />
-<h3 id="logging">✅ Logging<a class="headerlink" href="#logging" title="Permanent link">&para;</a></h3>
+<h3 id="logging">Logging<a class="headerlink" href="#logging" title="Permanent link">&para;</a></h3>
 <p><strong>Location:</strong> <code>nuvom/log.py</code></p>
 <ul>
 <li>Unified logging across all modules using Rich.</li>
@@ -992,7 +1031,7 @@ clear()
 <li>Categories: <code>debug</code>, <code>info</code>, <code>warning</code>, <code>error</code>.</li>
 </ul>
 <hr />
-<h2 id="plugin-architecture">🔌 Plugin Architecture<a class="headerlink" href="#plugin-architecture" title="Permanent link">&para;</a></h2>
+<h2 id="plugin-architecture">Plugin Architecture<a class="headerlink" href="#plugin-architecture" title="Permanent link">&para;</a></h2>
 <p><strong>Location:</strong> <code>nuvom/plugins/</code></p>
 <p>Nuvom supports plugins for:</p>
 <ul>
@@ -1007,7 +1046,7 @@ clear()
 </code></pre></div>
 <p>Each plugin must register itself via a <code>Plugin</code> subclass, and may use <code>register_queue_backend()</code> or <code>register_result_backend()</code>.</p>
 <hr />
-<h2 id="job-lifecycle">🔁 Job Lifecycle<a class="headerlink" href="#job-lifecycle" title="Permanent link">&para;</a></h2>
+<h2 id="job-lifecycle">Job Lifecycle<a class="headerlink" href="#job-lifecycle" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Developer defines a task with <code>@task</code>.</li>
 <li><code>nuvom discover tasks</code> parses and caches it.</li>
@@ -1025,13 +1064,13 @@ clear()
 <li>Results are queried via SDK or CLI.</li>
 </ol>
 <hr />
-<h2 id="design-principles">🎯 Design Principles<a class="headerlink" href="#design-principles" title="Permanent link">&para;</a></h2>
+<h2 id="design-principles">Design Principles<a class="headerlink" href="#design-principles" title="Permanent link">&para;</a></h2>
 <ul>
-<li>✅ Plugin-first, interface-driven</li>
-<li>✅ No global daemons or dependencies like Redis</li>
-<li>✅ Developer-first: minimal config, rich logging, CLI tooling</li>
-<li>✅ Native on Windows, Linux, macOS</li>
-<li>✅ Built to teach: readable source, clean separation</li>
+<li>Plugin-first, interface-driven</li>
+<li>No global daemons or dependencies like Redis</li>
+<li>Developer-first: minimal config, rich logging, CLI tooling</li>
+<li>Native on Windows, Linux, macOS</li>
+<li>Built to teach: readable source, clean separation</li>
 </ul>
 <hr />
 <p>For more, see:</p>
@@ -1060,7 +1099,7 @@ clear()
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 16, 2025 13:45:40 UTC">July 16, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 20, 2025 16:37:21 UTC">July 20, 2025</span>
   </span>
 
     
