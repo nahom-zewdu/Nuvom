@@ -1,17 +1,17 @@
 # Nuvom
 
-> 🧠 Lightweight, plugin-first task queue for Python — no Redis, no brokers, fully Windows-compatible.
+> Lightweight, plugin-first task queue for Python — no Redis, no brokers, fully Windows-compatible.
 
 Nuvom is a developer-first background task execution engine that helps you **queue**, **execute**, and **persist** background jobs — without the baggage of Celery or infrastructure-heavy dependencies.
 
 Built with clarity, speed, and extensibility in mind, Nuvom is:
 
-- 🪟 **Fully Windows-compatible** — no POSIX-only dependencies
-- 🔌 **Plugin-first** — extend queues, backends, and metrics with ease
-- ⚙️ **No Redis, no RabbitMQ, no Docker** — just Python
-- 🧠 **AST-powered static discovery** — no import-time magic
-- 🚀 **CLI-first DX** — introspect jobs, retry failures, inspect task metadata
-- 📦 **Manifest caching** — blazing-fast task resolution for workers and tooling
+- **Fully Windows-compatible** — no POSIX-only dependencies
+- **Plugin-first** — extend queues, backends, and metrics with ease
+- **No Redis, no RabbitMQ, no Docker** — just Python
+- **AST-powered static discovery** — no import-time magic
+- **CLI-first DX** — introspect jobs, retry failures, inspect task metata
+- **Manifest caching** — blazing-fast task resolution for workers and tooling
 
 ---
 
@@ -58,8 +58,9 @@ def add(x, y):
     return x + y
 
 # Submit job
+
 job = add.delay(2, 3)
-````
+```
 
 ```bash
 nuvom runworker                # Start workers
@@ -71,9 +72,7 @@ nuvom inspect job <job_id>    # Inspect job result and metadata
 ## Installation
 
 ```bash
-git clone https://github.com/nahom-zewdu/Nuvom
-cd Nuvom
-pip install -e .
+pip install nuvom .
 ```
 
 ---
