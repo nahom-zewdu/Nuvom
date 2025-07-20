@@ -642,7 +642,7 @@
         <li class="md-nav__item">
   <a href="#what-is-a-plugin" class="md-nav__link">
     <span class="md-ellipsis">
-      🔌 What is a Plugin?
+      What is a Plugin?
     </span>
   </a>
   
@@ -651,7 +651,16 @@
         <li class="md-nav__item">
   <a href="#file-layout" class="md-nav__link">
     <span class="md-ellipsis">
-      📁 File Layout
+      File Layout
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plugin-example-custom-queue-backend" class="md-nav__link">
+    <span class="md-ellipsis">
+      Plugin Example: Custom Queue Backend
     </span>
   </a>
   
@@ -660,7 +669,7 @@
         <li class="md-nav__item">
   <a href="#plugin-registry" class="md-nav__link">
     <span class="md-ellipsis">
-      🗃 Plugin Registry
+      Plugin Registry
     </span>
   </a>
   
@@ -669,7 +678,7 @@
         <li class="md-nav__item">
   <a href="#plugin-lifecycle" class="md-nav__link">
     <span class="md-ellipsis">
-      🛠 Plugin Lifecycle
+      Plugin Lifecycle
     </span>
   </a>
   
@@ -678,7 +687,7 @@
         <li class="md-nav__item">
   <a href="#plugin-types" class="md-nav__link">
     <span class="md-ellipsis">
-      🧪 Plugin Types
+      Plugin Types
     </span>
   </a>
   
@@ -687,7 +696,7 @@
         <li class="md-nav__item">
   <a href="#monitoring-plugin-example" class="md-nav__link">
     <span class="md-ellipsis">
-      📊 Monitoring Plugin Example
+      Monitoring Plugin Example
     </span>
   </a>
   
@@ -696,7 +705,7 @@
         <li class="md-nav__item">
   <a href="#best-practices" class="md-nav__link">
     <span class="md-ellipsis">
-      🧠 Best Practices
+      Best Practices
     </span>
   </a>
   
@@ -705,7 +714,7 @@
         <li class="md-nav__item">
   <a href="#cli-support" class="md-nav__link">
     <span class="md-ellipsis">
-      🚦 CLI Support
+      CLI Support
     </span>
   </a>
   
@@ -714,7 +723,7 @@
         <li class="md-nav__item">
   <a href="#roadmap-future-plugin-hooks" class="md-nav__link">
     <span class="md-ellipsis">
-      🚧 Roadmap (Future Plugin Hooks)
+      Roadmap (Future Plugin Hooks)
     </span>
   </a>
   
@@ -723,7 +732,7 @@
         <li class="md-nav__item">
   <a href="#summary" class="md-nav__link">
     <span class="md-ellipsis">
-      🧩 Summary
+      Summary
     </span>
   </a>
   
@@ -874,7 +883,7 @@
 <h1 id="plugin-system">Plugin System<a class="headerlink" href="#plugin-system" title="Permanent link">&para;</a></h1>
 <p>Nuvom v0.9 introduced first-class plugin support — allowing developers to register their own backends, extensions, and instrumentation layers with clean lifecycle management.</p>
 <hr />
-<h2 id="what-is-a-plugin">🔌 What is a Plugin?<a class="headerlink" href="#what-is-a-plugin" title="Permanent link">&para;</a></h2>
+<h2 id="what-is-a-plugin">What is a Plugin?<a class="headerlink" href="#what-is-a-plugin" title="Permanent link">&para;</a></h2>
 <p>A <strong>plugin</strong> is a Python class that implements the <code>Plugin</code> protocol, defining:</p>
 <ul>
 <li><code>name</code>: Unique plugin name</li>
@@ -883,48 +892,44 @@
 <li><code>stop()</code>: Cleanup logic on shutdown</li>
 </ul>
 <hr />
-<h2 id="file-layout">📁 File Layout<a class="headerlink" href="#file-layout" title="Permanent link">&para;</a></h2>
+<h2 id="file-layout">File Layout<a class="headerlink" href="#file-layout" title="Permanent link">&para;</a></h2>
 <p>Plugins can live inside your project or in external libraries. Common layout:</p>
 <div class="highlight"><pre><span></span><code>my_project/
 ├── plugins/
 │   ├── my_plugin.py       # Your plugin logic
 │   └── __init__.py
 └── .nuvom_plugins.toml    # Plugin registration
-````
+</code></pre></div>
+<hr />
+<h2 id="plugin-example-custom-queue-backend">Plugin Example: Custom Queue Backend<a class="headerlink" href="#plugin-example-custom-queue-backend" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># plugins/my_queue.py</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">nuvom.queue_backends.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseJobQueue</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">nuvom.plugins.contracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">Plugin</span>
 
----
+<span class="k">class</span><span class="w"> </span><span class="nc">MyQueue</span><span class="p">(</span><span class="n">BaseJobQueue</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enqueue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="p">):</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dequeue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pop_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">qsize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="o">...</span>
 
-## 🧱 Plugin Example: Custom Queue Backend
+<span class="k">class</span><span class="w"> </span><span class="nc">MyPlugin</span><span class="p">(</span><span class="n">Plugin</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;my_queue&quot;</span>
+    <span class="n">provides</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;queue_backend&quot;</span><span class="p">]</span>
 
-```python
-# plugins/my_queue.py
-from nuvom.queue_backends.base import BaseJobQueue
-from nuvom.plugins.contracts import Plugin
+    <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settings</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">nuvom.plugins.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_queue_backend</span>
+        <span class="n">register_queue_backend</span><span class="p">(</span><span class="s2">&quot;my_custom_queue&quot;</span><span class="p">,</span> <span class="n">MyQueue</span><span class="p">)</span>
 
-class MyQueue(BaseJobQueue):
-    def enqueue(self, job): ...
-    def dequeue(self, timeout=None): ...
-    def pop_batch(self, n): ...
-    def qsize(self): ...
-    def clear(self): ...
-
-class MyPlugin(Plugin):
-    name = &quot;my_queue&quot;
-    provides = [&quot;queue_backend&quot;]
-
-    def start(self, settings):
-        from nuvom.plugins.registry import register_queue_backend
-        register_queue_backend(&quot;my_custom_queue&quot;, MyQueue)
-
-    def stop(self):
-        pass
+    <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
 </code></pre></div>
 <p>Then register in <code>.nuvom_plugins.toml</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="k">[plugins]</span>
 <span class="n">queue_backend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;plugins.my_queue:MyPlugin&quot;</span><span class="p">]</span>
 </code></pre></div>
 <hr />
-<h2 id="plugin-registry">🗃 Plugin Registry<a class="headerlink" href="#plugin-registry" title="Permanent link">&para;</a></h2>
+<h2 id="plugin-registry">Plugin Registry<a class="headerlink" href="#plugin-registry" title="Permanent link">&para;</a></h2>
 <p>Nuvom loads plugins at <strong>worker startup</strong> (not during CLI commands).</p>
 <p>Each plugin is discovered from <code>.nuvom_plugins.toml</code>, instantiated, and injected with runtime settings.</p>
 <p>To test plugin loading:</p>
@@ -933,7 +938,7 @@ nuvom<span class="w"> </span>plugin<span class="w"> </span>list
 nuvom<span class="w"> </span>plugin<span class="w"> </span>inspect<span class="w"> </span>my_queue
 </code></pre></div>
 <hr />
-<h2 id="plugin-lifecycle">🛠 Plugin Lifecycle<a class="headerlink" href="#plugin-lifecycle" title="Permanent link">&para;</a></h2>
+<h2 id="plugin-lifecycle">Plugin Lifecycle<a class="headerlink" href="#plugin-lifecycle" title="Permanent link">&para;</a></h2>
 <p>Each plugin receives a <code>start(settings)</code> call when the worker starts.</p>
 <p>Example use cases:</p>
 <ul>
@@ -944,7 +949,7 @@ nuvom<span class="w"> </span>plugin<span class="w"> </span>inspect<span class="w
 </ul>
 <p>On shutdown (<code>CTRL+C</code>, SIGINT), plugins receive a <code>stop()</code> call to clean up.</p>
 <hr />
-<h2 id="plugin-types">🧪 Plugin Types<a class="headerlink" href="#plugin-types" title="Permanent link">&para;</a></h2>
+<h2 id="plugin-types">Plugin Types<a class="headerlink" href="#plugin-types" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -972,7 +977,7 @@ nuvom<span class="w"> </span>plugin<span class="w"> </span>inspect<span class="w
 </tbody>
 </table>
 <hr />
-<h2 id="monitoring-plugin-example">📊 Monitoring Plugin Example<a class="headerlink" href="#monitoring-plugin-example" title="Permanent link">&para;</a></h2>
+<h2 id="monitoring-plugin-example">Monitoring Plugin Example<a class="headerlink" href="#monitoring-plugin-example" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="c1"># plugins/prometheus_exporter.py</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">nuvom.plugins.contracts</span><span class="w"> </span><span class="kn">import</span> <span class="n">Plugin</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">nuvom.plugins.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_metrics_provider</span>
@@ -989,7 +994,7 @@ nuvom<span class="w"> </span>plugin<span class="w"> </span>inspect<span class="w
         <span class="o">...</span>
 </code></pre></div>
 <hr />
-<h2 id="best-practices">🧠 Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
+<h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Keep plugins self-contained.</li>
 <li>Use <code>settings</code> from <code>.env</code> or custom sources.</li>
@@ -998,7 +1003,7 @@ nuvom<span class="w"> </span>plugin<span class="w"> </span>inspect<span class="w
 <li>Don’t forget <code>stop()</code> for graceful cleanup.</li>
 </ul>
 <hr />
-<h2 id="cli-support">🚦 CLI Support<a class="headerlink" href="#cli-support" title="Permanent link">&para;</a></h2>
+<h2 id="cli-support">CLI Support<a class="headerlink" href="#cli-support" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1022,7 +1027,7 @@ nuvom<span class="w"> </span>plugin<span class="w"> </span>inspect<span class="w
 </tbody>
 </table>
 <hr />
-<h2 id="roadmap-future-plugin-hooks">🚧 Roadmap (Future Plugin Hooks)<a class="headerlink" href="#roadmap-future-plugin-hooks" title="Permanent link">&para;</a></h2>
+<h2 id="roadmap-future-plugin-hooks">Roadmap (Future Plugin Hooks)<a class="headerlink" href="#roadmap-future-plugin-hooks" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
@@ -1050,7 +1055,7 @@ nuvom<span class="w"> </span>plugin<span class="w"> </span>inspect<span class="w
 </tbody>
 </table>
 <hr />
-<h2 id="summary">🧩 Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
+<h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
 <p>Plugins allow you to:</p>
 <ul>
 <li>Add new backends (queue, result)</li>
@@ -1081,7 +1086,7 @@ nuvom<span class="w"> </span>plugin<span class="w"> </span>inspect<span class="w
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 16, 2025 13:45:17 UTC">July 16, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 20, 2025 16:39:26 UTC">July 20, 2025</span>
   </span>
 
     
