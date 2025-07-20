@@ -4,7 +4,7 @@ Nuvom is built around a small number of powerful, composable concepts. Mastering
 
 ---
 
-## 🧠 Task
+## Task
 
 A `Task` is a Python function decorated with `@task(...)`. It becomes a job template.
 
@@ -12,13 +12,13 @@ A `Task` is a Python function decorated with `@task(...)`. It becomes a job temp
 @task(retries=2, timeout_secs=5)
 def send_email(to, body):
     ...
-````
+```
 
 Each task carries metadata like retry policy, timeout, and whether to store results.
 
 ---
 
-## 🧱 Job
+## Job
 
 A `Job` is a serialized instance of a task + arguments.
 
@@ -30,7 +30,7 @@ Jobs are placed into a queue and executed by workers. You can inspect their meta
 
 ---
 
-## ⚙️ Worker
+## Worker
 
 A **Worker** is a thread that pulls jobs from the queue and executes them.
 
@@ -49,7 +49,7 @@ nuvom runworker
 
 ---
 
-## 🚦 Dispatcher
+## Dispatcher
 
 The **Dispatcher** handles the logic of turning a function call into a job.
 
@@ -60,7 +60,7 @@ The **Dispatcher** handles the logic of turning a function call into a job.
 
 ---
 
-## 🪜 Queue Backend
+## Queue Backend
 
 A **Queue Backend** stores jobs awaiting execution.
 
@@ -80,7 +80,7 @@ Plugins can register custom queues. Each queue implements:
 
 ---
 
-## 📥 Result Backend
+## Result Backend
 
 The **Result Backend** stores results or errors from executed jobs.
 
@@ -101,7 +101,7 @@ Backends must implement:
 
 ---
 
-## 🧾 Registry
+## Registry
 
 The **Task Registry** is a thread-safe mapping of task names → callables.
 
@@ -111,7 +111,7 @@ The **Task Registry** is a thread-safe mapping of task names → callables.
 
 ---
 
-## 🔍 Task Discovery
+## Task Discovery
 
 Nuvom uses static analysis (AST) to find `@task` decorators in your codebase.
 
@@ -124,7 +124,7 @@ This allows fast startup and avoids circular imports.
 
 ---
 
-## 🔌 Plugins
+## Plugins
 
 Plugins extend Nuvom dynamically — they can register:
 
@@ -144,7 +144,7 @@ Use `nuvom plugin test` to validate your plugin.
 
 ---
 
-## 💡 Summary Table
+## Summary Table
 
 | Concept      | Role                                       |
 | ------------ | ------------------------------------------ |
