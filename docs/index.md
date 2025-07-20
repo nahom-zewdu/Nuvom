@@ -48,6 +48,14 @@ Nuvom throws those assumptions out the window. It's designed for:
 
 ---
 
+## Installation
+
+```bash
+pip install nuvom .
+```
+
+---
+
 ## Example
 
 ```python
@@ -65,14 +73,6 @@ job = add.delay(2, 3)
 ```bash
 nuvom runworker                # Start workers
 nuvom inspect job <job_id>    # Inspect job result and metadata
-```
-
----
-
-## Installation
-
-```bash
-pip install nuvom .
 ```
 
 ---
