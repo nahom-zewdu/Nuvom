@@ -1,4 +1,4 @@
-# 🛣️ Nuvom Roadmap
+# Nuvom Roadmap
 
 This document outlines Nuvom’s development milestones, from initial prototype to the current release, and what’s ahead for v1.0 and beyond.
 
@@ -6,9 +6,9 @@ Nuvom is built to be a **developer-first**, **plugin-friendly**, and **Redis-fre
 
 ---
 
-## ✅ Completed Milestones
+## Completed Milestones
 
-### v0.1 — Core Foundations
+### v v0.1 — Core Foundations
 
 - Basic `@task()` decorator with `.delay()`
 - In-memory queue and worker threads
@@ -82,7 +82,7 @@ Nuvom is built to be a **developer-first**, **plugin-friendly**, and **Redis-fre
 
 ---
 
-## 🚧 Next Release: `v0.10`
+## Next Release: `v0.10`
 
 > **Status:** Final pre-v1 foundation
 
@@ -98,20 +98,20 @@ Nuvom is built to be a **developer-first**, **plugin-friendly**, and **Redis-fre
 
 ---
 
-## 🧠 v1.0 Goals — Stable Core
+## v1.0 Goals — Stable Core
 
-- ✅ Windows-native, Redis-free by design
-- ✅ No imports required: safe task discovery via AST
-- ✅ CLI-driven, scriptable, and testable
-- ✅ Plugin-first queue & result architecture
-- ✅ Observability, retries, and timeouts
-- 🧩 Plugin registry contracts + third-party plugin showcase
-- 📊 Rich dashboard and metrics browser
-- 🎯 Queue system stress-tested for multi-core workloads
+- [x] Windows-native, Redis-free by design
+- [x] No imports required: safe task discovery via AST
+- [x] CLI-driven, scriptable, and testable
+- [x] Plugin-first queue & result architecture
+- [x] Observability, retries, and timeouts
+- [ ] Plugin registry contracts + third-party plugin showcase
+- [ ] Rich dashboard and metrics browser
+- [ ] Queue system stress-tested for multi-core workloads
 
 ---
 
-## 🌍 Post‑1.0 Backlog (Ideas)
+## Post‑1.0 Backlog (Ideas)
 
 These features are actively under exploration — not committed to a specific release:
 
@@ -126,7 +126,7 @@ These features are actively under exploration — not committed to a specific re
 
 ---
 
-## 📣 Want to Contribute?
+## Want to Contribute?
 
 The roadmap is shaped by real-world problems. Open an issue or discussion if:
 
