@@ -4,23 +4,11 @@ This guide walks you through installing Nuvom, defining your first task, and run
 
 ---
 
-## 🔧 Installation
-
-Nuvom is under active development. Until the first stable release, install it from source:
+## Installation
 
 ```bash
-git clone https://github.com/nahom-zewdu/Nuvom
-cd Nuvom
-pip install -e .
-````
-
-If you plan to contribute or run the documentation:
-
-```bash
-hatch shell
+pip install nuvom
 ```
-
-This will install all development and documentation dependencies inside a Hatch-managed environment.
 
 ---
 
