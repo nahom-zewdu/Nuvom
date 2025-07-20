@@ -1,6 +1,6 @@
 [build]
   publish = "site"
-  command = "hatch run docs:build"
+  command = "pip install hatch && hatch run docs:build"
 
 [context.production.environment]
   PYTHON_VERSION = "3.10"
