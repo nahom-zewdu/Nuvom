@@ -4,7 +4,7 @@ Nuvom is highly configurable using environment variables and `.env` files. This 
 
 ---
 
-## 📁 Where Settings Come From
+## Where Settings Come From
 
 Nuvom loads configuration from:
 
@@ -14,7 +14,7 @@ Nuvom loads configuration from:
 
 ---
 
-## 🗃 Example `.env`
+## Example `.env`
 
 ```env
 NUVOM_ENVIRONMENT=dev
@@ -30,18 +30,18 @@ NUVOM_TIMEOUT_POLICY=retry
 NUVOM_PROMETHEUS_PORT=9150
 NUVOM_SQLITE_QUEUE_PATH=.nuvom/queue.db
 NUVOM_SQLITE_RESULT_PATH=.nuvom/results.db
-````
+```
 
 ---
 
-## ⚙️ Core Configuration Variables
+## Core Configuration Variables
 
 | Variable                      | Description                                              | Default                |
 | ----------------------------- | -------------------------------------------------------- | ---------------------- |
 | `NUVOM_ENVIRONMENT`           | `dev`, `test`, or `prod`                                 | `dev`                  |
 | `NUVOM_LOG_LEVEL`             | Logging level: `DEBUG`, `INFO`, etc.                     | `INFO`                 |
-| `NUVOM_QUEUE_BACKEND`         | Backend type: `memory`, `file`, or plugin name           | `memory`               |
-| `NUVOM_RESULT_BACKEND`        | Result store: `memory`, `file`, `sqlite`, or plugin name | `memory`               |
+| `NUVOM_QUEUE_BACKEND`         | Backend type: `memory`, `file`, `sqlite` or plugin name           | `sqlite`               |
+| `NUVOM_RESULT_BACKEND`        | Result store: `memory`, `file`, `sqlite`, or plugin name | `sqlite`               |
 | `NUVOM_SERIALIZATION_BACKEND` | Format: `msgpack` (others in future)                     | `msgpack`              |
 | `NUVOM_MANIFEST_PATH`         | Task discovery manifest path                             | `.nuvom/manifest.json` |
 | `NUVOM_JOB_TIMEOUT_SECS`      | Default job timeout (if not overridden in `@task`)       | `30`                   |
@@ -51,7 +51,7 @@ NUVOM_SQLITE_RESULT_PATH=.nuvom/results.db
 
 ---
 
-## 🧩 Plugin Configuration
+## Plugin Configuration
 
 Plugins are registered via `.nuvom_plugins.toml` in the root of your project.
 
@@ -78,7 +78,7 @@ def start(self, settings):
 
 ---
 
-## 🧠 SQLite Backend Settings
+## SQLite Backend Settings
 
 If you use the SQLite queue or result backend, configure paths:
 
@@ -91,7 +91,7 @@ Ensure the directories exist or Nuvom will create them automatically.
 
 ---
 
-## 🧪 CLI to View Active Config
+## CLI to View Active Config
 
 You can inspect current config at any time:
 
@@ -113,7 +113,7 @@ Manifest Path: .nuvom/manifest.json
 
 ---
 
-## 🔐 Best Practices
+## Best Practices
 
 * Commit a `.env.example` file for contributors
 * Don’t hardcode secrets or plugin tokens
@@ -122,7 +122,7 @@ Manifest Path: .nuvom/manifest.json
 
 ---
 
-## 🧩 Summary
+## Summary
 
 Nuvom gives you full control over how it runs, queues jobs, stores results, and loads plugins — all through a clean `.env` and TOML-based system.
 
