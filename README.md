@@ -39,13 +39,9 @@ Full guides and reference material are available in the [`docs/`](./docs) direct
 
 ## 📦 Installation
 
-> Nuvom is currently in active development. Until v1.0, install locally:
-
 ```bash
-git clone https://github.com/nahom-zewdu/Nuvom
-cd Nuvom
-pip install -e .
-````
+pip install nuvom
+```
 
 ---
 
