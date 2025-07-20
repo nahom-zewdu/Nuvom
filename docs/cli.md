@@ -1,4 +1,4 @@
-# 🧪 Command-Line Interface (CLI)
+# Command-Line Interface (CLI)
 
 Nuvom ships with a powerful developer-first CLI for running workers, inspecting jobs, managing plugins, and more.
 
@@ -6,11 +6,9 @@ Run the following to get started:
 
 ```bash
 nuvom --help
-````
+```
 
----
-
-## 🔧 Worker Control
+## Worker Control
 
 ### Start Worker Threads
 
@@ -22,7 +20,7 @@ Starts the dispatcher and worker pool based on your `.env` settings.
 
 ---
 
-## 📊 Job Inspection & Debugging
+## Job Inspection & Debugging
 
 ### Inspect Job Result
 
@@ -50,7 +48,7 @@ See recent jobs by filter or limit.
 
 ---
 
-## ⚙️ Task Discovery & Listing
+## Task Discovery & Listing
 
 ### Discover Tasks
 
@@ -70,7 +68,7 @@ Displays all available `@task` functions registered in the manifest.
 
 ---
 
-## 🧪 Local Job Runner
+## Local Job Runner
 
 ### Run Job Locally (For Testing)
 
@@ -82,7 +80,7 @@ Execute a job directly from a JSON file (offline, no queue).
 
 ---
 
-## 🔌 Plugin Management
+## Plugin Management
 
 ### Test Plugins
 
@@ -110,7 +108,7 @@ Creates a boilerplate plugin file with the correct structure.
 
 ---
 
-## 🛠 Configuration Helper
+## Configuration Helper
 
 ```bash
 nuvom config
