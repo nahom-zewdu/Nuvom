@@ -4,7 +4,7 @@ Nuvom v0.9 introduced first-class plugin support — allowing developers to regi
 
 ---
 
-## 🔌 What is a Plugin?
+## What is a Plugin?
 
 A **plugin** is a Python class that implements the `Plugin` protocol, defining:
 
@@ -15,7 +15,7 @@ A **plugin** is a Python class that implements the `Plugin` protocol, defining:
 
 ---
 
-## 📁 File Layout
+## File Layout
 
 Plugins can live inside your project or in external libraries. Common layout:
 
@@ -25,11 +25,11 @@ my_project/
 │   ├── my_plugin.py       # Your plugin logic
 │   └── __init__.py
 └── .nuvom_plugins.toml    # Plugin registration
-````
+```
 
 ---
 
-## 🧱 Plugin Example: Custom Queue Backend
+## Plugin Example: Custom Queue Backend
 
 ```python
 # plugins/my_queue.py
@@ -64,7 +64,7 @@ queue_backend = ["plugins.my_queue:MyPlugin"]
 
 ---
 
-## 🗃 Plugin Registry
+## Plugin Registry
 
 Nuvom loads plugins at **worker startup** (not during CLI commands).
 
@@ -80,7 +80,7 @@ nuvom plugin inspect my_queue
 
 ---
 
-## 🛠 Plugin Lifecycle
+## Plugin Lifecycle
 
 Each plugin receives a `start(settings)` call when the worker starts.
 
@@ -95,7 +95,7 @@ On shutdown (`CTRL+C`, SIGINT), plugins receive a `stop()` call to clean up.
 
 ---
 
-## 🧪 Plugin Types
+## Plugin Types
 
 | Provides         | Purpose                                  |
 | ---------------- | ---------------------------------------- |
@@ -106,7 +106,7 @@ On shutdown (`CTRL+C`, SIGINT), plugins receive a `stop()` call to clean up.
 
 ---
 
-## 📊 Monitoring Plugin Example
+## Monitoring Plugin Example
 
 ```python
 # plugins/prometheus_exporter.py
@@ -127,7 +127,7 @@ class PrometheusPlugin(Plugin):
 
 ---
 
-## 🧠 Best Practices
+## Best Practices
 
 - Keep plugins self-contained.
 - Use `settings` from `.env` or custom sources.
@@ -137,7 +137,7 @@ class PrometheusPlugin(Plugin):
 
 ---
 
-## 🚦 CLI Support
+## CLI Support
 
 | Command                | Description                   |
 | ---------------------- | ----------------------------- |
@@ -147,7 +147,7 @@ class PrometheusPlugin(Plugin):
 
 ---
 
-## 🚧 Roadmap (Future Plugin Hooks)
+## Roadmap (Future Plugin Hooks)
 
 | Feature                      | Status                    |
 | ---------------------------- | ------------------------- |
@@ -158,7 +158,7 @@ class PrometheusPlugin(Plugin):
 
 ---
 
-## 🧩 Summary
+## Summary
 
 Plugins allow you to:
 
