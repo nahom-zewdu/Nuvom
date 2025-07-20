@@ -1,0 +1,7 @@
+[build]
+  publish = "site"
+  command = "hatch run docs:build"
+
+[context.production.environment]
+  PYTHON_VERSION = "3.10"
+  PIP_NO_CACHE_DIR = "false"
