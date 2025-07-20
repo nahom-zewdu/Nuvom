@@ -1,10 +1,10 @@
-# ❓ Nuvom FAQ
+# Nuvom FAQ
 
 Welcome to the Nuvom Frequently Asked Questions. This page answers common questions about how Nuvom works, why it was designed this way, and how to resolve potential issues.
 
 ---
 
-## 🔧 Why doesn’t Nuvom require Redis or a message broker?
+## Why doesn’t Nuvom require Redis or a message broker?
 
 Because it doesn’t need one. Nuvom handles queuing and result persistence using **pluggable local backends** like memory, file, and SQLite.
 
@@ -14,13 +14,13 @@ For larger or distributed use cases, Redis support is planned as a plugin.
 
 ---
 
-## 🪟 Does Nuvom run on Windows?
+## Does Nuvom run on Windows?
 
 Yes. Nuvom is **100% Windows-compatible** — no reliance on POSIX signals, `fork()`, or Unix-only libraries. It works on Windows, Linux, and macOS out of the box.
 
 ---
 
-## 🧠 How does task discovery work without importing modules?
+## How does task discovery work without importing modules?
 
 Nuvom uses **AST parsing** to detect `@task` decorators. This means:
 
@@ -31,7 +31,7 @@ Nuvom uses **AST parsing** to detect `@task` decorators. This means:
 
 ---
 
-## 💥 Why isn’t my task showing up?
+## Why isn’t my task showing up?
 
 Check the following:
 
@@ -44,7 +44,7 @@ You can always inspect the manifest manually at `.nuvom/manifest.json`.
 
 ---
 
-## 🔁 My job failed. How do I retry it?
+## My job failed. How do I retry it?
 
 Use either the CLI or the SDK:
 
@@ -53,7 +53,7 @@ Use either the CLI or the SDK:
 ```bash
 nuvom inspect job <job_id>
 nuvom retry job <job_id>
-````
+```
 
 **Python:**
 
@@ -64,7 +64,7 @@ retry_job("<job_id>")
 
 ---
 
-## ⏲ How do timeouts and retries work?
+## How do timeouts and retries work?
 
 Each task can define:
 
@@ -77,20 +77,21 @@ If a task times out or fails, Nuvom uses these fields to determine what happens 
 
 ---
 
-## 🧪 How do I test my plugins?
+## How do I test my plugins?
 
 Use the plugin testing CLI:
 
 ```bash
-nuvom plugin test
-nuvom plugin inspect <plugin_name>
+nuvom plugin status                      # Show all loaded plugins
+nuvom plugin test nuvom_hello.plugin     # Test installed plugin   
+nuvom plugin test ./my_plugin.py         # Test from file
 ```
 
 Make sure your `.nuvom_plugins.toml` file points to a valid Python module implementing the `Plugin` protocol.
 
 ---
 
-## 📦 Where is job data stored?
+## Where is job data stored?
 
 Depends on your backend:
 
@@ -102,7 +103,7 @@ Use `.env` to control storage location and backend type.
 
 ---
 
-## 🚫 My job runs fine manually, but fails in the worker
+## My job runs fine manually, but fails in the worker
 
 This usually means:
 
@@ -120,7 +121,7 @@ This simulates a worker run locally.
 
 ---
 
-## 🧩 What can I build with plugins?
+## What can I build with plugins?
 
 Anything:
 
@@ -133,7 +134,7 @@ Nuvom's plugin system supports dynamic registration and lifecycle events (`start
 
 ---
 
-## ⚠️ Does Nuvom support distributed workers?
+## Does Nuvom support distributed workers?
 
 Not yet. Current backends (memory, file, SQLite) are designed for **single-host** or **single-disk** usage.
 
@@ -141,6 +142,6 @@ Distributed execution (e.g., multiple machines) will require network-aware backe
 
 ---
 
-## 💡 Got a question that’s not listed?
+## Got a question that’s not listed?
 
 Open an issue on GitHub or reach out via the project discussion board. We’ll update this page as real-world usage evolves.
