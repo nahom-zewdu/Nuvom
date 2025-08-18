@@ -42,7 +42,17 @@ def add(x, y):
     return x + y
 ```
 
-### 2. Queue a Job
+### 2. Discover Tasks
+
+Nuvom uses static AST-based discovery to find task definitions without executing your code.
+
+```bash
+nuvom discover tasks
+```
+
+This generates .nuvom/manifest.json to speed up worker startup and avoid runtime imports.
+
+### 3. Queue a Job
 
 ```python
 from tasks import add
@@ -51,13 +61,13 @@ job = add.delay(5, 7)
 print(job.id)
 ```
 
-### 3. Run the Worker
+### 4. Run the Worker
 
 ```bash
 nuvom runworker
 ```
 
-### 4. Inspect the Result
+### 5. Inspect the Result
 
 ```bash
 nuvom inspect job <job_id>
