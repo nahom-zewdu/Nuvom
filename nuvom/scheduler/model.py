@@ -1,37 +1,36 @@
 # nuvom/scheduler/model.py
 
 """
-Scheduler data model
-====================
+Scheduler and Discovery Data Models
+===================================
 
-This module defines the canonical `ScheduledJob` data model used by the
-Nuvom scheduler. This model is intentionally feature-complete.
+This module defines the canonical data structures used by the Nuvom scheduler
+and task discovery pipeline.
 
-- id: str (UUID)
-- task_name: str (registered task)
-- schedule_type: Literal["cron","interval","once"]
-- cron_expr: Optional[str]
-- interval_secs: Optional[int]
-- run_at: Optional[float] (unix timestamp)
-- args, kwargs: default args for created Jobs
-- enabled: bool
-- next_run_ts: Optional[float]
-- timezone: Optional[str] (default UTC)
-- misfire_policy: Literal["run_immediately","skip","reschedule"]
-- concurrency_limit: Optional[int]
-- queue_name: Optional[str]
-- created_at, updated_at: float (unix timestamps)
+Two primary concepts are modeled here:
 
-The model includes helpers for validation, computing the next run timestamp
-(for interval & cron schedules) and serialization helpers for persistence.
+1. ScheduledJob
+   -------------
+   A fully-instantiated schedule entry that the scheduler operates on.
+   This is storage-friendly and includes execution policies, timestamps,
+   and helpers for computing next run times.
 
-Notes
------
-- Cron expression handling is implemented via `croniter` when available. If
-  `croniter` is not installed and a cron schedule is used, `compute_next_run_ts`
-  will raise a clear error explaining the missing dependency.
-- Time values are stored as UNIX timestamps (floats) in UTC to keep storage
-  simple and interoperable across environments.
+2. ScheduledTaskReference
+   -----------------------
+   A lightweight reference created at *discovery time* for functions decorated
+   with `@scheduled_task`. It captures the scheduling metadata embedded in
+   decorators, without instantiating a full ScheduledJob yet.
+   These references are serialized into the manifest so that upon reload,
+   the scheduler can reconstruct `ScheduledJob` objects consistently,
+   without re-importing user code.
+
+Why two classes?
+----------------
+- `ScheduledTaskReference` is about *source metadata* discovered in user code.
+- `ScheduledJob` is about *runtime scheduling state* that drives execution.
+
+Separating them avoids repeatedly importing user modules at runtime, and keeps
+persistence and replaying schedules deterministic.
 """
 
 from __future__ import annotations
@@ -52,6 +51,81 @@ try:
 except Exception:  # pragma: no cover - import handled at runtime
     croniter = None
 
+
+# ---------------------------------------------------------------------------
+# Discovery Reference Model
+# ---------------------------------------------------------------------------
+
+@dataclass
+class ScheduledTaskReference:
+    """
+    Lightweight reference to a scheduled task discovered via `@scheduled_task`.
+
+    This structure is produced by the discovery layer (`discover_tasks`) and
+    persisted in the manifest. It captures *what was declared in code* without
+    performing any scheduling logic.
+
+    Attributes
+    ----------
+    file_path : str
+        Absolute or relative path to the Python file containing the task.
+    func_name : str
+        Name of the task function as defined in source code.
+    module_name : str
+        Importable module path (dot notation) of the containing module.
+    schedule_type : Literal["cron","interval","once"]
+        The type of schedule declared.
+    schedule_value : str | int | float
+        - For `cron`: the cron expression string.
+        - For `interval`: the interval in seconds (int).
+        - For `once`: a UNIX timestamp (float).
+    options : Dict[str, Any]
+        Optional keyword arguments passed to the decorator
+        (e.g., timezone, misfire_policy, concurrency_limit).
+    """
+
+    file_path: str
+    func_name: str
+    module_name: str
+    schedule_type: Literal["cron", "interval", "once"]
+    schedule_value: str | int | float
+    options: Dict[str, Any] = field(default_factory=dict)
+
+    def __repr__(self) -> str:
+        return (
+            f"<ScheduledTaskReference {self.module_name}:{self.func_name} "
+            f"({self.schedule_type}={self.schedule_value})>"
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize this reference to a JSON-friendly dict for persistence."""
+        return {
+            "file_path": self.file_path,
+            "func_name": self.func_name,
+            "module_name": self.module_name,
+            "schedule_type": self.schedule_type,
+            "schedule_value": self.schedule_value,
+            "options": self.options,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ScheduledTaskReference":
+        """
+        Reconstruct a ScheduledTaskReference from serialized manifest data.
+        """
+        return cls(
+            file_path=data["file_path"],
+            func_name=data["func_name"],
+            module_name=data["module_name"],
+            schedule_type=data["schedule_type"],
+            schedule_value=data["schedule_value"],
+            options=data.get("options", {}),
+        )
+
+
+# ---------------------------------------------------------------------------
+# Runtime Scheduled Job Model
+# ---------------------------------------------------------------------------
 
 @dataclass
 class ScheduledJob:
@@ -139,7 +213,6 @@ class ScheduledJob:
             if not self.cron_expr:
                 raise ValueError("cron_expr is required for schedule_type='cron'")
             if not croniter:
-                # Defer to runtime error in compute_next_run_ts but warn early
                 raise RuntimeError(
                     "cron schedules require the 'croniter' package. Install via: pip install croniter"
                 )
@@ -167,24 +240,10 @@ class ScheduledJob:
     def compute_next_run_ts(self, from_ts: Optional[float] = None) -> Optional[float]:
         """
         Compute the next run timestamp for this schedule.
-
-        Parameters
-        ----------
-        from_ts : Optional[float]
-            Base timestamp to compute from (defaults to now).
-
-        Returns
-        -------
-        Optional[float]
-            Unix timestamp for the next run, or None for malformed schedules.
-
-        Notes
-        -----
-        - For `once` schedules, this returns `run_at` (even if it is in the past).
-        - For `interval` schedules, this computes the next occurrence >= `from_ts`.
-        - For `cron` schedules, this uses `croniter` to compute the next occurrence
-          in the configured timezone.
+        ...
+        (unchanged body)
         """
+
         now = from_ts or time.time()
 
         if self.schedule_type == "once":
@@ -192,19 +251,15 @@ class ScheduledJob:
 
         if self.schedule_type == "interval":
             base = self.next_run_ts or self.run_at or now
-            # if base is None (shouldn't happen), use now
             if base is None:
                 base = now
-            # advance in multiples of interval until >= now
             interval = float(self.interval_secs)
             if interval <= 0:
                 raise ValueError("interval_secs must be > 0")
 
-            # compute next occurrence without looping when possible
             if base >= now:
                 return float(base)
 
-            # n = ceil((now - base) / interval)
             delta = now - base
             n = int(delta // interval) + 1
             return float(base + n * interval)
@@ -213,8 +268,6 @@ class ScheduledJob:
             if not croniter:
                 raise RuntimeError("cron schedule requires 'croniter' package")
 
-            # croniter accepts float start_time and returns next as float
-            # Respect timezone if ZoneInfo is available
             try:
                 start = now
                 it = croniter(self.cron_expr, start)
@@ -223,7 +276,6 @@ class ScheduledJob:
             except Exception as e:
                 raise RuntimeError(f"Failed to compute next cron run: {e}")
 
-        # Fallback: unknown schedule type
         return None
 
     # --------------------------- utility methods -------------------------
@@ -251,7 +303,6 @@ class ScheduledJob:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "ScheduledJob":
         """Create a ScheduledJob from a dict (reverse of `to_dict`)."""
-        # avoid passing None for default fields implicitly
         kwargs = dict(
             id=data.get("id") or str(uuid.uuid4()),
             task_name=data["task_name"],
@@ -275,4 +326,3 @@ class ScheduledJob:
     def touch_updated(self) -> None:
         """Update the `updated_at` timestamp to now."""
         self.updated_at = time.time()
-
