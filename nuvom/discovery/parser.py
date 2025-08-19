@@ -2,25 +2,24 @@
 
 """
 Provides AST-based parsing utilities to statically detect function
-definitions decorated with @task in Python source files.
+definitions decorated with @task and @scheduled_task in Python source files.
 """
 
 import ast
 from pathlib import Path
-from typing import List
+from typing import List, Tuple, Optional
 from nuvom.log import get_logger
 
 logger = get_logger()
 
-def find_task_defs(file_path: Path) -> List[str]:
+def find_task_defs(file_path: Path) -> List[Tuple[str, Optional[str]]]:
     """
-    Parse a Python source file and find all function names decorated with @task.
-
-    Args:
-        file_path (Path): Path to the Python source file.
+    Parse a Python file and find all function names decorated with
+    @task or @scheduled_task.
 
     Returns:
-        List[str]: List of function names decorated with @task.
+        List of tuples: (func_name, decorator_type)
+        decorator_type is either "task" or "scheduled_task"
     """
     try:
         source = file_path.read_text(encoding="utf-8")
@@ -34,18 +33,36 @@ def find_task_defs(file_path: Path) -> List[str]:
         logger.warning(f"[parser] Syntax error in {file_path}: {e}")
         return []
 
-    tasks = []
+    results: List[Tuple[str, Optional[str]]] = []
+
     for node in ast.walk(tree):
         if isinstance(node, ast.FunctionDef):
             for decorator in node.decorator_list:
-                if isinstance(decorator, ast.Name) and decorator.id == "task":
-                    tasks.append(node.name)
-                elif isinstance(decorator, ast.Attribute) and decorator.attr == "task":
-                    tasks.append(node.name)
+                name = None
+                if isinstance(decorator, ast.Name):
+                    if decorator.id == "task":
+                        name = "task"
+                    elif decorator.id == "scheduled_task":
+                        name = "scheduled_task"
+                elif isinstance(decorator, ast.Attribute):
+                    if decorator.attr == "task":
+                        name = "task"
+                    elif decorator.attr == "scheduled_task":
+                        name = "scheduled_task"
                 elif isinstance(decorator, ast.Call):
-                    # Check if decorator is a call to `task` or `x.task`
                     func = decorator.func
-                    if (isinstance(func, ast.Name) and func.id == "task") or \
-                       (isinstance(func, ast.Attribute) and func.attr == "task"):
-                        tasks.append(node.name)
-    return tasks
+                    if isinstance(func, ast.Name):
+                        if func.id == "task":
+                            name = "task"
+                        elif func.id == "scheduled_task":
+                            name = "scheduled_task"
+                    elif isinstance(func, ast.Attribute):
+                        if func.attr == "task":
+                            name = "task"
+                        elif func.attr == "scheduled_task":
+                            name = "scheduled_task"
+
+                if name:
+                    results.append((node.name, name))
+
+    return results
