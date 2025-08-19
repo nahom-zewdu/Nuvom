@@ -25,14 +25,14 @@ if TYPE_CHECKING:
     # type-only imports to keep runtime cost low
     from nuvom.scheduler.scheduler import Scheduler
     from nuvom.scheduler.model import ScheduledJob
-    from nuvom.scheduler.store import PersistentStore
+    from nuvom.scheduler.store import SchedulerStore
 
 
 __all__ = [
     "ScheduledJob",
     "Scheduler",
     "get_scheduler",
-    "PersistentStore",
+    "SchedulerStore",
     "SQLiteStore",
     "scheduled_task",
 ]
