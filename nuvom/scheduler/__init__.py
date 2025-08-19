@@ -23,9 +23,9 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     # type-only imports to keep runtime cost low
-    from .scheduler import Scheduler
-    from .model import ScheduledJob
-    from .store import PersistentStore
+    from nuvom.scheduler.scheduler import Scheduler
+    from nuvom.scheduler.model import ScheduledJob
+    from nuvom.scheduler.store import PersistentStore
 
 
 __all__ = [
@@ -50,8 +50,8 @@ def get_scheduler() -> "Scheduler":
     global _scheduler_instance
     if _scheduler_instance is None:
         # Local import to avoid startup costs when CLI isn't starting scheduler
-        from .scheduler import Scheduler
-        from .sqlite_store import SQLiteStore
+        from nuvom.scheduler.scheduler import Scheduler
+        from nuvom.scheduler.sqlite_store import SQLiteStore
 
         store = SQLiteStore()
         _scheduler_instance = Scheduler(store=store)
