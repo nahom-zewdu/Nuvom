@@ -18,15 +18,12 @@ modules during CLI startup until the scheduler is actually used.
 """
 
 from __future__ import annotations
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    # type-only imports to keep runtime cost low
     from nuvom.scheduler.scheduler import Scheduler
     from nuvom.scheduler.model import ScheduledJob
     from nuvom.scheduler.store import SchedulerStore
-
 
 __all__ = [
     "ScheduledJob",
@@ -37,36 +34,29 @@ __all__ = [
     "scheduled_task",
 ]
 
-# Lightweight accessor (concrete implementation is imported lazily)
-_scheduler_instance = None
-
+# ------------------------ Singleton ------------------------
+_scheduler_instance: Scheduler | None = None
 
 def get_scheduler() -> "Scheduler":
-    """Return the global Scheduler singleton, lazily created on first call.
+    """
+    Return the global Scheduler singleton, lazily created on first call.
 
-    The concrete Scheduler class is imported when needed, keeping the
-    package import lightweight for commands that don't use scheduling.
+    Uses SQLiteStore as the default persistent backend.
     """
     global _scheduler_instance
     if _scheduler_instance is None:
-        # Local import to avoid startup costs when CLI isn't starting scheduler
         from nuvom.scheduler.scheduler import Scheduler
         from nuvom.scheduler.sqlite_store import SQLiteStore
 
-        store = SQLiteStore()
+        store = SQLiteStore()  # default path 'nuvom_scheduler.db'
         _scheduler_instance = Scheduler(store=store)
     return _scheduler_instance
 
-
-# Re-export decorator and store symbol names lazily
+# ------------------------ Re-exports ------------------------
 def scheduled_task(*args, **kwargs):
-    from .decorators import scheduled_task as _decor
-
+    from nuvom.scheduler.decorators import scheduled_task as _decor
     return _decor(*args, **kwargs)
 
-
-# Expose SQLiteStore symbol without importing heavy modules at top-level
 def SQLiteStore(*args, **kwargs):
-    from .sqlite_store import SQLiteStore as _SQLiteStore
-
+    from nuvom.scheduler.sqlite_store import SQLiteStore as _SQLiteStore
     return _SQLiteStore(*args, **kwargs)
