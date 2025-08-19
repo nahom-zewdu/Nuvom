@@ -24,8 +24,11 @@ discover_tasks(root_path, include, exclude) -> (List[TaskReference], List[Schedu
 
 from __future__ import annotations
 
-from typing import List, Tuple, Dict, Any
+import importlib
+import importlib.util
+import sys
 from pathlib import Path
+from typing import List, Tuple, Dict, Any
 
 from nuvom.discovery.walker import get_python_files
 from nuvom.discovery.parser import find_task_defs
@@ -33,19 +36,16 @@ from nuvom.discovery.compute_path import compute_module_path
 from nuvom.discovery.reference import TaskReference, ScheduledTaskReference
 from nuvom.log import get_logger
 
-# Prefer the project’s loader util if present (avoids module name collisions).
 try:
+    # Prefer project’s loader util if available
     from nuvom.discovery.loader import load_module_from_path
-except Exception:  # pragma: no cover - fallback path loader
+except Exception:  # pragma: no cover
     load_module_from_path = None  # type: ignore
-
-import importlib
-import importlib.util
-import sys
 
 logger = get_logger()
 
 
+# --------------------------- module import helpers ---------------------------
 def _load_module(module_name: str | None, file_path: str):
     """
     Load a module either by its dotted name or from file path (without polluting user modules).
@@ -59,59 +59,59 @@ def _load_module(module_name: str | None, file_path: str):
     -------
     module : ModuleType
     """
-    # 1) Try regular import by module name
     if module_name:
         try:
             return importlib.import_module(module_name)
         except Exception as e:
             logger.debug("[discover] Import by module name failed for %s: %s", module_name, e)
 
-    # 2) Use project loader if available
     if load_module_from_path is not None:
         return load_module_from_path(file_path)
 
-    # 3) Fallback: direct path import with a unique-ish name
+    # Fallback: synthetic unique name
     mod_name = f"nuvom_discovery_{abs(hash(file_path))}"
     spec = importlib.util.spec_from_file_location(mod_name, file_path)
     if not spec or not spec.loader:
-        raise ImportError(f"Cannot load spec from path: {file_path}")
+        raise ImportError(f"Cannot create import spec for: {file_path}")
+
     module = importlib.util.module_from_spec(spec)
+    loader = spec.loader
+    assert loader
     sys.modules[mod_name] = module
-    spec.loader.exec_module(module)
-    return module
+    try:
+        loader.exec_module(module)
+        return module
+    finally:
+        # avoid permanent pollution
+        sys.modules.pop(mod_name, None)
 
 
+# ----------------------- scheduled metadata extraction -----------------------
 def _extract_scheduled_metadata(module, func_name: str) -> Dict[str, Any] | None:
     """
-    Best-effort extraction of `_scheduled_metadata` from a function in a module.
+    Extract `_scheduled_metadata` from a function in a module.
 
     Returns
     -------
     dict | None
         The metadata dict if present and well-formed; otherwise None.
     """
-    if not hasattr(module, func_name):
-        logger.warning("[discover] Module %s has no attribute '%s'", getattr(module, "__name__", "?"), func_name)
-        return None
-
-    func = getattr(module, func_name)
+    func = getattr(module, func_name, None)
     if not callable(func):
-        logger.warning("[discover] Attribute '%s' in %s is not callable", func_name, getattr(module, "__name__", "?"))
+        logger.debug("[discover] %s.%s is not callable", getattr(module, "__name__", "?"), func_name)
         return None
 
     meta = getattr(func, "_scheduled_metadata", None)
     if meta is None:
-        logger.warning("[discover] scheduled_task '%s' has no _scheduled_metadata; skipping metadata.", func_name)
         return None
-
     if not isinstance(meta, dict):
         logger.warning("[discover] _scheduled_metadata for '%s' is not a dict; skipping.", func_name)
         return None
 
-    # Shallow copy to ensure JSON-serializable primitive containers downstream
+    # Normalize → shallow copy for downstream JSON safety
     return dict(meta)
 
-
+# ------------------------------ public API -----------------------------------
 def discover_tasks(
     root_path: str = ".",
     include: List[str] | None = None,
@@ -150,11 +150,11 @@ def discover_tasks(
     root = Path(root_path).resolve()
 
     for file in files:
-        task_defs = find_task_defs(file)  # [(func_name, decorator_type)]
-        if not task_defs:
+        defs = find_task_defs(file)
+        if not defs:
             continue
 
-        for func_name, decorator_type in task_defs:
+        for func_name, decorator_type in defs:
             module_path = compute_module_path(file, root_path=root)
 
             if decorator_type == "task":
@@ -162,15 +162,16 @@ def discover_tasks(
                 continue
 
             if decorator_type == "scheduled_task":
-                # Import the module ONLY to read the function's `_scheduled_metadata`
+                meta: Dict[str, Any] = {}
                 try:
                     module = _load_module(module_path, str(file))
-                    meta = _extract_scheduled_metadata(module, func_name) or {}
+                    extracted = _extract_scheduled_metadata(module, func_name)
+                    if extracted:
+                        meta.update(extracted)
                 except Exception as e:
-                    logger.exception("[discover] Failed reading _scheduled_metadata for %s:%s", module_path or file, func_name)
-                    meta = {}
+                    logger.exception("[discover] Failed to load metadata for %s:%s", module_path or file, func_name)
 
-                # Ensure task_name is present for consumers; default to func name
+                # Always enforce a task_name key (fallback to func name)
                 meta.setdefault("task_name", func_name)
 
                 scheduled_tasks.append(
