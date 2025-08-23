@@ -86,7 +86,7 @@ from nuvom.queue import get_queue_backend
 from nuvom.registry.registry import get_task_registry
 
 # Deliberate soft dependency: we *use* the accessor but do not dictate its impl.
-from nuvom.scheduler.queue import get_scheduler_backend  # type: ignore
+from nuvom.scheduler.backend import get_scheduler_backend  # type: ignore
 
 
 # -------------------------------------------------------------------- #
