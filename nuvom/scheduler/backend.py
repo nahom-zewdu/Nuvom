@@ -140,6 +140,7 @@ def get_scheduler_backend() -> SchedulerBackend:
     global _backend_singleton
     if _backend_singleton is None:
         # Lazy import to avoid circulars and heavy deps at import time.
-        from nuvom.scheduler.memory_qeueu import InMemorySchedulerBackend  # type: ignore
-        _backend_singleton = InMemorySchedulerBackend()
+        from nuvom.scheduler.sqlite_backend import SqlSchedulerBackend  # type: ignore
+        _backend_singleton = SqlSchedulerBackend()
+        
     return _backend_singleton # type: ignore
