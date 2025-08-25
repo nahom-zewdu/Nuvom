@@ -495,7 +495,7 @@ class Task:
             raise RuntimeError(
                 "Scheduler backend must expose an `enqueue(envelope: dict)` method."
             )
-        print("---------", ref.interval_secs, ref.next_run)
+            
         envelope = scheduler_backend.enqueue(ref)
         return envelope
 
