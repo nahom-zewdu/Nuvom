@@ -35,112 +35,121 @@ When a schedule is due, the dispatcher will convert it into a *regular*
 
 from __future__ import annotations
 
+import importlib
+import threading
 from abc import ABC, abstractmethod
-from typing import Iterable, List, Optional, Sequence
+from typing import List, Optional
 
 from nuvom.scheduler.models import ScheduledTaskReference, ScheduleEnvelope
+from nuvom.config import get_settings
 
-
+# -------------------------------------------------------------------------
+# Abstract base class
+# -------------------------------------------------------------------------
 class SchedulerBackend(ABC):
     """
     Abstract base class for scheduler backends.
-
-    Any backend must be concurrency-safe for typical multi-threaded access.
-    Stronger guarantees (e.g., distributed locks) are backend-specific.
+    Must be thread-safe and safe for concurrent workers.
     """
 
     # ----------------------------- write path ------------------------------
-
     @abstractmethod
     def enqueue(self, ref: ScheduledTaskReference) -> ScheduleEnvelope:
-        """
-        Persist a `ScheduledTaskReference` as a durable `ScheduleEnvelope`.
-
-        Implementations should:
-        - Validate and normalize inputs
-        - Assign missing next_run_ts if appropriate (e.g., for interval/cron)
-        - Ensure idempotency if metadata contains a unique key (optional)
-        - Return the stored envelope
-        """
+        """Persist a `ScheduledTaskReference` and return a `ScheduleEnvelope`."""
         raise NotImplementedError
 
     # ------------------------------ read path -----------------------------
-
     @abstractmethod
     def get(self, schedule_id: str) -> Optional[ScheduleEnvelope]:
-        """Return an envelope by id, or None if unknown."""
+        """Return an envelope by ID, or None if unknown."""
         raise NotImplementedError
 
     @abstractmethod
     def list(self) -> List[ScheduleEnvelope]:
-        """Return all envelopes currently known to the backend."""
+        """List all stored schedule envelopes."""
         raise NotImplementedError
 
     @abstractmethod
     def due(self, now_ts: Optional[float] = None, limit: Optional[int] = None) -> List[ScheduleEnvelope]:
-        """
-        Return envelopes that are due to run at `now_ts`.
-
-        Implementations should not mutate envelopes here; the dispatcher
-        will mark and/or reschedule after successful enqueue to the main queue.
-        """
+        """Return envelopes that are due for dispatch at the current timestamp."""
         raise NotImplementedError
 
     # ---------------------------- lifecycle ops ---------------------------
-
     @abstractmethod
     def ack_dispatched(self, schedule_id: str) -> None:
-        """
-        Mark an envelope as dispatched (successful handoff to main queue).
-
-        Implementations should update status and bump run_count.
-        """
+        """Mark an envelope as dispatched and increment run counters."""
         raise NotImplementedError
 
     @abstractmethod
     def reschedule(self, schedule_id: str, next_run_ts: float) -> None:
-        """
-        Update the next_run_ts for a schedule (cron/interval recomputation).
-        """
+        """Update the `next_run_ts` for recurring schedules."""
         raise NotImplementedError
 
     @abstractmethod
     def cancel(self, schedule_id: str) -> None:
-        """Cancel a pending schedule."""
+        """Cancel a pending scheduled task."""
         raise NotImplementedError
 
 
 # -------------------------------------------------------------------------
-# Default backend accessor
+# Backend loader & thread-safe singleton accessor
 # -------------------------------------------------------------------------
-
 _backend_singleton: Optional[SchedulerBackend] = None
+_lock = threading.Lock()
+
+
+def _load_backend() -> SchedulerBackend:
+    """
+    Dynamically load the backend specified in configuration.
+
+    Supported values:
+      - `sqlite` (default)
+      - `memory`
+      - `redis`
+      - `package.module:ClassName` for custom implementations
+    """
+    settings = get_settings()
+    backend_name = getattr(settings, "scheduler_backend", "sqlite").lower()
+
+    if backend_name == "sqlite":
+        from nuvom.scheduler.sqlite_backend import SqlSchedulerBackend
+        return SqlSchedulerBackend()
+    elif backend_name == "memory":
+        from nuvom.scheduler.memory_backend import InMemorySchedulerBackend
+        return InMemorySchedulerBackend()
+    # elif backend_name == "redis":
+    #     from nuvom.scheduler.redis_backend import RedisSchedulerBackend
+    #     return RedisSchedulerBackend()
+
+    # Load custom backend dynamically
+    if ":" in backend_name:
+        module_path, class_name = backend_name.split(":")
+        module = importlib.import_module(module_path)
+        cls = getattr(module, class_name)
+        if not issubclass(cls, SchedulerBackend):
+            raise TypeError(f"{class_name} is not a subclass of SchedulerBackend")
+        return cls()
+
+    raise ValueError(f"Unsupported scheduler backend: {backend_name}")
 
 
 def set_scheduler_backend(backend: SchedulerBackend) -> None:
-    """
-    Install a process-wide scheduler backend singleton.
-
-    This is typically used by application bootstrap or tests.
-    """
+    """Explicitly set the global backend instance (used for tests or bootstrap)."""
     global _backend_singleton
-    _backend_singleton = backend
+    with _lock:
+        _backend_singleton = backend
 
 
 def get_scheduler_backend() -> SchedulerBackend:
     """
-    Return the process-wide scheduler backend singleton.
+    Get the configured scheduler backend singleton.
 
-    If no backend has been set yet, this function will lazily instantiate
-    the in-memory backend implementation for convenience (dev/test).
-
-    Production deployments should call `set_scheduler_backend(...)`
-    during initialization to install a durable backend.
+    Loads the backend from settings if not already instantiated.
+    Thread-safe for concurrent initialization.
     """
     global _backend_singleton
     if _backend_singleton is None:
-        # Lazy import to avoid circulars and heavy deps at import time.
-        from nuvom.scheduler.sqlite_backend import SqlSchedulerBackend  # type: ignore
-        _backend_singleton = SqlSchedulerBackend()
-        
-    return _backend_singleton # type: ignore
+        with _lock:
+            if _backend_singleton is None:  # Double-checked locking
+                _backend_singleton = _load_backend()
+    return _backend_singleton
