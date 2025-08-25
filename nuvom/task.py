@@ -1,3 +1,5 @@
+# nuvom/task.py
+
 """
 Task abstraction and scheduling entrypoint for Nuvom
 ===================================================
@@ -87,7 +89,7 @@ from nuvom.registry.registry import get_task_registry
 
 # Deliberate soft dependency: we *use* the accessor but do not dictate its impl.
 from nuvom.scheduler.backend import get_scheduler_backend  # type: ignore
-
+from nuvom.scheduler.models import ScheduledTaskReference, ScheduleEnvelope
 
 # -------------------------------------------------------------------- #
 # Helper utilities
@@ -368,7 +370,7 @@ class Task:
         cron: str | None = None,
         timezone_name: str | None = "UTC",
         **kwargs: Any,
-    ) -> dict:
+    ) -> ScheduleEnvelope:
         """Schedule this task for **future or recurring execution**.
 
         Exactly one of ``at``/``in_``/``interval``/``cron`` must be provided.
@@ -453,26 +455,31 @@ class Task:
         else:  # pragma: no cover - guarded by mutual exclusivity check above
             raise ValueError("Must specify a valid scheduling mode.")
 
-        envelope: dict[str, Any] = {
-            "id": str(uuid4()),
-            "task_name": self.name,
-            "args": list(args),
-            "kwargs": dict(kwargs),
-            "created_at_ts": now.timestamp(),
-            "next_run_ts": at_ts,
-            "schedule": {
-                "type": schedule_type,
-                "at_ts": at_ts,
-                "interval_secs": interval_secs,
-                "cron_expr": cron_expr,
-                "timezone": timezone_name,
-            },
-            "metadata": {
+        ref = ScheduledTaskReference.create(
+            func_name=self.name,
+            args=list(args),
+            kwargs=dict(kwargs),
+            schedule_type=(
+                "one_off" if at or in_ else
+                "interval" if interval else
+                "cron"
+            ),
+            next_run=(
+                at if at else
+                (now + in_) if in_ else
+                (now + timedelta(seconds=interval_secs)) if interval else
+                None
+            ),
+            interval_secs=interval if interval else None,
+            cron_expr=cron if cron else None,
+            timezone=timezone_name or "UTC",
+            metadata={
                 "category": self.category,
                 "description": self.description,
                 "tags": self.tags,
             },
-        }
+        )
+
 
         # Defer to the scheduler backend (separate queue from the main job queue)
         try:
@@ -488,8 +495,8 @@ class Task:
             raise RuntimeError(
                 "Scheduler backend must expose an `enqueue(envelope: dict)` method."
             )
-
-        scheduler_backend.enqueue(envelope)
+        print("---------", ref.interval_secs, ref.next_run)
+        envelope = scheduler_backend.enqueue(ref)
         return envelope
 
     # ---------------------------------------------------------------- #
