@@ -74,9 +74,10 @@ def load_task(ref: TaskReference) -> Callable:
             module = importlib.import_module(ref.module_name)
             logger.info(f"[loader] ✅ Imported module: {ref.module_name}")
         except ImportError as e:
-            logger.warning(f"[loader] ⚠ Failed to import '{ref.module_name}': {e}")
-            logger.info("[loader] ℹ Falling back to loading from file path...")
-
+            # logger.warning(f"[loader] ⚠ Failed to import '{ref.module_name}': {e}")
+            # logger.info("[loader] ℹ Falling back to loading from file path...")
+            pass
+    
     # Fallback to loading from path
     if module is None:
         module = load_module_from_path(ref.file_path)
