@@ -194,7 +194,7 @@ def _next_run_after(envelope: ScheduleEnvelope, after_ts: float) -> Optional[flo
 
 # ------------------------------ dispatch core ----------------------------- #
 
-def dispatch_once(now_ts: Optional[float] = None, limit: Optional[int] = 100) -> int:
+def dispatch_once(now_ts: Optional[float] = None, limit: Optional[int] = 100, backend = None) -> int:
     """
     Poll the backend for due envelopes and dispatch them once.
 
@@ -210,7 +210,9 @@ def dispatch_once(now_ts: Optional[float] = None, limit: Optional[int] = 100) ->
     int
         Number of envelopes successfully enqueued to the main queue.
     """
-    backend = get_scheduler_backend()
+    if backend is None:
+        backend = get_scheduler_backend()
+    
     now = now_ts if now_ts is not None else time.time()
 
     try:
