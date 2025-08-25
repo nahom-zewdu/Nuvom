@@ -49,16 +49,17 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _coerce_utc(dt: datetime | None) -> Optional[datetime]:
+def _coerce_utc(dt: datetime | float | None) -> Optional[datetime]:
     """
-    Ensure a datetime is timezone-aware in UTC.
-
-    - If None, returns None.
-    - If naive, interprets as UTC.
-    - If aware, converts to UTC.
+    Ensure the value is timezone-aware UTC datetime.
+    Accepts:
+    - datetime
+    - float/int (unix timestamp)
     """
     if dt is None:
         return None
+    if isinstance(dt, (float, int)):
+        return datetime.fromtimestamp(dt, tz=timezone.utc)
     if dt.tzinfo is None:
         return dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc)
