@@ -59,11 +59,11 @@ def _warn_legacy(fn: str) -> None:
     )
 
 def register_queue_backend(name: str, cls: Any, *, override: bool = False) -> None:
-    _warn_legacy("register_queue_backend()")
+    # _warn_legacy("register_queue_backend()")
     REGISTRY.register("queue_backend", name, cls, override=override)
 
 def register_result_backend(name: str, cls: Any, *, override: bool = False) -> None:
-    _warn_legacy("register_result_backend()")
+    # _warn_legacy("register_result_backend()")
     REGISTRY.register("result_backend", name, cls, override=override)
 
 def get_queue_backend_cls(name: str):

@@ -1,33 +1,36 @@
 # Nuvom Configuration Guide
 
-Nuvom is highly configurable using environment variables and `.env` files. This guide explains all supported settings, how they affect runtime behavior, and how to configure plugins.
+Nuvom is fully configurable via environment variables and `.env` files. This guide explains supported settings, how they affect runtime behavior, and plugin integration, including the scheduler backend.
 
 ---
 
 ## Where Settings Come From
 
-Nuvom loads configuration from:
+Nuvom loads configuration in order of precedence:
 
-1. `.env` file in your project root (uses `pydantic-settings`)
+1. `.env` file in your project root (via `pydantic-settings`)
 2. Environment variables (`export FOO=...`)
-3. Defaults defined in code (if no value is provided)
+3. Defaults defined in code if not overridden
 
 ---
 
 ## Example `.env`
 
 ```env
-NUVOM_ENVIRONMENT=dev
-NUVOM_LOG_LEVEL=INFO
 NUVOM_QUEUE_BACKEND=file
 NUVOM_RESULT_BACKEND=memory
 NUVOM_SERIALIZATION_BACKEND=msgpack
+NUVOM_SCHEDULER_BACKEND=file
+
+NUVOM_ENVIRONMENT=dev
+NUVOM_LOG_LEVEL=INFO
+
 NUVOM_MAX_WORKERS=4
 NUVOM_BATCH_SIZE=10
 NUVOM_JOB_TIMEOUT_SECS=30
-NUVOM_MANIFEST_PATH=.nuvom/manifest.json
 NUVOM_TIMEOUT_POLICY=retry
-NUVOM_PROMETHEUS_PORT=9150
+
+NUVOM_MANIFEST_PATH=.nuvom/manifest.json
 NUVOM_SQLITE_QUEUE_PATH=.nuvom/queue.db
 NUVOM_SQLITE_RESULT_PATH=.nuvom/results.db
 ```
@@ -36,36 +39,37 @@ NUVOM_SQLITE_RESULT_PATH=.nuvom/results.db
 
 ## Core Configuration Variables
 
-| Variable                      | Description                                              | Default                |
-| ----------------------------- | -------------------------------------------------------- | ---------------------- |
-| `NUVOM_ENVIRONMENT`           | `dev`, `test`, or `prod`                                 | `dev`                  |
-| `NUVOM_LOG_LEVEL`             | Logging level: `DEBUG`, `INFO`, etc.                     | `INFO`                 |
-| `NUVOM_QUEUE_BACKEND`         | Backend type: `memory`, `file`, `sqlite` or plugin name           | `sqlite`               |
-| `NUVOM_RESULT_BACKEND`        | Result store: `memory`, `file`, `sqlite`, or plugin name | `sqlite`               |
-| `NUVOM_SERIALIZATION_BACKEND` | Format: `msgpack` (others in future)                     | `msgpack`              |
-| `NUVOM_MANIFEST_PATH`         | Task discovery manifest path                             | `.nuvom/manifest.json` |
-| `NUVOM_JOB_TIMEOUT_SECS`      | Default job timeout (if not overridden in `@task`)       | `30`                   |
-| `NUVOM_BATCH_SIZE`            | Jobs pulled at once per worker cycle                     | `10`                   |
-| `NUVOM_MAX_WORKERS`           | Number of worker threads to spawn                        | `4`                    |
-| `NUVOM_TIMEOUT_POLICY`        | Behavior on timeout: `retry`, `fail`, `ignore`           | `retry`                |
+| Variable                      | Description                                                   | Default                |
+| ----------------------------- | ------------------------------------------------------------- | ---------------------- |
+| `NUVOM_ENVIRONMENT`           | `dev`, `test`, or `prod`                                      | `dev`                  |
+| `NUVOM_LOG_LEVEL`             | Logging level: `DEBUG`, `INFO`, etc.                          | `INFO`                 |
+| `NUVOM_QUEUE_BACKEND`         | Backend type: `memory`, `file`, `sqlite`, or plugin name      | `sqlite`               |
+| `NUVOM_RESULT_BACKEND`        | Result store: `memory`, `file`, `sqlite`, or plugin name      | `sqlite`               |
+| `NUVOM_SERIALIZATION_BACKEND` | Format for job payloads (`msgpack`)                           | `msgpack`              |
+| `NUVOM_MANIFEST_PATH`         | Path to task discovery manifest                               | `.nuvom/manifest.json` |
+| `NUVOM_JOB_TIMEOUT_SECS`      | Default job timeout (unless overridden in `@task`)            | `30`                   |
+| `NUVOM_BATCH_SIZE`            | Jobs pulled per worker cycle                                  | `10`                   |
+| `NUVOM_MAX_WORKERS`           | Number of worker threads                                      | `4`                    |
+| `NUVOM_TIMEOUT_POLICY`        | Behavior on timeout: `retry`, `fail`, `ignore`                | `retry`                |
+| `NUVOM_SCHEDULER_BACKEND`     | Scheduler backend to use (`memory`, `redis`, `sqlite`, plugin) | `sqlite`               |
 
 ---
 
 ## Plugin Configuration
 
-Plugins are registered via `.nuvom_plugins.toml` in the root of your project.
+Plugins extend Nuvom dynamically and are registered via `.nuvom_plugins.toml`:
 
 ```toml
 [plugins]
 queue_backend = ["my_module:MyQueuePlugin"]
 result_backend = ["my_module:MyResultPlugin"]
+scheduler_backend = ["my_module:CustomSchedulerBackend"]
 monitoring = ["nuvom.plugins.monitoring.prometheus:PrometheusPlugin"]
 ```
 
-Use your `.env` to pass any plugin-specific values:
+Pass plugin-specific values via `.env`:
 
 ```env
-NUVOM_PROMETHEUS_PORT=9150
 MY_PLUGIN_AUTH_TOKEN=abc123
 ```
 
@@ -73,38 +77,37 @@ Inside the plugin, access them via the `settings` argument passed to `start()`:
 
 ```python
 def start(self, settings):
-    port = settings.get("prometheus_port", 9150)
+    token = settings.get("auth_token", None)
 ```
 
 ---
 
 ## SQLite Backend Settings
 
-If you use the SQLite queue or result backend, configure paths:
+For SQLite backends:
 
 | Variable                   | Purpose                             | Default             |
 | -------------------------- | ----------------------------------- | ------------------- |
-| `NUVOM_SQLITE_QUEUE_PATH`  | SQLite file path for the job queue  | `.nuvom/queue.db`   |
+| `NUVOM_SQLITE_QUEUE_PATH`  | SQLite file path for job queue      | `.nuvom/queue.db`   |
 | `NUVOM_SQLITE_RESULT_PATH` | SQLite file path for result backend | `.nuvom/results.db` |
 
-Ensure the directories exist or Nuvom will create them automatically.
+Directories are created automatically if missing.
 
 ---
 
 ## CLI to View Active Config
 
-You can inspect current config at any time:
-
 ```bash
 nuvom config
 ```
 
-Output:
+Example output:
 
 ```text
 Environment: dev
-Queue Backend: file
+Queue Backend: sqlite
 Result Backend: sqlite
+Scheduler Backend: sqlite
 Max Workers: 4
 Batch Size: 10
 Manifest Path: .nuvom/manifest.json
@@ -115,22 +118,18 @@ Manifest Path: .nuvom/manifest.json
 
 ## Best Practices
 
-* Commit a `.env.example` file for contributors
-* Don’t hardcode secrets or plugin tokens
-* Keep `.env` out of version control (`.gitignore`)
-* Use `dotenv` or OS environment overrides in CI/CD
+* Commit `.env.example` for contributors
+* Keep secrets out of version control (`.gitignore`)
+* Override values in CI/CD via environment variables
+* Use scheduler backends that match your production workload
+* Verify configuration with `nuvom config`
 
 ---
 
 ## Summary
 
-Nuvom gives you full control over how it runs, queues jobs, stores results, and loads plugins — all through a clean `.env` and TOML-based system.
+Nuvom gives developers clean, predictable, and extensible control over runtime behavior, queuing, results, plugins, and scheduling via a single scheduler backend variable.
 
-You can:
+> Developer-first, predictable, and professional configuration.
 
-* Swap backends without changing code
-* Override runtime behavior with simple settings
-* Pass config to your own plugins
-* Use the CLI to verify current values
-
-> Simple configs. Powerful control.
+---

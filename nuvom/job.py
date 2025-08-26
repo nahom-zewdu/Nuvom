@@ -3,11 +3,19 @@
 """
 Job object definition and lifecycle management.
 
-Handles:
-• Retry control
-• Status lifecycle
-• Result/error serialization
-• Lifecycle hooks
+The `Job` class represents an executable unit of work in Nuvom.
+It encapsulates task metadata, lifecycle state, retries, timeouts,
+and result persistence. Both ad-hoc (`@task`) and scheduled
+(`@scheduled_task`) jobs are unified under this abstraction.
+
+Key Features
+------------
+- Status lifecycle tracking (pending → running → success/failed).
+- Retry and backoff handling.
+- Result/error persistence in configured result backend.
+- Support for execution hooks (before, after, on_error).
+- Priority-based dispatch (lower = higher priority).
+- Serialization for persistence/transport.
 """
 
 import uuid
@@ -26,7 +34,7 @@ logger = get_logger()
 # Enums
 # -------------------------------------------------------------------- #
 class JobStatus(str, Enum):
-    """Job state lifecycle."""
+    """Lifecycle states for a Job."""
     PENDING = "PENDING"
     RUNNING = "RUNNING"
     SUCCESS = "SUCCESS"
@@ -40,23 +48,45 @@ class Job:
     """
     Represents a single executable task (with metadata, status, retry logic).
 
-    Fields:
-        • func_name — name of registered task
-        • args/kwargs — execution parameters
-        • retries — max attempts for failure handling
-        • status/result/error — runtime tracking
-        • store_result — persist result/error in backend
-        • timeout_secs — execution time limit
-        • retry_delay_secs — delay before retry
-        • timeout_policy — fail, retry, or ignore on timeout
-        • hooks — before/after/error lifecycle hooks
+    Parameters
+    ----------
+    func_name : str
+        Name of the registered task function to execute.
+    args : tuple, optional
+        Positional arguments for the task (default: ()).
+    kwargs : dict, optional
+        Keyword arguments for the task (default: {}).
+    retries : int, optional
+        Maximum retry attempts (default: 0).
+    store_result : bool, optional
+        Whether to persist results/errors in backend (default: True).
+    timeout_secs : int, optional
+        Execution time limit in seconds (default: None).
+    timeout_policy : {"fail","retry","ignore"}, optional
+        Strategy when a timeout occurs (default: from settings).
+    retry_delay_secs : int, optional
+        Delay before retry in seconds (default: None).
+    before_job : callable, optional
+        Hook executed before task runs.
+    after_job : callable, optional
+        Hook executed after successful completion.
+    on_error : callable, optional
+        Hook executed on failure.
+
+    Scheduling/Priority
+    -------------------
+    priority : int
+        Job dispatch priority. Lower values run first. Default = 5.
+        (e.g., scheduled tasks = 1, normal tasks = 5).
+    scheduled : bool
+        True if created by the scheduler (vs ad-hoc task).
     """
 
     def __init__(
         self,
         func_name: str,
         args: tuple = (),
-        kwargs: dict = None,
+        kwargs: dict | None = None,
         *,
         retries: int = 0,
         store_result: bool = True,
@@ -66,36 +96,52 @@ class Job:
         before_job: Optional[Callable[[], None]] = None,
         after_job: Optional[Callable[[Any], None]] = None,
         on_error: Optional[Callable[[Exception], None]] = None,
+        priority: int = 5,
+        scheduled: bool = False,
     ):
+        # Core identifiers
         self.id = str(uuid.uuid4())
         self.func_name = func_name
         self.args = args or ()
         self.kwargs = kwargs or {}
-        self.store_result = store_result
+
+        # Execution/lifecycle state
         self.status = JobStatus.PENDING
         self.created_at = time.time()
+        self.result: Any = None
+        self.error: str | None = None
 
+        # Retry/timeout config
+        self.max_retries = retries
+        self.retries_left = retries
         self.timeout_secs = timeout_secs
         self.retry_delay_secs = retry_delay_secs
         self.timeout_policy = timeout_policy or get_settings().timeout_policy
-
-        self.max_retries = retries
-        self.retries_left = retries
-        self.result: Any = None
-        self.error: str | None = None
         self.next_retry_at: float | None = None
 
+        # Persistence
+        self.store_result = store_result
+
+        # Scheduling/priority
+        self.priority = priority
+        self.scheduled = scheduled
+
+        # Hooks
         self.before_job = before_job
         self.after_job = after_job
         self.on_error = on_error
 
-        logger.debug(f"[job:{self.id}] Created job for task '{self.func_name}'")
+        logger.debug(
+            f"[job:{self.id}] Created "
+            f"{'scheduled ' if self.scheduled else ''}job "
+            f"for task '{self.func_name}' (priority={self.priority})"
+        )
 
     # ---------------------------------------------------------------- #
     # Serialization
     # ---------------------------------------------------------------- #
     def to_dict(self) -> dict:
-        """Serialize job state."""
+        """Serialize job state to dictionary."""
         return {
             "id": self.id,
             "func_name": self.func_name,
@@ -112,6 +158,8 @@ class Job:
             "retry_delay_secs": self.retry_delay_secs,
             "next_retry_at": self.next_retry_at,
             "timeout_policy": self.timeout_policy,
+            "priority": self.priority,
+            "scheduled": self.scheduled,
             "hooks": {
                 "before_job": bool(self.before_job),
                 "after_job": bool(self.after_job),
@@ -131,6 +179,8 @@ class Job:
             timeout_secs=data.get("timeout_secs"),
             retry_delay_secs=data.get("retry_delay_secs"),
             timeout_policy=data.get("timeout_policy"),
+            priority=data.get("priority", 5),
+            scheduled=data.get("scheduled", False),
         )
         job.id = data.get("id", job.id)
         job.status = JobStatus(data.get("status", "PENDING"))
@@ -159,12 +209,16 @@ class Job:
         """
         Poll result from backend until available or timeout hit.
 
-        Raises:
-            TimeoutError | RuntimeError
+        Raises
+        ------
+        TimeoutError
+            If no result available within timeout.
+        RuntimeError
+            If an error was stored for this job.
         """
         if not self.store_result:
             logger.warning(f"[job:{self.id}] get() called on non-persistent job.")
-            return
+            return {}
 
         backend = get_backend()
         start = time.time()
@@ -180,23 +234,29 @@ class Job:
                 raise RuntimeError(f"[job:{self.id}] Failed: {error}")
 
             if timeout is not None and (time.time() - start) > timeout:
-                raise TimeoutError(f"[job:{self.id}] Result not ready within {timeout} seconds.")
+                raise TimeoutError(
+                    f"[job:{self.id}] Result not ready within {timeout} seconds."
+                )
 
             time.sleep(interval)
 
     def mark_running(self):
+        """Mark job as running."""
         self.status = JobStatus.RUNNING
         logger.debug(f"[job:{self.id}] Status set to RUNNING.")
 
     def mark_success(self, result: Any):
+        """Mark job as successfully completed."""
         self.status = JobStatus.SUCCESS
         self.result = result
         logger.debug(f"[job:{self.id}] Status set to SUCCESS.")
 
     def mark_failed(self, error: Exception):
+        """Mark job as failed with error message."""
         self.status = JobStatus.FAILED
         self.error = str(error)
         logger.error(f"[job:{self.id}] Status set to FAILED. Error: {error}")
 
     def can_retry(self) -> bool:
+        """Return True if job has retries left."""
         return self.retries_left > 0

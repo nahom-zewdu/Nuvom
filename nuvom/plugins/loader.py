@@ -145,12 +145,12 @@ def load_plugins(settings: dict | None = None, extras: dict | None = None) -> No
 
                 # ─── Legacy callable plugins ─────────────────────────────────
                 if callable(target) and not isinstance(target, type):
-                    warnings.warn(
-                        "Legacy plugin register() style is deprecated and will be "
-                        "removed in Nuvom 1.0. Implement the Plugin protocol.",
-                        DeprecationWarning,
-                        stacklevel=2,
-                    )
+                    # warnings.warn(
+                    #     "Legacy plugin register() style is deprecated and will be "
+                    #     "removed in Nuvom 1.0. Implement the Plugin protocol.",
+                    #     DeprecationWarning,
+                    #     stacklevel=2,
+                    # )
                     target()  # run register()
                     logger.info("[Plugin‑Legacy] %s loaded", spec)
                     _LOADED_SPECS.add(spec)

@@ -1,12 +1,14 @@
 # Nuvom Architecture
 
-This document explains the internal architecture of **Nuvom**, a lightweight, plugin-first task execution engine for Python.
+> **Clean, predictable, and pluggable built for developers who value control and clarity.**
+
+Nuvom is a **plugin-first task engine** for Python. Its architecture cleanly separates task definition, discovery, queuing, execution, and result storage with each layer following a well-defined contract.
+
+This makes it simple to start with zero external dependencies and equally simple to plug in Redis, PostgreSQL, or any custom backend as you scale.
 
 ---
 
 ## High-Level Overview
-
-Nuvom is designed to **decouple** task definition, discovery, execution, queuing, and result storage. Each layer is pluggable and follows a clearly defined contract via abstract base classes.
 
 ```text
      +-------------------------+
@@ -39,56 +41,54 @@ Nuvom is designed to **decouple** task definition, discovery, execution, queuing
 
 ## Core Components
 
-### `@task` Decorator
+### **Task API**
 
 **Location:** `nuvom/task.py`
 
-* Wraps a function to register it as a Nuvom task.
-* Adds metadata (`retries`, `timeout_secs`, etc.).
-* Supports `.delay()` and `.map()` for job dispatch.
-* All tasks are auto-registered via AST and manifest system.
+* The `@task` decorator registers a function as a Nuvom task.
+* Metadata (like retries, timeouts, or result persistence) is attached at definition time.
+* Exposes `.delay()`, `.map()`, and `.schedule()` for immediate, batched, or deferred execution.
 
 ---
 
-### Task Discovery
+### **Task Discovery**
 
 **Location:** `nuvom/discovery/`
 
-* Uses AST parsing (not imports) to detect decorated `@task` functions.
-* Avoids side-effects, safe for large codebases.
-* Uses `.nuvomignore` to skip paths.
-* Output is cached in `.nuvom/manifest.json` for fast reloading.
+* AST-based discovery ensures safe, import-free scanning.
+* Uses `.nuvomignore` to skip irrelevant paths.
+* Caches output to `.nuvom/manifest.json` for near-instant worker startup.
 
-Key files:
+Key modules:
 
-* `walker.py` – file traversal
-* `parser.py` – AST parsing
-* `manifest.py` – manifest file I/O
-* `auto_register.py` – registry loader
+* `walker.py` — file traversal
+* `parser.py` — AST parsing
+* `manifest.py` — manifest I/O
+* `auto_register.py` — loads tasks into the registry
 
 ---
 
-### Task Registry
+### **Task Registry**
 
 **Location:** `nuvom/registry/registry.py`
 
-* Thread-safe global registry for tasks.
-* Validates task names (prevents duplicates unless `force=True`).
-* Used by the dispatcher and job runner to resolve function names.
+* Thread-safe global registry.
+* Prevents duplicate names unless `force=True`.
+* Serves as the single source of truth for dispatchers and workers.
 
 ---
 
-### Dispatcher
+### **Dispatcher**
 
 **Location:** `nuvom/dispatcher.py`
 
-* Orchestrates job submission: serializes, enqueues, retries.
-* Provides `.delay()`, `.map()`, and job creation utilities.
-* Uses `msgpack` for efficient, cross-platform job serialization.
+* Serializes and enqueues jobs via a consistent interface.
+* Uses `msgpack` for efficient, portable serialization.
+* Powers `.delay()` and `.map()` to create jobs programmatically.
 
 ---
 
-### Job Queues
+### **Job Queues**
 
 **Location:** `nuvom/queue_backends/`
 
@@ -96,9 +96,9 @@ Built-in backends:
 
 * `MemoryJobQueue`
 * `FileJobQueue`
-* `SQLiteJobQueue` (v0.10)
+* `SQLiteJobQueue`
 
-Required interface methods:
+Custom queues follow a simple interface:
 
 ```python
 enqueue(job)
@@ -108,30 +108,27 @@ qsize()
 clear()
 ```
 
-Custom backends can be added via the plugin system.
-
 ---
 
-### Workers & Job Execution
+### **Workers & Execution**
 
 **Location:** `nuvom/worker.py`, `nuvom/execution/job_runner.py`
 
-* Each worker runs in its own thread.
-* Jobs are executed with timeouts, retries, and lifecycle hooks:
+* Multi-threaded worker pool with controlled concurrency.
+* Executes jobs with:
 
-  * `before_job()`
-  * `after_job()`
-  * `on_error()`
-* ThreadPoolExecutor is used internally for concurrency.
-* Supports graceful shutdown with log flushing and safe teardown.
+  * Timeouts
+  * Retries
+  * Lifecycle hooks (`before_job`, `after_job`, `on_error`)
+* Graceful shutdown with log flushing and clean teardown.
 
 ---
 
-### Result Backends
+### **Result Backends**
 
 **Location:** `nuvom/result_backends/`
 
-Built-in backends:
+Built-in options:
 
 * `MemoryResultBackend`
 * `FileResultBackend`
@@ -148,17 +145,16 @@ get_full(job_id)
 list_jobs()
 ```
 
-Use `.nuvom_plugins.toml` to register custom plugins.
+Custom result backends can be registered via `.nuvom_plugins.toml`.
 
 ---
 
-### Logging
+### **Logging**
 
 **Location:** `nuvom/log.py`
 
-* Unified logging across all modules using Rich.
-* Logs are styled, color-coded, and exception-aware.
-* Categories: `debug`, `info`, `warning`, `error`.
+* Unified, developer-friendly logging built on `Rich`.
+* Color-coded, exception-aware output for clean debugging and CLI visibility.
 
 ---
 
@@ -166,13 +162,10 @@ Use `.nuvom_plugins.toml` to register custom plugins.
 
 **Location:** `nuvom/plugins/`
 
-Nuvom supports plugins for:
+* Extend queues, result backends, or monitoring exporters.
+* Lifecycle hooks: `start()` and `stop()` for controlled resource management.
 
-* Queues
-* Result backends
-* Monitoring/exporters
-
-Plugins follow a strict `Plugin` protocol with `start()` and `stop()` lifecycle methods.
+Example `.nuvom_plugins.toml`:
 
 ```toml
 [plugins]
@@ -180,38 +173,37 @@ queue_backend = ["custom.module:MyQueue"]
 result_backend = ["custom.module:MyResult"]
 ```
 
-Each plugin must register itself via a `Plugin` subclass, and may use `register_queue_backend()` or `register_result_backend()`.
-
 ---
 
 ## Job Lifecycle
 
 1. Developer defines a task with `@task`.
-2. `nuvom discover tasks` parses and caches it.
-3. Job is queued with `.delay()` or `.map()`.
+2. `nuvom discover tasks` scans and caches it in the manifest.
+3. A job is queued using `.delay()`, `.map()`, or `.schedule()`.
 4. Worker dequeues the job.
 5. `JobRunner`:
 
-   * Triggers lifecycle hooks
-   * Executes task with timeout/retry logic
-   * Stores result or error
-6. Job metadata is saved in the selected result backend.
-7. Results are queried via SDK or CLI.
+   * Fires lifecycle hooks
+   * Executes the task with retry and timeout logic
+   * Stores result or error in the backend
+6. Result metadata can be queried via CLI or SDK.
 
 ---
 
 ## Design Principles
 
-* Plugin-first, interface-driven
-* No global daemons or dependencies like Redis
-* Developer-first: minimal config, rich logging, CLI tooling
-* Native on Windows, Linux, macOS
-* Built to teach: readable source, clean separation
+* **Clean separation** — each layer has a single responsibility
+* **Pluggable by design** — backends, metrics, and hooks are swappable
+* **Predictable behavior** — no hidden daemons or background processes
+* **Cross-platform consistency** — works the same on Linux, macOS, and Windows
+* **Readable source** — easy to debug, easy to extend
 
 ---
 
-For more, see:
+For more details:
 
-* [CONTRIBUTING](./contributing.md)
-* [README](../README.md)
+* [Contributing](./contributing.md)
 * [Roadmap](./roadmap.md)
+* [README](../README.md)
+
+---

@@ -1,7 +1,7 @@
 [project]
 name = "nuvom"
-version = "0.10"
-description = "A Fast, Windows-First Task Queue for Python. Simple, Reliable, and Cross-Platform."
+version = "0.11.0"
+description = "Nuvom gives developers a task engine they can trust: clean APIs, predictable behavior, and production-ready task scheduling for Python."
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.8"
 license = "Apache-2.0"
@@ -12,13 +12,19 @@ authors = [
 
 dependencies = [
   "rich>=13.0.0",
-  "pydantic-settings>=2.9.1",
   "pydantic>=2.0.0",
+  "pydantic-settings>=2.9.1",
   "typer>=0.7.0,<0.12.0",
   "python-dotenv>=1.1.0",
   "msgpack>=1.1.0",
-  "tomli; python_version < '3.11'"
+  "croniter>=1.3.8",
+  "requests>=2.32.0",
+  "tzdata>=2025.2",
+  "watchdog>=6.0.0",
+  "pathspec>=0.12.1",
+  "tomli; python_version < '3.11'",
 ]
+
 
 [build-system]
 requires = ["hatchling"]
@@ -47,14 +53,15 @@ packages = ["nuvom"]
 
 [tool.hatch.envs.default]
 dependencies = [
-  "pytest",
-  "mkdocs-material",
-  "mkdocstrings[python]",
-  "mkdocs-git-revision-date-localized-plugin",
-  "prometheus_client"
-] 
+  "pytest>=7.0.0",
+  "mkdocs-material>=9.6.0",
+  "mkdocstrings[python]>=0.24.0",
+  "mkdocs-git-revision-date-localized-plugin>=0.16.0",
+  "prometheus_client>=0.16.0"
+]
 
 [tool.hatch.envs.docs.scripts]
 serve = "mkdocs serve"
 build = "mkdocs build"
 deploy = "mkdocs gh-deploy --clean"
+
