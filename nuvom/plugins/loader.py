@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import importlib
 import importlib.metadata as md
-import tomllib
 import warnings
 from pathlib import Path
 from types import ModuleType
@@ -28,6 +27,7 @@ import threading
 from nuvom.log import get_logger
 from nuvom.plugins.contracts import API_VERSION, Plugin
 from nuvom.plugins.registry import REGISTRY
+from nuvom.utils.compat_utils.tomllib_compat import tomllib
 
 # --------------------------------------------------------------------------- #
 # Globals

@@ -12,13 +12,13 @@ import importlib
 import sys
 from types import ModuleType
 from pathlib import Path
-import tomllib
 import textwrap
 
 import pytest
 
 from nuvom.plugins import registry as plugreg
 from nuvom.plugins import loader as plugload
+from nuvom.utils.compat_utils.tomllib_compat import tomllib
 
 
 # --------------------------------------------------------------------------- #
