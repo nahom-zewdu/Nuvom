@@ -1,96 +1,78 @@
 # Nuvom
 
-> Lightweight, plugin-first task queue for Python — no Redis, no brokers, fully Windows-compatible.
+> **Nuvom gives developers a task engine they can trust clean APIs, zero magic, and predictable behavior from local dev to production scale.**
 
-Nuvom is a developer-first background task execution engine that helps you **queue**, **execute**, and **persist** background jobs — without the baggage of Celery or infrastructure-heavy dependencies.
+Nuvom is a **developer-first background task engine** for Python. It lets you **queue, schedule, and persist** background jobs with predictable behavior without depending on heavyweight infrastructure.
 
-Built with clarity, speed, and extensibility in mind, Nuvom is:
-
-- **Fully Windows-compatible** — no POSIX-only dependencies
-- **Plugin-first** — extend queues, backends, and metrics with ease
-- **No Redis, no RabbitMQ, no Docker** — just Python
-- **AST-powered static discovery** — no import-time magic
-- **CLI-first DX** — introspect jobs, retry failures, inspect task metata
-- **Manifest caching** — blazing-fast task resolution for workers and tooling
+When you need more power, Nuvom’s **pluggable backend architecture** lets you integrate with **SQLite, PostgreSQL, Redis, RabbitMQ**, or your own backend for advanced workflows and scaling.
 
 ---
 
 ## Why Nuvom?
 
-Traditional tools like Celery and RQ assume:
+Nuvom is built for developers who want a **clear, reliable, and flexible** task system that scales with their needs — from a single-machine project to production-grade deployments.
 
-- Linux environments
-- Redis or RabbitMQ brokers
-- Complex operational setups
+It’s designed for:
 
-Nuvom throws those assumptions out the window. It's designed for:
-
-- **Solo developers or small teams** who want productivity without infra.
-- **Plugin authors** who need pluggable, testable task systems.
-- **Cross-platform developers** (especially on Windows).
-- **Performance-focused workflows** with static analysis, manifest caching, and real observability.
+* **Developers and teams** who want simplicity without giving up control
+* **Plugin authors** who need a modular, testable task engine
+* **Cross-platform environments** — consistent behavior on Linux, macOS, and Windows
+* **Predictable production workflows** with static discovery, manifest caching, and clean observability
+* **Advanced setups** that need pluggable backends for durability and scale
 
 ---
 
 ## Key Features
 
-- `@task` decorator with `.delay()` / `.map()`  
-- AST-based static discovery — no imports  
-- Graceful retry + timeout logic  
-- Pluggable result and queue backends  
-- SQLite, file, and in-memory backends built-in  
-- Plugin loader with `.toml` registry  
-- Prometheus metrics plugin  
-- Job metadata, tracebacks, and historical CLI inspection  
-- Typed config via `.env` + Pydantic  
-- CLI commands to run, retry, inspect, and monitor jobs  
-- Compatible with Python 3.8+
+* **Clean task API** with `@task`, `.delay()`, `.map()`, and `.schedule()`
+* **Pluggable architecture** — SQLite, Postgres, Redis, RabbitMQ, or custom backends
+* **Static task discovery** — AST-powered, no runtime imports needed
+* **Multiple scheduling modes** — one-off (`at` / `in_`), interval, cron
+* **Durable job execution** — retries, timeouts, and predictable failure handling
+* **Plugin loader** with `.toml` registry for easy extension
+* **Observability built-in** — job metadata, tracebacks, and optional Prometheus metrics
+* **Typed configuration** via `.env` and Pydantic
+* **Cross-platform** — Python 3.8+ on Linux, macOS, and Windows
 
 ---
 
-## Installation
-
-```bash
-pip install nuvom .
-```
-
----
-
-## Example
+## Example: Scheduling a Task
 
 ```python
+from datetime import timedelta
 from nuvom.task import task
 
 @task(retries=2, retry_delay_secs=5, timeout_secs=3)
-def add(x, y):
-    return x + y
+def send_reminder(user_id):
+    print(f"Reminder sent to user {user_id}")
 
-# Submit job
+# Run once in 5 minutes
+send_reminder.schedule(123, in_=timedelta(minutes=5))
 
-job = add.delay(2, 3)
-```
+# Run every hour
+send_reminder.schedule(123, interval=3600)
 
-```bash
-nuvom runworker                # Start workers
-nuvom inspect job <job_id>    # Inspect job result and metadata
+# Cron-style: every Monday at 9am UTC
+send_reminder.schedule(123, cron="0 9 * * MON")
 ```
 
 ---
 
 ## What’s Next?
 
-- [Quickstart →](quickstart.md)
-- [Configuration →](configuration.md)
-- [CLI →](cli.md)
-- [Core Concepts →](concepts.md)
-- [Plugin System →](plugins.md)
-- [Architecture →](architecture.md)
-- [Roadmap →](roadmap.md)
-- [Contributing →](contributing.md)
-- [FAQ →](faq.md)
+* [Quickstart →](quickstart.md)
+* [Configuration →](configuration.md)
+* [CLI →](cli.md)
+* [Core Concepts →](concepts.md)
+* [Scheduler →](scheduler.md)
+* [Plugin System →](plugins.md)
+* [Architecture →](architecture.md)
+* [Roadmap →](roadmap.md)
+* [Contributing →](contributing.md)
+* [FAQ →](faq.md)
 
 ---
 
 ## License
 
-Apache 2.0 — use it freely, build responsibly.
+Apache 2.0 - open, reliable, and production-ready.
