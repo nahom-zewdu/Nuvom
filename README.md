@@ -1,8 +1,8 @@
-# `nuvom`
+# nuvom
 
-> Lightweight, plugin-first task queue for Python. No Redis, Windows-native, AST-powered task discovery, and extensible by design.
+> Nuvom gives developers a task engine they can trust: clean APIs, zero magic, and predictable behavior from local dev to production scale.
 
-![status](https://img.shields.io/badge/version-v0.10-blue)
+![status](https://img.shields.io/badge/version-v0.11-blue)
 ![python](https://img.shields.io/badge/python-3.8%2B-yellow)
 ![license](https://img.shields.io/badge/license-Apache--2.0-green)
 
@@ -10,15 +10,17 @@
 
 ## Why Nuvom?
 
-**Nuvom** is a developer-first job execution engine that helps you queue, run, and persist background tasks — without requiring Redis, Celery, or any infrastructure.
+**Nuvom** is a modern task engine for Python that focuses on **clarity, reliability, and flexibility**.
+It’s simple to start, easy to scale, and built for developers who value predictable, production-ready behavior.
 
 ### Core Principles
 
-- **Windows-native** — built for cross-platform reliability
-- **Plugin-first** — customize queue engines, backends, discovery logic
-- **No brokers** — zero dependency setup
-- **Static task discovery** — powered by AST, not imports
-- **Manifest caching** — ultra-fast CLI startup
+* **Developer-first design** — clean APIs, no magic, no surprises
+* **Pluggable architecture** — use SQLite, PostgreSQL, Redis, or your own backend
+* **Cross-platform** — consistent behavior on Linux, macOS, and Windows
+* **Static task discovery** — AST-powered for speed and safety
+* **Built-in scheduling** — one-off, interval, or cron-style recurring jobs
+* **Predictable in production** — fault-tolerant workers and durable job persistence
 
 ---
 
@@ -44,13 +46,11 @@ def add(x, y):
 
 ### 2. Discover Tasks
 
-Nuvom uses static AST-based discovery to find task definitions without executing your code.
-
 ```bash
 nuvom discover tasks
 ```
 
-This generates .nuvom/manifest.json to speed up worker startup and avoid runtime imports.
+Generates `.nuvom/manifest.json` for faster worker startup.
 
 ### 3. Queue a Job
 
@@ -61,13 +61,40 @@ job = add.delay(5, 7)
 print(job.id)
 ```
 
-### 4. Run the Worker
+### 4. Schedule a Job
+
+```python
+from datetime import timedelta, datetime, timezone
+from tasks import add
+
+# Run at a specific time (2038 iykyk)
+add.schedule(5, 7, at=datetime(2038, 1, 19, 3, 14, 7, tzinfo=timezone.utc)) 
+
+# Run after 30 seconds
+add.schedule(5, 7, in_=timedelta(seconds=30))
+
+# Repeat every 5 minutes
+add.schedule(2, 3, interval=300)
+
+# Daily at midnight UTC
+add.schedule(1, 2, cron="0 0 * * *")
+```
+
+Start the scheduler service:
+
+```bash
+nuvom runscheduler
+```
+
+Workers will automatically pick up due jobs.
+
+### 5. Run the Worker
 
 ```bash
 nuvom runworker
 ```
 
-### 5. Inspect the Result
+### 6. Inspect Results
 
 ```bash
 nuvom inspect job <job_id>
@@ -77,30 +104,29 @@ nuvom inspect job <job_id>
 
 ## Plugin Architecture
 
-Nuvom is extensible by design. You can:
+Nuvom is modular by design:
 
-- Implement custom queue engines
-- Hook in your own result backends
-- Add Prometheus metrics or distributed storage
-- Auto-discover tasks with custom logic
+* Implement custom queue or result backends
+* Extend scheduling with custom triggers
+* Add metrics, persistence, or monitoring plugins
 
-Everything is modular and pluggable via a `.nuvom_plugins.toml` file.
+Configure via `.nuvom_plugins.toml`.
 
 ---
 
-## Full Documentation
+## Documentation
 
-Head over to the official documentation site for:
+Explore:
 
-- Advanced task options
-- Plugin development guides
-- Architecture & internal design
-- CLI usage and environment setup
+* Advanced task & scheduling options
+* Plugin development guides
+* CLI usage and environment setup
+* Architecture and internals
 
-👉 **[https://nuvom.netlify.app](https://nuvom.netlify.app)**
+👉 **[Documentation](https://nuvom.netlify.app)**
 
 ---
 
 ## License
 
-Apache 2.0 — use it freely, build responsibly.
+Apache 2.0 - open, reliable, and production-ready.

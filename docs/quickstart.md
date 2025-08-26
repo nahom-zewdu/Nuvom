@@ -1,6 +1,6 @@
 # Quickstart
 
-This guide walks you through installing Nuvom, defining your first task, and running workers — all in under 5 minutes.
+This guide walks you through installing Nuvom, defining your first task, scheduling it, and running workers all in under 5 minutes.
 
 ---
 
@@ -43,7 +43,7 @@ This generates `.nuvom/manifest.json` to speed up worker startup and avoid runti
 
 ---
 
-## 3. Submit a Job
+## 3. Submit a Job Immediately
 
 Dispatch jobs programmatically:
 
@@ -56,7 +56,38 @@ print(job.id)
 
 ---
 
-## 4. Run a Worker
+## 4. Schedule a Task
+
+Tasks expose `.schedule()` for deferred or recurring execution. Scheduling works seamlessly across workers and backends.
+
+```python
+from datetime import timedelta, datetime, timezone
+from tasks import add
+
+# Run at a specific time (2038 iykyk)
+add.schedule(5, 7, at=datetime(2038, 1, 19, 3, 14, 7, tzinfo=timezone.utc)) 
+
+# Run once after 30 seconds
+add.schedule(5, 7, in_=timedelta(seconds=30))
+
+# Run every 5 minutes (interval scheduling)
+add.schedule(2, 3, interval=300)
+
+# Cron-style: every day at midnight UTC
+add.schedule(1, 2, cron="0 0 * * *")
+```
+
+Start the scheduler service:
+
+```bash
+nuvom runscheduler
+```
+
+Workers will automatically execute due jobs.
+
+---
+
+## 5. Run a Worker
 
 Workers execute jobs in parallel threads:
 
@@ -64,11 +95,11 @@ Workers execute jobs in parallel threads:
 nuvom runworker
 ```
 
-You can configure worker behavior (e.g., count, batch size) via `.env`. See [Configuration](configuration.md) for full details.
+You can configure worker behavior (count, batch size, scheduler backend, etc.) via `.env`. See [Configuration](configuration.md) for details.
 
 ---
 
-## 5. Inspect Job Status
+## 6. Inspect Job Status
 
 ```bash
 nuvom inspect job <job_id>
@@ -84,7 +115,7 @@ nuvom history recent --limit 10
 
 ---
 
-## 6. Retry Failed Jobs
+## 7. Retry Failed Jobs
 
 Retry manually from Python:
 
@@ -94,6 +125,6 @@ from nuvom.sdk import retry_job
 retry_job("<job_id>")
 ```
 
-CLI support for retrying is coming soon.
+CLI support for retrying is available in the next release.
 
 ---

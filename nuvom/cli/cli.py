@@ -75,6 +75,58 @@ def runworker(
             observer.stop()
             observer.join()
             logger.debug("Manifest watcher stopped")
+            
+ 
+@app.command(rich_help_panel="🌟  Core Commands")
+def runscheduler(
+    poll: float = typer.Option(
+        1.0,
+        "--poll",
+        "-p",
+        help="Polling interval (seconds) between checks for due jobs."
+    ),
+    batch: int = typer.Option(
+        100,
+        "--batch",
+        "-b",
+        help="Maximum number of schedules dispatched per iteration."
+    ),
+    jitter: float = typer.Option(
+        0.0,
+        "--jitter",
+        "-j",
+        help="Optional random jitter (seconds) to reduce sync across replicas."
+    ),
+):
+    """
+    Start the scheduler worker in the foreground.
+
+    Examples:
+        nuvom runscheduler
+        nuvom runscheduler --poll 2.0 --batch 50 --jitter 0.5
+    """
+    from nuvom.scheduler.worker import SchedulerWorker
+
+    console.print("[yellow]⏳ Starting scheduler worker...[/yellow]")
+    logger.info(
+        "Starting scheduler worker (poll=%.3fs, batch=%d, jitter=%.3fs)",
+        poll, batch, jitter
+    )
+
+    worker = SchedulerWorker(
+        poll_interval=poll,
+        batch_size=batch,
+        jitter=jitter,
+    )
+
+    try:
+        # Foreground blocking mode
+        worker.start(background=False)
+    except KeyboardInterrupt:
+        console.print("\n[cyan]🛑 Stopping scheduler worker (KeyboardInterrupt)...[/cyan]")
+        logger.info("Scheduler worker shutdown requested by user.")
+        worker.stop()      
+            
 
 @app.command(rich_help_panel="🌟  Core Commands")
 def status(job_id: str):

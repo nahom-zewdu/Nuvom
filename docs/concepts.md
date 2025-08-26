@@ -1,6 +1,6 @@
 # Core Concepts
 
-Nuvom is built around a small number of powerful, composable concepts. Mastering these is key to using (and extending) the system effectively.
+Nuvom is built around a small number of powerful, composable concepts. Mastering these is key to using (and extending) the system effectively, now including built-in scheduling.
 
 ---
 
@@ -14,7 +14,7 @@ def send_email(to, body):
     ...
 ```
 
-Each task carries metadata like retry policy, timeout, and whether to store results.
+Each task carries metadata like retry policy, timeout, whether to store results, and scheduling configuration.
 
 ---
 
@@ -26,22 +26,23 @@ A `Job` is a serialized instance of a task + arguments.
 job = send_email.delay("alice@example.com", "hello")
 ```
 
-Jobs are placed into a queue and executed by workers. You can inspect their metadata, result, status, and tracebacks.
+Jobs are queued and executed by workers. You can inspect metadata, results, status, and tracebacks.
 
 ---
 
 ## Worker
 
-A **Worker** is a thread that pulls jobs from the queue and executes them.
+A **Worker** pulls jobs from the queue and executes them.
 
 Nuvom workers:
 
 * Run in parallel (multi-threaded)
-* Respect timeouts, retries, lifecycle hooks
+* Respect timeouts, retries, and lifecycle hooks
 * Use safe shutdown behavior (`SIGINT` triggers graceful stop)
 * Work with plugin-registered backends
+* Execute scheduled jobs seamlessly, respecting intervals, cron expressions, and one-off timings
 
-You can start a worker pool with:
+Start a worker pool with:
 
 ```bash
 nuvom runworker
@@ -51,10 +52,11 @@ nuvom runworker
 
 ## Dispatcher
 
-The **Dispatcher** handles the logic of turning a function call into a job.
+The **Dispatcher** converts function calls into jobs.
 
 * `.delay()` → single job
-* `.map()` → batch of jobs
+* `.map()` → batch jobs
+* `.schedule()` → schedule jobs (one-off, interval, or cron)
 * Supports metadata injection
 * Automatically selects queue backend from config
 
@@ -64,13 +66,13 @@ The **Dispatcher** handles the logic of turning a function call into a job.
 
 A **Queue Backend** stores jobs awaiting execution.
 
-Nuvom ships with:
+Built-in:
 
 * `MemoryJobQueue` – fast, ephemeral
 * `FileJobQueue` – atomic, file-based persistence
 * `SQLiteJobQueue` – relational queue with retries + visibility timeouts
 
-Plugins can register custom queues. Each queue implements:
+Custom backends can be added via plugins. Each queue implements:
 
 * `enqueue(job)`
 * `dequeue(timeout)`
@@ -82,15 +84,15 @@ Plugins can register custom queues. Each queue implements:
 
 ## Result Backend
 
-The **Result Backend** stores results or errors from executed jobs.
+Stores results or errors from executed jobs.
 
-Built-in backends:
+Built-in:
 
-* `MemoryResultBackend` – ephemeral
-* `FileResultBackend` – persistent JSON lines
-* `SQLiteResultBackend` – full metadata, indexed queries
+* `MemoryResultBackend`
+* `FileResultBackend`
+* `SQLiteResultBackend`
 
-Backends must implement:
+Backends implement:
 
 * `set_result(id, func, result)`
 * `set_error(id, func, exc)`
@@ -103,44 +105,67 @@ Backends must implement:
 
 ## Registry
 
-The **Task Registry** is a thread-safe mapping of task names → callables.
+The **Task Registry** maps task names → callables.
 
-* Populated at startup from `.nuvom/manifest.json`
-* Also supports dynamic registration (`force`, `silent`, etc.)
+* Populated from `.nuvom/manifest.json`
+* Supports dynamic registration (`force`, `silent`)
 * Used by workers to resolve jobs → functions
 
 ---
 
 ## Task Discovery
 
-Nuvom uses static analysis (AST) to find `@task` decorators in your codebase.
+Uses AST parsing to find `@task` decorators.
 
-* No runtime imports required
-* Supports `.nuvomignore` and folder filters
-* Stores results in `.nuvom/manifest.json`
+* No runtime imports
+* Supports `.nuvomignore`
+* Results cached in `.nuvom/manifest.json`
 * Updated via `nuvom discover tasks`
 
-This allows fast startup and avoids circular imports.
+Enables fast startup and avoids circular imports.
+
+---
+
+## Scheduling
+
+Scheduling is built into Nuvom tasks:
+
+* **One-off**: run once at a specific time
+* **Interval**: run repeatedly at fixed intervals
+* **Cron**: run with cron expressions
+
+Example:
+
+```python
+from datetime import timedelta, datetime, timezone
+
+# Run once at a specific time
+send_email.schedule("alice@example.com", "hello", at=datetime(2025,8,25,12,0,tzinfo=timezone.utc))
+
+# Run once after 30 seconds
+send_email.schedule("alice@example.com", "hello", in_=timedelta(seconds=30))
+
+# Run every 5 minutes
+send_email.schedule("alice@example.com", "hello", interval=300)
+
+# Cron-style: daily at midnight UTC
+send_email.schedule("alice@example.com", "hello", cron="0 0 * * *")
+```
+
+Scheduled jobs integrate seamlessly with workers, retries, and plugins.
 
 ---
 
 ## Plugins
 
-Plugins extend Nuvom dynamically — they can register:
+Extend Nuvom dynamically:
 
 * Queue backends
 * Result backends
 * Monitoring hooks
 * Lifecycle-aware systems
 
-Plugins follow a standard `Plugin` protocol and are defined in `.nuvom_plugins.toml`.
-
-```toml
-[plugins]
-queue_backend = ["my_module:MyQueuePlugin"]
-```
-
-Use `nuvom plugin test` to validate your plugin.
+Defined in `.nuvom_plugins.toml` and validated with `nuvom plugin test`.
 
 ---
 
@@ -148,12 +173,13 @@ Use `nuvom plugin test` to validate your plugin.
 
 | Concept      | Role                                       |
 | ------------ | ------------------------------------------ |
-| `@task`      | Defines metadata for background execution  |
+| `@task`      | Defines metadata for background execution, including scheduling |
 | `Job`        | A task + args, queued for execution        |
-| `Worker`     | Executes jobs from the queue               |
+| `Worker`     | Executes jobs from the queue, including scheduled jobs |
 | `Queue`      | Stores jobs awaiting execution             |
 | `Backend`    | Stores results, errors, and metadata       |
-| `Dispatcher` | Converts function calls into jobs          |
+| `Dispatcher` | Converts function calls into jobs, supports `.delay()`, `.map()`, `.schedule()` |
 | `Registry`   | Maps task names to functions               |
 | `Discovery`  | Scans source code and builds task manifest |
 | `Plugin`     | Dynamically extends Nuvom’s capabilities   |
+| `Scheduler`  | Manages one-off, interval, and cron jobs across workers |

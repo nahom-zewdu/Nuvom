@@ -1,5 +1,5 @@
 site_name: Nuvom
-site_description: Lightweight, plugin-first Python task queue — no Redis required.
+site_description: Plugin-first Python task queue for reliable scheduling, fault-tolerant workers, and pluggable backends.
 site_author: Nahom Zewdu
 site_url: https://nahom-zewdu.github.io/Nuvom/
 repo_url: https://github.com/nahom-zewdu/Nuvom
@@ -25,7 +25,9 @@ theme:
 
 nav:
   - Home: index.md
-  - Quickstart: quickstart.md
+  - Quickstart:
+      - Overview: quickstart.md
+      - Scheduler: scheduler.md
   - CLI Reference: cli.md
   - Concepts: concepts.md
   - Plugins:
