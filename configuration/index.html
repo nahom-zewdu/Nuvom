@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Lightweight, plugin-first Python task queue — no Redis required.">
+        <meta name="description" content="Plugin-first Python task queue for reliable scheduling, fault-tolerant workers, and pluggable backends.">
       
       
         <meta name="author" content="Nahom Zewdu">
@@ -233,17 +233,18 @@
   
   
   
-    <li class="md-tabs__item">
-      <a href="../quickstart/" class="md-tabs__link">
-        
-  
-  
     
+    
+      <li class="md-tabs__item">
+        <a href="../quickstart/" class="md-tabs__link">
+          
+  
   
   Quickstart
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -477,9 +478,23 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../quickstart/" class="md-nav__link">
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
   
   
   <span class="md-ellipsis">
@@ -488,7 +503,65 @@
   </span>
   
 
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Quickstart
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scheduler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Scheduler
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -849,28 +922,31 @@
 
 
 <h1 id="nuvom-configuration-guide">Nuvom Configuration Guide<a class="headerlink" href="#nuvom-configuration-guide" title="Permanent link">&para;</a></h1>
-<p>Nuvom is highly configurable using environment variables and <code>.env</code> files. This guide explains all supported settings, how they affect runtime behavior, and how to configure plugins.</p>
+<p>Nuvom is fully configurable via environment variables and <code>.env</code> files. This guide explains supported settings, how they affect runtime behavior, and plugin integration, including the scheduler backend.</p>
 <hr />
 <h2 id="where-settings-come-from">Where Settings Come From<a class="headerlink" href="#where-settings-come-from" title="Permanent link">&para;</a></h2>
-<p>Nuvom loads configuration from:</p>
+<p>Nuvom loads configuration in order of precedence:</p>
 <ol>
-<li><code>.env</code> file in your project root (uses <code>pydantic-settings</code>)</li>
+<li><code>.env</code> file in your project root (via <code>pydantic-settings</code>)</li>
 <li>Environment variables (<code>export FOO=...</code>)</li>
-<li>Defaults defined in code (if no value is provided)</li>
+<li>Defaults defined in code if not overridden</li>
 </ol>
 <hr />
 <h2 id="example-env">Example <code>.env</code><a class="headerlink" href="#example-env" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code>NUVOM_ENVIRONMENT=dev
-NUVOM_LOG_LEVEL=INFO
-NUVOM_QUEUE_BACKEND=file
+<div class="highlight"><pre><span></span><code>NUVOM_QUEUE_BACKEND=file
 NUVOM_RESULT_BACKEND=memory
 NUVOM_SERIALIZATION_BACKEND=msgpack
+NUVOM_SCHEDULER_BACKEND=file
+
+NUVOM_ENVIRONMENT=dev
+NUVOM_LOG_LEVEL=INFO
+
 NUVOM_MAX_WORKERS=4
 NUVOM_BATCH_SIZE=10
 NUVOM_JOB_TIMEOUT_SECS=30
-NUVOM_MANIFEST_PATH=.nuvom/manifest.json
 NUVOM_TIMEOUT_POLICY=retry
-NUVOM_PROMETHEUS_PORT=9150
+
+NUVOM_MANIFEST_PATH=.nuvom/manifest.json
 NUVOM_SQLITE_QUEUE_PATH=.nuvom/queue.db
 NUVOM_SQLITE_RESULT_PATH=.nuvom/results.db
 </code></pre></div>
@@ -897,7 +973,7 @@ NUVOM_SQLITE_RESULT_PATH=.nuvom/results.db
 </tr>
 <tr>
 <td><code>NUVOM_QUEUE_BACKEND</code></td>
-<td>Backend type: <code>memory</code>, <code>file</code>, <code>sqlite</code> or plugin name</td>
+<td>Backend type: <code>memory</code>, <code>file</code>, <code>sqlite</code>, or plugin name</td>
 <td><code>sqlite</code></td>
 </tr>
 <tr>
@@ -907,27 +983,27 @@ NUVOM_SQLITE_RESULT_PATH=.nuvom/results.db
 </tr>
 <tr>
 <td><code>NUVOM_SERIALIZATION_BACKEND</code></td>
-<td>Format: <code>msgpack</code> (others in future)</td>
+<td>Format for job payloads (<code>msgpack</code>)</td>
 <td><code>msgpack</code></td>
 </tr>
 <tr>
 <td><code>NUVOM_MANIFEST_PATH</code></td>
-<td>Task discovery manifest path</td>
+<td>Path to task discovery manifest</td>
 <td><code>.nuvom/manifest.json</code></td>
 </tr>
 <tr>
 <td><code>NUVOM_JOB_TIMEOUT_SECS</code></td>
-<td>Default job timeout (if not overridden in <code>@task</code>)</td>
+<td>Default job timeout (unless overridden in <code>@task</code>)</td>
 <td><code>30</code></td>
 </tr>
 <tr>
 <td><code>NUVOM_BATCH_SIZE</code></td>
-<td>Jobs pulled at once per worker cycle</td>
+<td>Jobs pulled per worker cycle</td>
 <td><code>10</code></td>
 </tr>
 <tr>
 <td><code>NUVOM_MAX_WORKERS</code></td>
-<td>Number of worker threads to spawn</td>
+<td>Number of worker threads</td>
 <td><code>4</code></td>
 </tr>
 <tr>
@@ -935,27 +1011,32 @@ NUVOM_SQLITE_RESULT_PATH=.nuvom/results.db
 <td>Behavior on timeout: <code>retry</code>, <code>fail</code>, <code>ignore</code></td>
 <td><code>retry</code></td>
 </tr>
+<tr>
+<td><code>NUVOM_SCHEDULER_BACKEND</code></td>
+<td>Scheduler backend to use (<code>memory</code>, <code>redis</code>, <code>sqlite</code>, plugin)</td>
+<td><code>sqlite</code></td>
+</tr>
 </tbody>
 </table>
 <hr />
 <h2 id="plugin-configuration">Plugin Configuration<a class="headerlink" href="#plugin-configuration" title="Permanent link">&para;</a></h2>
-<p>Plugins are registered via <code>.nuvom_plugins.toml</code> in the root of your project.</p>
+<p>Plugins extend Nuvom dynamically and are registered via <code>.nuvom_plugins.toml</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="k">[plugins]</span>
 <span class="n">queue_backend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;my_module:MyQueuePlugin&quot;</span><span class="p">]</span>
 <span class="n">result_backend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;my_module:MyResultPlugin&quot;</span><span class="p">]</span>
+<span class="n">scheduler_backend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;my_module:CustomSchedulerBackend&quot;</span><span class="p">]</span>
 <span class="n">monitoring</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;nuvom.plugins.monitoring.prometheus:PrometheusPlugin&quot;</span><span class="p">]</span>
 </code></pre></div>
-<p>Use your <code>.env</code> to pass any plugin-specific values:</p>
-<div class="highlight"><pre><span></span><code>NUVOM_PROMETHEUS_PORT=9150
-MY_PLUGIN_AUTH_TOKEN=abc123
+<p>Pass plugin-specific values via <code>.env</code>:</p>
+<div class="highlight"><pre><span></span><code>MY_PLUGIN_AUTH_TOKEN=abc123
 </code></pre></div>
 <p>Inside the plugin, access them via the <code>settings</code> argument passed to <code>start()</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settings</span><span class="p">):</span>
-    <span class="n">port</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prometheus_port&quot;</span><span class="p">,</span> <span class="mi">9150</span><span class="p">)</span>
+    <span class="n">token</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;auth_token&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 <hr />
 <h2 id="sqlite-backend-settings">SQLite Backend Settings<a class="headerlink" href="#sqlite-backend-settings" title="Permanent link">&para;</a></h2>
-<p>If you use the SQLite queue or result backend, configure paths:</p>
+<p>For SQLite backends:</p>
 <table>
 <thead>
 <tr>
@@ -967,7 +1048,7 @@ MY_PLUGIN_AUTH_TOKEN=abc123
 <tbody>
 <tr>
 <td><code>NUVOM_SQLITE_QUEUE_PATH</code></td>
-<td>SQLite file path for the job queue</td>
+<td>SQLite file path for job queue</td>
 <td><code>.nuvom/queue.db</code></td>
 </tr>
 <tr>
@@ -977,16 +1058,16 @@ MY_PLUGIN_AUTH_TOKEN=abc123
 </tr>
 </tbody>
 </table>
-<p>Ensure the directories exist or Nuvom will create them automatically.</p>
+<p>Directories are created automatically if missing.</p>
 <hr />
 <h2 id="cli-to-view-active-config">CLI to View Active Config<a class="headerlink" href="#cli-to-view-active-config" title="Permanent link">&para;</a></h2>
-<p>You can inspect current config at any time:</p>
 <div class="highlight"><pre><span></span><code>nuvom<span class="w"> </span>config
 </code></pre></div>
-<p>Output:</p>
+<p>Example output:</p>
 <div class="highlight"><pre><span></span><code>Environment: dev
-Queue Backend: file
+Queue Backend: sqlite
 Result Backend: sqlite
+Scheduler Backend: sqlite
 Max Workers: 4
 Batch Size: 10
 Manifest Path: .nuvom/manifest.json
@@ -995,24 +1076,19 @@ Manifest Path: .nuvom/manifest.json
 <hr />
 <h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">&para;</a></h2>
 <ul>
-<li>Commit a <code>.env.example</code> file for contributors</li>
-<li>Don’t hardcode secrets or plugin tokens</li>
-<li>Keep <code>.env</code> out of version control (<code>.gitignore</code>)</li>
-<li>Use <code>dotenv</code> or OS environment overrides in CI/CD</li>
+<li>Commit <code>.env.example</code> for contributors</li>
+<li>Keep secrets out of version control (<code>.gitignore</code>)</li>
+<li>Override values in CI/CD via environment variables</li>
+<li>Use scheduler backends that match your production workload</li>
+<li>Verify configuration with <code>nuvom config</code></li>
 </ul>
 <hr />
 <h2 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Nuvom gives you full control over how it runs, queues jobs, stores results, and loads plugins — all through a clean <code>.env</code> and TOML-based system.</p>
-<p>You can:</p>
-<ul>
-<li>Swap backends without changing code</li>
-<li>Override runtime behavior with simple settings</li>
-<li>Pass config to your own plugins</li>
-<li>Use the CLI to verify current values</li>
-</ul>
+<p>Nuvom gives developers clean, predictable, and extensible control over runtime behavior, queuing, results, plugins, and scheduling via a single scheduler backend variable.</p>
 <blockquote>
-<p>Simple configs. Powerful control.</p>
+<p>Developer-first, predictable, and professional configuration.</p>
 </blockquote>
+<hr />
 
 
 
@@ -1033,7 +1109,7 @@ Manifest Path: .nuvom/manifest.json
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 20, 2025 16:39:08 UTC">July 20, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 26, 2025 02:58:15 UTC">August 26, 2025</span>
   </span>
 
     

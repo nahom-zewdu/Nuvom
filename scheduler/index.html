@@ -12,13 +12,13 @@
         <meta name="author" content="Nahom Zewdu">
       
       
-        <link rel="canonical" href="https://nahom-zewdu.github.io/Nuvom/roadmap/">
+        <link rel="canonical" href="https://nahom-zewdu.github.io/Nuvom/scheduler/">
       
       
-        <link rel="prev" href="../architecture/">
+        <link rel="prev" href="../quickstart/">
       
       
-        <link rel="next" href="../faq/">
+        <link rel="next" href="../cli/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -26,7 +26,7 @@
     
     
       
-        <title>Roadmap - Nuvom</title>
+        <title>Scheduler - Nuvom</title>
       
     
     
@@ -82,7 +82,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#nuvom-roadmap" class="md-skip">
+        <a href="#nuvom-scheduling-guide" class="md-skip">
           Skip to content
         </a>
       
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Roadmap
+              Scheduler
             
           </span>
         </div>
@@ -232,10 +232,12 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
+      <li class="md-tabs__item md-tabs__item--active">
         <a href="../quickstart/" class="md-tabs__link">
           
   
@@ -348,11 +350,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../roadmap/" class="md-tabs__link">
         
   
   
@@ -476,24 +476,29 @@
       
   
   
+    
   
   
+  
     
     
     
     
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
-          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
             
   
   
@@ -506,7 +511,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             Quickstart
@@ -540,10 +545,32 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../scheduler/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Scheduler
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -554,6 +581,194 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-concepts" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Concepts
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Concepts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#schedule-envelope" class="md-nav__link">
+    <span class="md-ellipsis">
+      Schedule Envelope
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#scheduling-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      Scheduling Types
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-api-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. API Reference
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. API Reference">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      Parameters
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#returns" class="md-nav__link">
+    <span class="md-ellipsis">
+      Returns
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Examples
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Examples">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#one-off-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      One-off execution
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#interval-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Interval execution
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cron-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      Cron execution
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-scheduler-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Scheduler Service
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-advanced-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Advanced Notes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Advanced Notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#time-zones" class="md-nav__link">
+    <span class="md-ellipsis">
+      Time Zones
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#failure-resilience" class="md-nav__link">
+    <span class="md-ellipsis">
+      Failure &amp; Resilience
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#extensibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      Extensibility
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. Best Practices
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -729,32 +944,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    Roadmap
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../roadmap/" class="md-nav__link">
         
   
   
@@ -765,167 +958,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#completed-milestones" class="md-nav__link">
-    <span class="md-ellipsis">
-      Completed Milestones
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Completed Milestones">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#v01-core-foundations" class="md-nav__link">
-    <span class="md-ellipsis">
-      v0.1 — Core Foundations
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#v02-result-backends-cli" class="md-nav__link">
-    <span class="md-ellipsis">
-      v0.2 — Result Backends &amp; CLI
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#v03-queue-backends" class="md-nav__link">
-    <span class="md-ellipsis">
-      v0.3 — Queue Backends
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#v04-runtime-execution-hooks" class="md-nav__link">
-    <span class="md-ellipsis">
-      v0.4 — Runtime Execution &amp; Hooks
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#v05-static-task-discovery" class="md-nav__link">
-    <span class="md-ellipsis">
-      v0.5 — Static Task Discovery
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#v06-developer-experience-boosts" class="md-nav__link">
-    <span class="md-ellipsis">
-      v0.6 — Developer Experience Boosts
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#v07-observability-history" class="md-nav__link">
-    <span class="md-ellipsis">
-      v0.7 — Observability &amp; History
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#v08-reliability-and-polish" class="md-nav__link">
-    <span class="md-ellipsis">
-      v0.8 — Reliability and Polish
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#v09-plugin-architecture-sqlite" class="md-nav__link">
-    <span class="md-ellipsis">
-      v0.9 — Plugin Architecture + SQLite
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#v010-pre-v1-foundation" class="md-nav__link">
-    <span class="md-ellipsis">
-      v0.10 — Pre-v1 Foundation
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#v011-scheduler-production-ready-apis" class="md-nav__link">
-    <span class="md-ellipsis">
-      v0.11 — Scheduler &amp; Production-Ready APIs
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#v10-goals-stable-core" class="md-nav__link">
-    <span class="md-ellipsis">
-      v1.0 Goals — Stable Core
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#post10-backlog-ideas" class="md-nav__link">
-    <span class="md-ellipsis">
-      Post‑1.0 Backlog (Ideas)
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#contributing" class="md-nav__link">
-    <span class="md-ellipsis">
-      Contributing
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -990,137 +1022,131 @@
 
 
 
-<h1 id="nuvom-roadmap">Nuvom Roadmap<a class="headerlink" href="#nuvom-roadmap" title="Permanent link">&para;</a></h1>
-<p>This document outlines Nuvom’s development milestones, from initial prototype to the current release, and what’s ahead for v1.0 and beyond.</p>
-<p>Nuvom is built to be a <strong>developer-first</strong>, <strong>plugin-friendly</strong>, and <strong>predictable</strong> task execution engine. We’re designing for real-world problems across local development, production, and Windows environments — with <strong>clarity</strong>, <strong>extensibility</strong>, and <strong>reliability</strong> at the core.</p>
-<hr />
-<h2 id="completed-milestones">Completed Milestones<a class="headerlink" href="#completed-milestones" title="Permanent link">&para;</a></h2>
-<h3 id="v01-core-foundations">v0.1 — Core Foundations<a class="headerlink" href="#v01-core-foundations" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Basic <code>@task()</code> decorator with <code>.delay()</code></li>
-<li>In-memory queue and worker threads</li>
-<li>Functional CLI: <code>nuvom runworker</code>, <code>nuvom list tasks</code></li>
-</ul>
-<hr />
-<h3 id="v02-result-backends-cli">v0.2 — Result Backends &amp; CLI<a class="headerlink" href="#v02-result-backends-cli" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Pluggable result backend interface</li>
-<li>File-based result store</li>
-<li>Full CLI inspection commands</li>
-</ul>
-<hr />
-<h3 id="v03-queue-backends">v0.3 — Queue Backends<a class="headerlink" href="#v03-queue-backends" title="Permanent link">&para;</a></h3>
-<ul>
-<li>File-based persistent job queue</li>
-<li>Msgpack serialization for jobs</li>
-<li><code>.corrupt</code> quarantine for bad jobs</li>
-</ul>
-<hr />
-<h3 id="v04-runtime-execution-hooks">v0.4 — Runtime Execution &amp; Hooks<a class="headerlink" href="#v04-runtime-execution-hooks" title="Permanent link">&para;</a></h3>
-<ul>
-<li><code>ExecutionEngine</code> abstraction</li>
-<li>Timeout and retries</li>
-<li>Lifecycle hooks: <code>before_job</code>, <code>after_job</code>, <code>on_error</code></li>
-</ul>
-<hr />
-<h3 id="v05-static-task-discovery">v0.5 — Static Task Discovery<a class="headerlink" href="#v05-static-task-discovery" title="Permanent link">&para;</a></h3>
-<ul>
-<li>AST-powered task detection</li>
-<li><code>.nuvomignore</code> support</li>
-<li>Manifest system for caching task metadata</li>
-</ul>
-<hr />
-<h3 id="v06-developer-experience-boosts">v0.6 — Developer Experience Boosts<a class="headerlink" href="#v06-developer-experience-boosts" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Dev mode (<code>--dev</code>) for hot task reloading</li>
-<li>Manifest diffing and CLI-rich task listings</li>
-<li>Structured logs and tracebacks via <code>rich</code></li>
-</ul>
-<hr />
-<h3 id="v07-observability-history">v0.7 — Observability &amp; History<a class="headerlink" href="#v07-observability-history" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Tracebacks for all jobs</li>
-<li>Full CLI metadata inspection</li>
-<li>Historical job browsing</li>
-</ul>
-<hr />
-<h3 id="v08-reliability-and-polish">v0.8 — Reliability and Polish<a class="headerlink" href="#v08-reliability-and-polish" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Retry-on-failure system</li>
-<li>Timeout policy: <code>retry</code>, <code>fail</code>, <code>ignore</code></li>
-<li>SDK retry tools</li>
-<li>Job attempt metadata and diagnostics</li>
-</ul>
-<hr />
-<h3 id="v09-plugin-architecture-sqlite">v0.9 — Plugin Architecture + SQLite<a class="headerlink" href="#v09-plugin-architecture-sqlite" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Fully dynamic plugin system via <code>.nuvom_plugins.toml</code></li>
-<li>SQLite result backend</li>
-<li>Graceful shutdown lifecycle for plugin-based workers</li>
-<li>Plugin-based test coverage</li>
-</ul>
-<hr />
-<h3 id="v010-pre-v1-foundation">v0.10 — Pre-v1 Foundation<a class="headerlink" href="#v010-pre-v1-foundation" title="Permanent link">&para;</a></h3>
-<ul>
-<li>SQLite-based persistent <strong>queue backend</strong></li>
-<li>Visibility timeout &amp; requeue support</li>
-<li>Plugin regression test suite</li>
-<li>Built-in Prometheus metrics plugin</li>
-<li>MkDocs documentation site</li>
-<li>Performance &amp; concurrency benchmarking</li>
-<li>Plugin lifecycle: <code>start(settings)</code>, <code>stop()</code></li>
-<li>Queue introspection metrics: <code>queue_size</code>, <code>inflight_jobs</code></li>
-<li>Final polish + bugfixes for v0.10 release</li>
-</ul>
-<hr />
-<h2 id="v011-scheduler-production-ready-apis">v0.11 — Scheduler &amp; Production-Ready APIs<a class="headerlink" href="#v011-scheduler-production-ready-apis" title="Permanent link">&para;</a></h2>
+<h1 id="nuvom-scheduling-guide">Nuvom Scheduling Guide<a class="headerlink" href="#nuvom-scheduling-guide" title="Permanent link">&para;</a></h1>
 <blockquote>
-<p><strong>Status:</strong> Current release</p>
+<p>Scheduling in Nuvom is a first-class citizen. It works just like <code>.delay()</code>, but defers execution for the future or sets up recurring tasks. Jobs are stored in a <strong>scheduler backend</strong>, and workers execute them when they become due.</p>
 </blockquote>
+<hr />
+<h2 id="1-concepts">1. Concepts<a class="headerlink" href="#1-concepts" title="Permanent link">&para;</a></h2>
+<h3 id="schedule-envelope">Schedule Envelope<a class="headerlink" href="#schedule-envelope" title="Permanent link">&para;</a></h3>
+<p>When you call <code>.schedule()</code>, Nuvom wraps your task call in a <strong>ScheduleEnvelope</strong>:</p>
 <ul>
-<li><strong>Built-in scheduler</strong> for one-off, interval, and cron-style tasks</li>
-<li><code>.schedule()</code> API integrated with tasks, compatible with workers</li>
-<li>Scheduler backend support via environment variable</li>
-<li>Predictable execution across local and production environments</li>
-<li>CLI and SDK support for scheduling inspection</li>
-<li>Minor bugfixes and cross-platform stability improvements</li>
-<li>Documentation updates with scheduling guides</li>
+<li>Contains task name, args/kwargs, schedule type, next run timestamp, and metadata</li>
+<li>Stored in the scheduler backend (a separate queue from the main job queue)</li>
+<li>Scheduler service reads due envelopes and pushes jobs to the main queue</li>
+</ul>
+<p>This abstraction allows <strong>reliable, recurring, and time-zone aware scheduling</strong> without burdening the worker logic.</p>
+<h3 id="scheduling-types">Scheduling Types<a class="headerlink" href="#scheduling-types" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+<th>Backend Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>one_off</code></td>
+<td>Single execution at a specific time (<code>at</code>) or after a delay (<code>in_</code>)</td>
+<td>Removed after dispatch</td>
+</tr>
+<tr>
+<td><code>interval</code></td>
+<td>Recurring execution every N seconds (<code>interval</code>)</td>
+<td>Next run rescheduled automatically</td>
+</tr>
+<tr>
+<td><code>cron</code></td>
+<td>Recurring execution following a cron expression (<code>cron</code>)</td>
+<td>Scheduler computes next fire time according to timezone</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-api-reference">2. API Reference<a class="headerlink" href="#2-api-reference" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">Task</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+    <span class="n">at</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">in_</span><span class="p">:</span> <span class="n">timedelta</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">cron</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">timezone_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;UTC&quot;</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ScheduleEnvelope</span>
+</code></pre></div>
+<h3 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>*args, **kwargs</code> — Arguments passed to the task when executed</li>
+<li><code>at</code> — Absolute UTC-aware datetime for one-off execution</li>
+<li><code>in_</code> — Relative <code>timedelta</code> from now for one-off execution</li>
+<li><code>interval</code> — Seconds between recurring runs; must be &gt;0</li>
+<li><code>cron</code> — Standard cron string (e.g., <code>"0 9 * * MON"</code>)</li>
+<li><code>timezone_name</code> — IANA timezone for cron evaluation; defaults to <code>"UTC"</code></li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Exactly <strong>one</strong> of <code>at</code>, <code>in_</code>, <code>interval</code>, or <code>cron</code> must be provided.</p>
+</blockquote>
+<h3 id="returns">Returns<a class="headerlink" href="#returns" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>ScheduleEnvelope</code> — Backend-storable object representing your scheduled task</li>
 </ul>
 <hr />
-<h2 id="v10-goals-stable-core">v1.0 Goals — Stable Core<a class="headerlink" href="#v10-goals-stable-core" title="Permanent link">&para;</a></h2>
+<h2 id="3-examples">3. Examples<a class="headerlink" href="#3-examples" title="Permanent link">&para;</a></h2>
+<h3 id="one-off-execution">One-off execution<a class="headerlink" href="#one-off-execution" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">add</span>
+
+<span class="c1"># Absolute time</span>
+<span class="n">add</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="n">at</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2025</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">))</span>
+
+<span class="c1"># Relative time</span>
+<span class="n">add</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="n">in_</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">30</span><span class="p">))</span>
+</code></pre></div>
+<h3 id="interval-execution">Interval execution<a class="headerlink" href="#interval-execution" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Run every 5 minutes</span>
+<span class="n">add</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="cron-execution">Cron execution<a class="headerlink" href="#cron-execution" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># Run every Monday at 9 AM UTC</span>
+<span class="n">add</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">cron</span><span class="o">=</span><span class="s2">&quot;0 9 * * MON&quot;</span><span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="4-scheduler-service">4. Scheduler Service<a class="headerlink" href="#4-scheduler-service" title="Permanent link">&para;</a></h2>
+<p>The scheduler backend stores scheduled tasks separately from the main queue. To execute them:</p>
+<div class="highlight"><pre><span></span><code>nuvom<span class="w"> </span>runscheduler
+</code></pre></div>
 <ul>
-<li>[x] Windows-native, Redis-free by design</li>
-<li>[x] No imports required: safe task discovery via AST</li>
-<li>[x] CLI-driven, scriptable, and testable</li>
-<li>[x] Plugin-first queue &amp; result architecture</li>
-<li>[x] Observability, retries, and timeouts</li>
-<li>[x] Queue system stress-tested for multi-core workloads</li>
-<li>[ ] Plugin registry contracts + third-party plugin showcase</li>
-<li>[ ] Rich dashboard and metrics browser</li>
+<li>Reads <code>ScheduleEnvelope</code> objects that are <strong>due</strong></li>
+<li>Pushes jobs to the main queue for worker consumption</li>
+<li>Reschedules interval and cron tasks automatically</li>
+<li>Supports multiple scheduler instances safely in production</li>
 </ul>
 <hr />
-<h2 id="post10-backlog-ideas">Post‑1.0 Backlog (Ideas)<a class="headerlink" href="#post10-backlog-ideas" title="Permanent link">&para;</a></h2>
-<p>These features are actively under exploration — not committed to a specific release:</p>
+<h2 id="5-advanced-notes">5. Advanced Notes<a class="headerlink" href="#5-advanced-notes" title="Permanent link">&para;</a></h2>
+<h3 id="time-zones">Time Zones<a class="headerlink" href="#time-zones" title="Permanent link">&para;</a></h3>
 <ul>
-<li>[ ] Redis queue and result backend (optional, opt-in)</li>
-<li>[ ] Multi-host worker cluster (via file locks or RPC mesh)</li>
-<li>[ ] DAG-style task chaining: <code>task1().then(task2)</code></li>
-<li>[ ] Plugin sandboxing and capability enforcement</li>
-<li>[ ] Web UI / dashboard to browse queue + workers</li>
-<li>[ ] VSCode extension: discover tasks visually, browse results</li>
-<li>[ ] Task versioning and signature integrity check</li>
-<li>[ ] Offline <code>.nuvom_tasks.json</code> static task export (zero-import bootstrap)</li>
+<li>Cron expressions can be evaluated in any IANA timezone</li>
+<li>Naive <code>datetime</code> objects in <code>at</code> are assumed UTC with a warning</li>
+</ul>
+<h3 id="failure-resilience">Failure &amp; Resilience<a class="headerlink" href="#failure-resilience" title="Permanent link">&para;</a></h3>
+<ul>
+<li>One-off tasks are removed after execution</li>
+<li>Interval tasks are rescheduled automatically, even if the previous run failed</li>
+<li>Scheduler backend implementations can persist envelopes to disk, database, or memory</li>
+</ul>
+<h3 id="extensibility">Extensibility<a class="headerlink" href="#extensibility" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Custom scheduler backends can be implemented by providing <code>enqueue()</code>, <code>get()</code>, <code>due()</code>, <code>reschedule()</code>, and <code>cancel()</code> methods</li>
+<li>Fully compatible with Nuvom’s plugin system</li>
 </ul>
 <hr />
-<h2 id="contributing">Contributing<a class="headerlink" href="#contributing" title="Permanent link">&para;</a></h2>
-<p>The roadmap is shaped by real-world problems. Open an issue or discussion if:</p>
+<h2 id="6-best-practices">6. Best Practices<a class="headerlink" href="#6-best-practices" title="Permanent link">&para;</a></h2>
 <ul>
-<li>You need support for a custom backend</li>
-<li>You’re building a dashboard or monitoring tool</li>
-<li>You’re using Nuvom at scale and hitting edge cases</li>
-<li>You want to build your own plugin or backend</li>
+<li>Use <code>.schedule()</code> over <code>.delay()</code> for long-running or recurring tasks</li>
+<li>Combine <code>.schedule(interval=...)</code> with <code>store_result=True</code> to track recurring job outcomes</li>
+<li>Keep <code>cron</code> expressions timezone-aware for production deployments</li>
 </ul>
-<p>Let’s build something lean, sharp, and predictable — together.</p>
 <hr />
 
 
@@ -1142,7 +1168,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 26, 2025 03:10:44 UTC">August 26, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 26, 2025 02:03:49 UTC">August 26, 2025</span>
   </span>
 
     
@@ -1178,7 +1204,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../architecture/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Architecture">
+          <a href="../quickstart/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Overview">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -1188,20 +1214,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Architecture
+                Overview
               </div>
             </div>
           </a>
         
         
           
-          <a href="../faq/" class="md-footer__link md-footer__link--next" aria-label="Next: FAQ">
+          <a href="../cli/" class="md-footer__link md-footer__link--next" aria-label="Next: CLI Reference">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                FAQ
+                CLI Reference
               </div>
             </div>
             <div class="md-footer__button md-icon">

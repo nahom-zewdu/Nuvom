@@ -6,7 +6,7 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Lightweight, plugin-first Python task queue — no Redis required.">
+        <meta name="description" content="Plugin-first Python task queue for reliable scheduling, fault-tolerant workers, and pluggable backends.">
       
       
         <meta name="author" content="Nahom Zewdu">
@@ -18,7 +18,7 @@
         <link rel="prev" href="..">
       
       
-        <link rel="next" href="../cli/">
+        <link rel="next" href="../scheduler/">
       
       
       <link rel="icon" href="../assets/images/favicon.png">
@@ -26,7 +26,7 @@
     
     
       
-        <title>Quickstart - Nuvom</title>
+        <title>Overview - Nuvom</title>
       
     
     
@@ -116,7 +116,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Quickstart
+              Overview
             
           </span>
         </div>
@@ -235,17 +235,18 @@
     
   
   
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
-        
-  
-  
     
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
   
   Quickstart
 
-      </a>
-    </li>
+        </a>
+      </li>
+    
   
 
       
@@ -479,6 +480,52 @@
   
   
   
+    
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Quickstart
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Quickstart
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
     <li class="md-nav__item md-nav__item--active">
       
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
@@ -492,7 +539,7 @@
   
   
   <span class="md-ellipsis">
-    Quickstart
+    Overview
     
   </span>
   
@@ -505,7 +552,7 @@
   
   
   <span class="md-ellipsis">
-    Quickstart
+    Overview
     
   </span>
   
@@ -555,36 +602,45 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#3-submit-a-job" class="md-nav__link">
+  <a href="#3-submit-a-job-immediately" class="md-nav__link">
     <span class="md-ellipsis">
-      3. Submit a Job
+      3. Submit a Job Immediately
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#4-run-a-worker" class="md-nav__link">
+  <a href="#4-schedule-a-task" class="md-nav__link">
     <span class="md-ellipsis">
-      4. Run a Worker
+      4. Schedule a Task
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-inspect-job-status" class="md-nav__link">
+  <a href="#5-run-a-worker" class="md-nav__link">
     <span class="md-ellipsis">
-      5. Inspect Job Status
+      5. Run a Worker
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#6-retry-failed-jobs" class="md-nav__link">
+  <a href="#6-inspect-job-status" class="md-nav__link">
     <span class="md-ellipsis">
-      6. Retry Failed Jobs
+      6. Inspect Job Status
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-retry-failed-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      7. Retry Failed Jobs
     </span>
   </a>
   
@@ -593,6 +649,37 @@
     </ul>
   
 </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scheduler/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Scheduler
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
       
     </li>
   
@@ -840,7 +927,7 @@
 
 
 <h1 id="quickstart">Quickstart<a class="headerlink" href="#quickstart" title="Permanent link">&para;</a></h1>
-<p>This guide walks you through installing Nuvom, defining your first task, and running workers — all in under 5 minutes.</p>
+<p>This guide walks you through installing Nuvom, defining your first task, scheduling it, and running workers all in under 5 minutes.</p>
 <hr />
 <h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>nuvom
@@ -864,7 +951,7 @@
 </code></pre></div>
 <p>This generates <code>.nuvom/manifest.json</code> to speed up worker startup and avoid runtime imports.</p>
 <hr />
-<h2 id="3-submit-a-job">3. Submit a Job<a class="headerlink" href="#3-submit-a-job" title="Permanent link">&para;</a></h2>
+<h2 id="3-submit-a-job-immediately">3. Submit a Job Immediately<a class="headerlink" href="#3-submit-a-job-immediately" title="Permanent link">&para;</a></h2>
 <p>Dispatch jobs programmatically:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">add</span>
 
@@ -872,13 +959,35 @@
 <span class="nb">print</span><span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
 </code></pre></div>
 <hr />
-<h2 id="4-run-a-worker">4. Run a Worker<a class="headerlink" href="#4-run-a-worker" title="Permanent link">&para;</a></h2>
+<h2 id="4-schedule-a-task">4. Schedule a Task<a class="headerlink" href="#4-schedule-a-task" title="Permanent link">&para;</a></h2>
+<p>Tasks expose <code>.schedule()</code> for deferred or recurring execution. Scheduling works seamlessly across workers and backends.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tasks</span><span class="w"> </span><span class="kn">import</span> <span class="n">add</span>
+
+<span class="c1"># Run at a specific time (2038 iykyk)</span>
+<span class="n">add</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="n">at</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2038</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">19</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">))</span> 
+
+<span class="c1"># Run once after 30 seconds</span>
+<span class="n">add</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="n">in_</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="mi">30</span><span class="p">))</span>
+
+<span class="c1"># Run every 5 minutes (interval scheduling)</span>
+<span class="n">add</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+
+<span class="c1"># Cron-style: every day at midnight UTC</span>
+<span class="n">add</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">cron</span><span class="o">=</span><span class="s2">&quot;0 0 * * *&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>Start the scheduler service:</p>
+<div class="highlight"><pre><span></span><code>nuvom<span class="w"> </span>runscheduler
+</code></pre></div>
+<p>Workers will automatically execute due jobs.</p>
+<hr />
+<h2 id="5-run-a-worker">5. Run a Worker<a class="headerlink" href="#5-run-a-worker" title="Permanent link">&para;</a></h2>
 <p>Workers execute jobs in parallel threads:</p>
 <div class="highlight"><pre><span></span><code>nuvom<span class="w"> </span>runworker
 </code></pre></div>
-<p>You can configure worker behavior (e.g., count, batch size) via <code>.env</code>. See <a href="../configuration/">Configuration</a> for full details.</p>
+<p>You can configure worker behavior (count, batch size, scheduler backend, etc.) via <code>.env</code>. See <a href="../configuration/">Configuration</a> for details.</p>
 <hr />
-<h2 id="5-inspect-job-status">5. Inspect Job Status<a class="headerlink" href="#5-inspect-job-status" title="Permanent link">&para;</a></h2>
+<h2 id="6-inspect-job-status">6. Inspect Job Status<a class="headerlink" href="#6-inspect-job-status" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code>nuvom<span class="w"> </span>inspect<span class="w"> </span>job<span class="w"> </span>&lt;job_id&gt;
 </code></pre></div>
 <p>This shows result, error, traceback, retries remaining, and timestamps.</p>
@@ -886,13 +995,13 @@
 <div class="highlight"><pre><span></span><code>nuvom<span class="w"> </span><span class="nb">history</span><span class="w"> </span>recent<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
 </code></pre></div>
 <hr />
-<h2 id="6-retry-failed-jobs">6. Retry Failed Jobs<a class="headerlink" href="#6-retry-failed-jobs" title="Permanent link">&para;</a></h2>
+<h2 id="7-retry-failed-jobs">7. Retry Failed Jobs<a class="headerlink" href="#7-retry-failed-jobs" title="Permanent link">&para;</a></h2>
 <p>Retry manually from Python:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">nuvom.sdk</span><span class="w"> </span><span class="kn">import</span> <span class="n">retry_job</span>
 
 <span class="n">retry_job</span><span class="p">(</span><span class="s2">&quot;&lt;job_id&gt;&quot;</span><span class="p">)</span>
 </code></pre></div>
-<p>CLI support for retrying is coming soon.</p>
+<p>CLI support for retrying is available in the next release.</p>
 <hr />
 
 
@@ -914,7 +1023,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 20, 2025 16:39:20 UTC">July 20, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="August 26, 2025 03:03:59 UTC">August 26, 2025</span>
   </span>
 
     
@@ -967,13 +1076,13 @@
         
         
           
-          <a href="../cli/" class="md-footer__link md-footer__link--next" aria-label="Next: CLI Reference">
+          <a href="../scheduler/" class="md-footer__link md-footer__link--next" aria-label="Next: Scheduler">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                CLI Reference
+                Scheduler
               </div>
             </div>
             <div class="md-footer__button md-icon">
