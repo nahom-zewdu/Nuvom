@@ -1,6 +1,6 @@
 [project]
 name = "nuvom"
-version = "0.11.0"
+version = "0.11.2"
 description = "Nuvom gives developers a task engine they can trust: clean APIs, predictable behavior, and production-ready task scheduling for Python."
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.8"
