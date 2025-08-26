@@ -26,9 +26,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # ------------------------------------------------------------------ #
 ROOT_DIR = Path(__file__).resolve().parent.parent
 ENV_PATH = ROOT_DIR / ".env"
+PROJECT_ENV_PATH = Path(".env")
 
-# Pre-load environment variables to ensure they propagate to workers.
-load_dotenv(dotenv_path=ENV_PATH, override=True)
+# Pre-load environment variables:
+# 1. Try .env in the current working directory (project root in most cases)
+# 2. Fallback to the internal .env for local dev
+if not load_dotenv(override=True):  # returns False if no .env was found
+    load_dotenv(dotenv_path=ENV_PATH, override=True)
 
 # Supported built-in backends.
 _BUILTIN_BACKENDS = {"file", "redis", "sqlite", "memory"}
@@ -76,8 +80,9 @@ class NuvomSettings(BaseSettings):
         Port for Prometheus metrics exporter.
     """
 
+    # Prefer project-level .env, fallback to internal one for dev
     model_config = SettingsConfigDict(
-        env_file=ENV_PATH,
+        env_file=PROJECT_ENV_PATH if PROJECT_ENV_PATH.exists() else ENV_PATH,
         env_prefix="NUVOM_",
         extra="ignore",
     )
