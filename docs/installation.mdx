@@ -1,0 +1,50 @@
+---
+title: "Installation"
+description: "Install and configure Nuvom."
+order: 10
+---
+
+# Installation
+
+Nuvom is a standard Python package. Install it with pip:
+
+```bash
+pip install nuvom
+```
+
+That's the only required step for local development. Nuvom starts with an in-memory or SQLite backend by default — no external services needed.
+
+## Prerequisites
+
+- Python 3.9 or later
+- pip (or any compatible installer)
+
+## Verify the install
+
+After installing, confirm the CLI is available:
+
+```bash
+nuvom --help
+```
+
+You should see the top-level help listing available commands like `runworker`, `runscheduler`, `discover`, `inspect`, and `history`.
+
+## Contributing or developing locally
+
+If you're working on Nuvom itself, the project uses [Hatch](https://hatch.pypa.io) to manage environments and dependencies. Clone the repository and enter the development shell:
+
+```bash
+git clone https://github.com/your-org/nuvom.git
+cd nuvom
+hatch shell
+```
+
+This activates a fully isolated environment with all development dependencies. Run the test suite with:
+
+```bash
+hatch run test
+```
+
+> **Note:** The `pyproject.toml` at the repo root defines all package metadata and dependencies. You don't need to edit it for normal usage.
+
+Once installed, head to [Quickstart](/docs/quickstart) to define your first task and start a worker.

@@ -1,0 +1,64 @@
+---
+title: "Configuration"
+description: "All environment variables and .env settings that control Nuvom's runtime behavior."
+order: 4
+---
+
+# Configuration
+
+Nuvom is fully configurable via a `.env` file or shell environment variables. It uses `pydantic-settings` to load and validate configuration at startup, so mistakes surface early with clear error messages.
+
+## Precedence
+
+Settings are loaded in this order — earlier sources win:
+
+1. Environment variables set in your shell (`export NUVOM_LOG_LEVEL=DEBUG`)
+2. A `.env` file in your project root
+3. Built-in defaults
+
+## Example `.env`
+
+```bash
+NUVOM_QUEUE_BACKEND=file
+NUVOM_RESULT_BACKEND=memory
+NUVOM_SERIALIZATION_BACKEND=msgpack
+NUVOM_SCHEDULER_BACKEND=file
+
+NUVOM_ENVIRONMENT=dev
+NUVOM_LOG_LEVEL=INFO
+
+NUVOM_MAX_WORKERS=4
+NUVOM_BATCH_SIZE=10
+NUVOM_JOB_TIMEOUT_SECS=30
+NUVOM_TIMEOUT_POLICY=retry
+
+NUVOM_MANIFEST_PATH=.nuvom/manifest.json
+NUVOM_SQLITE_QUEUE_PATH=.nuvom/queue.db
+NUVOM_SQLITE_RESULT_PATH=.nuvom/results.db
+```
+
+## Core variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `NUVOM_ENVIRONMENT` | Runtime environment: `dev`, `test`, or `prod` | `dev` |
+| `NUVOM_LOG_LEVEL` | Logging verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR` | `INFO` |
+| `NUVOM_QUEUE_BACKEND` | Job queue backend: `memory`, `file`, `sqlite`, or a plugin name | `sqlite` |
+| `NUVOM_RESULT_BACKEND` | Result store: `memory`, `file`, `sqlite`, or a plugin name | `sqlite` |
+| `NUVOM_SERIALIZATION_BACKEND` | Job payload format | `msgpack` |
+| `NUVOM_SCHEDULER_BACKEND` | Scheduler storage backend | `file` |
+| `NUVOM_MAX_WORKERS` | Number of worker threads | `4` |
+| `NUVOM_BATCH_SIZE` | Jobs dequeued per worker poll cycle | `10` |
+| `NUVOM_JOB_TIMEOUT_SECS` | Default job timeout in seconds | `30` |
+| `NUVOM_TIMEOUT_POLICY` | What happens on timeout: `retry` or `fail` | `retry` |
+| `NUVOM_MANIFEST_PATH` | Path to the task manifest file | `.nuvom/manifest.json` |
+| `NUVOM_SQLITE_QUEUE_PATH` | SQLite file path for the queue backend | `.nuvom/queue.db` |
+| `NUVOM_SQLITE_RESULT_PATH` | SQLite file path for the result backend | `.nuvom/results.db` |
+
+## Backend selection
+
+The backend variables (`NUVOM_QUEUE_BACKEND`, `NUVOM_RESULT_BACKEND`, `NUVOM_SCHEDULER_BACKEND`) accept either a built-in backend name or the name of a registered plugin. To use a custom plugin backend, register it in `.nuvom_plugins.toml` and set the variable to the plugin's `name` value. See Plugin System for details.
+
+## Plugin configuration
+
+Plugins can read additional settings from the same `.env` file or environment. When Nuvom calls `start(settings: dict)` on your plugin, it passes the full resolved settings dictionary so your plugin can extract whatever it needs.

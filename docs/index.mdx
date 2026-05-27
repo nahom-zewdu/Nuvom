@@ -1,0 +1,15 @@
+---
+title: "Introduction"
+description: "A developer-first Python task engine with clean APIs, predictable behavior, and production-ready scheduling — no heavyweight infrastructure required."
+order: 0
+---
+
+# Introduction
+
+Nuvom is a background task engine for Python that you can trust from your first local prototype all the way to production. It lets you queue, schedule, and persist jobs with zero magic — no hidden imports, no forced broker dependencies, no surprises when you scale.
+
+The core primitive is the `@task` decorator. Wrap any Python function with it and you get retry logic, timeouts, result persistence, and both immediate and deferred dispatch built in. Nuvom's pluggable backend architecture means you start with SQLite (zero setup) and swap in PostgreSQL, Redis, or your own backend when you need to.
+
+Nuvom is fully cross-platform — Linux, macOS, and Windows — and uses AST-based static task discovery so worker startup is fast and safe, with no accidental side-effect imports.
+
+If you're new, start with [Quickstart](/docs/quickstart) to go from install to a running worker in under five minutes. When you're ready to go deeper, [Core Concepts](/docs/concepts) explains the mental model, [Configuration](/docs/configuration) covers every environment variable, and [Scheduling](/docs/scheduler) walks through one-off, interval, and cron-style jobs.

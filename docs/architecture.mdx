@@ -1,0 +1,72 @@
+---
+title: "Architecture"
+description: "How Nuvom's layers fit together — from task definition to execution and result storage."
+order: 7
+---
+
+# Architecture
+
+Nuvom is a plugin-first task engine. Its architecture separates task definition, discovery, queuing, execution, and result storage into distinct layers, each following a well-defined contract. You can start with zero external dependencies and progressively replace any layer with a plugin as your requirements grow.
+
+## High-level flow
+
+```text
+     +-------------------------+
+     |      @task decorator    |
+     +-------------------------+
+                  |
+                  v
+      +------------------------+
+      |     Task Registry      | <--- loaded from manifest
+      +------------------------+
+                  |
+                  v
++-------------+     +-------------------+
+| Dispatcher  | --> |  Job Queue        |
++-------------+     +-------------------+
+                         |
+                         v
+            +----------------------+
+            |   Worker Pool        |
+            | (Threads + Runner)   |
+            +----------------------+
+                         |
+                         v
+            +----------------------+
+            |  Result Backend      |
+            +----------------------+
+```
+
+## Core components
+
+### Task API — `nuvom/task.py`
+
+The `@task` decorator registers a function as a Nuvom task. Metadata like retries, timeouts, and result persistence is attached at definition time. The decorator adds `.delay()`, `.map()`, and `.schedule()` methods to the function for immediate, batched, or deferred dispatch.
+
+### Task Discovery — `nuvom/discovery/`
+
+Nuvom uses AST-based discovery to find task definitions without importing or executing your code. The `walker.py` module traverses files, `parser.py` extracts task definitions, and `manifest.py` writes the result to `.nuvom/manifest.json`. A `.nuvomignore` file lets you skip irrelevant paths.
+
+### Task Registry — `nuvom/registry/registry.py`
+
+The registry is a thread-safe global store of known tasks. Workers load the registry from the manifest at startup for near-instant boot. The registry prevents duplicate task names unless `force=True` is specified.
+
+### Dispatcher and Job Queue
+
+The dispatcher reads tasks from the registry and pushes serialized Job objects into the queue backend. The queue backend is swappable — `memory`, `file`, `sqlite`, or a plugin-registered backend like Redis.
+
+### Worker Pool
+
+Workers run in parallel threads, polling the queue and executing jobs. Each worker respects the timeout and retry settings on the task, runs lifecycle hooks (`before_job`, `after_job`, `on_error`), and handles graceful shutdown on `SIGINT`.
+
+### Result Backend
+
+If a task sets `store_result=True`, the worker writes the return value to the result backend after execution. The result backend is independently pluggable from the queue backend.
+
+### Scheduler
+
+The scheduler is a separate service that manages ScheduleEnvelopes. It reads the scheduler backend on a polling interval, identifies due envelopes, and dispatches them into the main job queue. This keeps scheduling logic completely decoupled from worker execution.
+
+## Plugin layer
+
+Every backend — queue, result, scheduler — is a plugin slot. Nuvom resolves backend names to plugin classes at startup, so swapping backends is a one-line change in your `.env`. See Plugin System for how to implement and register your own.

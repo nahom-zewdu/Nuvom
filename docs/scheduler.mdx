@@ -1,0 +1,71 @@
+---
+title: "Scheduling"
+description: "One-off, interval, and cron-style scheduling with Nuvom's built-in scheduler."
+order: 5
+---
+
+# Scheduling
+
+Scheduling in Nuvom works exactly like `.delay()`, except execution is deferred. You call `.schedule()` on any task, and Nuvom stores a ScheduleEnvelope in the scheduler backend. A separate scheduler service polls for due envelopes and pushes jobs into the main queue for workers to pick up.
+
+## Starting the scheduler
+
+Run the scheduler service alongside your workers:
+
+```bash
+nuvom runscheduler
+```
+
+The scheduler and workers are independent processes — you can run them on the same machine or separately.
+
+## Scheduling patterns
+
+### One-off at a specific time
+
+```python
+from datetime import datetime, timezone
+from tasks import add
+
+add.schedule(5, 7, at=datetime(2038, 1, 19, 3, 14, 7, tzinfo=timezone.utc))
+```
+
+### One-off after a delay
+
+```python
+from datetime import timedelta
+from tasks import add
+
+add.schedule(5, 7, in_=timedelta(seconds=30))
+```
+
+### Recurring on an interval
+
+```python
+# Repeat every 5 minutes (300 seconds)
+add.schedule(2, 3, interval=300)
+```
+
+### Recurring on a cron expression
+
+```python
+# Daily at midnight UTC
+add.schedule(1, 2, cron="0 0 * * *")
+```
+
+## Schedule types
+
+| Type | How to use | What happens after dispatch |
+|---|---|---|
+| `one_off` | Pass `at=` or `in_=` | Envelope is removed after the job is queued |
+| `interval` | Pass `interval=` (seconds) | Next run is rescheduled automatically |
+| `cron` | Pass `cron=` expression | Scheduler computes the next fire time |
+
+## Schedule Envelope
+
+When you call `.schedule()`, Nuvom creates a ScheduleEnvelope containing the task name, arguments, schedule type, next run timestamp, and metadata. The envelope is stored in the scheduler backend — a separate store from the main job queue. This separation means scheduling logic never blocks or interferes with job execution.
+
+## Scheduler backend
+
+The scheduler backend is configured with `NUVOM_SCHEDULER_BACKEND` in your `.env`. The default is `file`, which requires no external services. You can swap in a custom plugin backend for distributed deployments. See [Configuration](/docs/configuration) for the full variable reference.
+
+> **Note:** If you don't run `nuvom runscheduler`, scheduled envelopes will accumulate but no jobs will be dispatched. Workers alone do not poll the scheduler backend.
