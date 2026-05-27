@@ -1,0 +1,87 @@
+---
+title: "CLI Reference"
+description: "Every Nuvom command for running workers, inspecting jobs, discovering tasks, and managing plugins."
+order: 6
+---
+
+# CLI Reference
+
+Nuvom ships with a developer-first CLI that covers the full task engine lifecycle: starting workers, inspecting jobs, discovering tasks, managing the scheduler, and working with plugins. All commands read from your `.env` file, so your backend and worker configuration applies automatically.
+
+```bash
+nuvom --help
+```
+
+## Workers
+
+### Start the worker pool
+
+```bash
+nuvom runworker
+```
+
+Starts the dispatcher and worker threads using settings from your `.env`. The number of threads is controlled by `NUVOM_MAX_WORKERS`.
+
+### Start the scheduler service
+
+```bash
+nuvom runscheduler
+```
+
+Polls the scheduler backend for due envelopes and pushes them into the job queue. Run this alongside `runworker` for scheduled job support.
+
+## Task discovery
+
+### Discover tasks
+
+```bash
+nuvom discover tasks
+```
+
+Scans your project using AST parsing and writes `.nuvom/manifest.json`. Run this whenever you add or remove tasks. No code is executed during discovery.
+
+### List tasks
+
+```bash
+nuvom list tasks
+```
+
+Prints all tasks found in the current manifest.
+
+## Job inspection
+
+### Inspect a job
+
+```bash
+nuvom inspect job <job_id>
+```
+
+Displays full metadata for a job: status, arguments, result, timestamps, and traceback if it failed.
+
+### Check job status
+
+```bash
+nuvom status <job_id>
+```
+
+Quickly fetches the final status of a job — useful for scripting or CI checks.
+
+### View recent history
+
+```bash
+nuvom history recent --limit 10 --status SUCCESS
+```
+
+Lists recent jobs filtered by status. The `--limit` flag controls how many results to return.
+
+## Plugin management
+
+Nuvom's CLI includes commands for inspecting loaded plugins. Use:
+
+```bash
+nuvom --help
+```
+
+to see the full list of available plugin-related subcommands for your installed version.
+
+> **Note:** All CLI commands respect the `.env` in your current working directory. If you run commands from a different directory, set `NUVOM_MANIFEST_PATH` and the backend paths explicitly.

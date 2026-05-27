@@ -1,0 +1,42 @@
+---
+title: "Roadmap"
+description: "Nuvom's development milestones — what's shipped and what's coming next."
+order: 9
+---
+
+# Roadmap
+
+Nuvom is built to be a developer-first, plugin-friendly, and predictable task execution engine. This page tracks what's been shipped and what's coming — designed for real-world problems across local development, production, and Windows environments.
+
+## Completed milestones
+
+**v0.1 — Core Foundations**
+Basic `@task()` decorator with `.delay()`, in-memory queue, worker threads, and a functional CLI (`nuvom runworker`, `nuvom list tasks`).
+
+**v0.2 — Result Backends & CLI**
+Pluggable result backend interface, file-based result store, and full CLI inspection commands.
+
+**v0.3 — Queue Backends**
+File-based persistent job queue, msgpack serialization, and `.corrupt` quarantine for malformed jobs.
+
+**v0.4 — Runtime Execution & Hooks**
+`ExecutionEngine` abstraction, timeout and retry support, and lifecycle hooks: `before_job`, `after_job`, `on_error`.
+
+**v0.5 — Static Task Discovery**
+AST-powered task detection, `.nuvomignore` support, and the manifest system for caching task metadata.
+
+**v0.6 — Developer Experience**
+Dev mode (`--dev`) for hot task reloading, manifest diffing, and rich CLI task listings.
+
+**v0.7 — SQLite Backends**
+SQLite-backed queue and result stores for durable local persistence without external services.
+
+**v0.8 — Scheduling**
+First-class scheduling API: `.schedule()` with `at`, `in_`, `interval`, and `cron` modes. Dedicated scheduler service (`nuvom runscheduler`).
+
+**v0.9 — Plugin System**
+First-class plugin support with `Plugin` protocol, lifecycle management, and `.nuvom_plugins.toml` registration.
+
+## What's ahead
+
+The team is actively working toward v1.0, which targets production-hardened stability, a Redis plugin for distributed deployments, expanded observability hooks, and comprehensive documentation for all subsystems. Community contributions to plugin backends, performance, and cross-platform reliability are especially welcome — see the contributing guide in the repository for setup instructions.

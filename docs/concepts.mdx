@@ -1,0 +1,68 @@
+---
+title: "Core Concepts"
+description: "The mental model and primitives you need to use Nuvom effectively."
+order: 3
+---
+
+# Core Concepts
+
+Nuvom is built around a small number of composable primitives. Once you understand how they fit together, every other feature — scheduling, plugins, custom backends — follows naturally.
+
+## Task
+
+A Task is a Python function decorated with `@task(...)`. It acts as a job template: it carries metadata like retry policy, timeout, and result persistence, but it doesn't execute anything on its own.
+
+```python
+@task(retries=2, timeout_secs=5)
+def send_email(to, body):
+    ...
+```
+
+When you're ready to run it, call `.delay()` to queue it or `.schedule()` to defer it.
+
+## Job
+
+A Job is a serialized instance of a task plus its arguments. Nuvom creates a job when you call `.delay()` or `.schedule()`, assigns it a unique ID, and places it in the queue.
+
+```python
+job = send_email.delay("alice@example.com", "hello")
+print(job.id)
+```
+
+You can inspect a job's status, result, and traceback at any time via the CLI or programmatically.
+
+## Worker
+
+A Worker pulls jobs from the queue and executes them. Nuvom workers run in parallel threads, respect timeouts and retry policies, and use safe shutdown behavior — sending `SIGINT` triggers a graceful stop.
+
+Start a worker pool with:
+
+```bash
+nuvom runworker
+```
+
+## Queue Backend
+
+The queue backend is where jobs live between being dispatched and being picked up by a worker. Nuvom ships with `memory`, `file`, and `sqlite` backends out of the box. You configure the backend with the `NUVOM_QUEUE_BACKEND` environment variable, or swap in a custom plugin for Redis, PostgreSQL, or anything else.
+
+## Result Backend
+
+If a task is defined with `store_result=True`, Nuvom writes the return value to the result backend after execution. Like the queue backend, the result backend is pluggable and configured via `NUVOM_RESULT_BACKEND`.
+
+## Scheduler
+
+The scheduler is a separate service that manages deferred and recurring jobs. When you call `.schedule()` on a task, Nuvom stores a ScheduleEnvelope in the scheduler backend. The scheduler service reads due envelopes and pushes them into the main job queue so workers execute them at the right time.
+
+Run the scheduler alongside your workers:
+
+```bash
+nuvom runscheduler
+```
+
+## Manifest
+
+The manifest is a cached snapshot of all discovered tasks in your project, stored at `.nuvom/manifest.json`. It's produced by `nuvom discover tasks` and loaded by workers at startup to avoid scanning your codebase on every run. Regenerate it whenever you add or remove tasks.
+
+## Next steps
+
+With the mental model in place, see [Scheduling](/docs/scheduler) for the full scheduling API, [Configuration](/docs/configuration) for all environment variables, and Plugin System to extend Nuvom with custom backends.
